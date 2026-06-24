@@ -70,7 +70,7 @@ function UsersPage() {
             <tbody>
               {(data?.profiles ?? []).map(p => {
                 const userRole = (data?.rolesByUser.get(p.id) ?? ["do"])[0];
-                return <UserRow key={p.id} p={p} teams={data?.teams ?? []} role={userRole} onRole={(r)=>setUserRole(p.id, r)} onTeam={(t)=>setTeam(p.id, t)} />;
+                return <UserRow key={p.id} p={p} teams={data?.teams ?? []} role={userRole} onRole={(r: AppRole)=>setUserRole(p.id, r)} onTeam={(t: string)=>setTeam(p.id, t)} />;
               })}
             </tbody>
           </table>

@@ -9,38 +9,197 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppUsersRouteImport } from './routes/_app.users'
+import { Route as AppTeamsRouteImport } from './routes/_app.teams'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppRenewalsRouteImport } from './routes/_app.renewals'
+import { Route as AppMasterRouteImport } from './routes/_app.master'
+import { Route as AppDealsRouteImport } from './routes/_app.deals'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppClientsRouteImport } from './routes/_app.clients'
+import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
+import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeamsRoute = AppTeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRenewalsRoute = AppRenewalsRouteImport.update({
+  id: '/renewals',
+  path: '/renewals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMasterRoute = AppMasterRouteImport.update({
+  id: '/master',
+  path: '/master',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDealsRoute = AppDealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientsRoute = AppClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDealsNewRoute = AppDealsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppDealsRoute,
+} as any)
+const AppDealsIdRoute = AppDealsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppDealsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/clients': typeof AppClientsRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/deals': typeof AppDealsRouteWithChildren
+  '/master': typeof AppMasterRoute
+  '/renewals': typeof AppRenewalsRoute
+  '/settings': typeof AppSettingsRoute
+  '/teams': typeof AppTeamsRoute
+  '/users': typeof AppUsersRoute
+  '/deals/$id': typeof AppDealsIdRoute
+  '/deals/new': typeof AppDealsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/clients': typeof AppClientsRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/deals': typeof AppDealsRouteWithChildren
+  '/master': typeof AppMasterRoute
+  '/renewals': typeof AppRenewalsRoute
+  '/settings': typeof AppSettingsRoute
+  '/teams': typeof AppTeamsRoute
+  '/users': typeof AppUsersRoute
+  '/deals/$id': typeof AppDealsIdRoute
+  '/deals/new': typeof AppDealsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_app/clients': typeof AppClientsRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/deals': typeof AppDealsRouteWithChildren
+  '/_app/master': typeof AppMasterRoute
+  '/_app/renewals': typeof AppRenewalsRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/_app/teams': typeof AppTeamsRoute
+  '/_app/users': typeof AppUsersRoute
+  '/_app/deals/$id': typeof AppDealsIdRoute
+  '/_app/deals/new': typeof AppDealsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/clients'
+    | '/dashboard'
+    | '/deals'
+    | '/master'
+    | '/renewals'
+    | '/settings'
+    | '/teams'
+    | '/users'
+    | '/deals/$id'
+    | '/deals/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/clients'
+    | '/dashboard'
+    | '/deals'
+    | '/master'
+    | '/renewals'
+    | '/settings'
+    | '/teams'
+    | '/users'
+    | '/deals/$id'
+    | '/deals/new'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/auth'
+    | '/_app/clients'
+    | '/_app/dashboard'
+    | '/_app/deals'
+    | '/_app/master'
+    | '/_app/renewals'
+    | '/_app/settings'
+    | '/_app/teams'
+    | '/_app/users'
+    | '/_app/deals/$id'
+    | '/_app/deals/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +207,121 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/users': {
+      id: '/_app/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AppUsersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/teams': {
+      id: '/_app/teams'
+      path: '/teams'
+      fullPath: '/teams'
+      preLoaderRoute: typeof AppTeamsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/renewals': {
+      id: '/_app/renewals'
+      path: '/renewals'
+      fullPath: '/renewals'
+      preLoaderRoute: typeof AppRenewalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/master': {
+      id: '/_app/master'
+      path: '/master'
+      fullPath: '/master'
+      preLoaderRoute: typeof AppMasterRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/deals': {
+      id: '/_app/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof AppDealsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/clients': {
+      id: '/_app/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof AppClientsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/deals/new': {
+      id: '/_app/deals/new'
+      path: '/new'
+      fullPath: '/deals/new'
+      preLoaderRoute: typeof AppDealsNewRouteImport
+      parentRoute: typeof AppDealsRoute
+    }
+    '/_app/deals/$id': {
+      id: '/_app/deals/$id'
+      path: '/$id'
+      fullPath: '/deals/$id'
+      preLoaderRoute: typeof AppDealsIdRouteImport
+      parentRoute: typeof AppDealsRoute
+    }
   }
 }
 
+interface AppDealsRouteChildren {
+  AppDealsIdRoute: typeof AppDealsIdRoute
+  AppDealsNewRoute: typeof AppDealsNewRoute
+}
+
+const AppDealsRouteChildren: AppDealsRouteChildren = {
+  AppDealsIdRoute: AppDealsIdRoute,
+  AppDealsNewRoute: AppDealsNewRoute,
+}
+
+const AppDealsRouteWithChildren = AppDealsRoute._addFileChildren(
+  AppDealsRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppClientsRoute: typeof AppClientsRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppDealsRoute: typeof AppDealsRouteWithChildren
+  AppMasterRoute: typeof AppMasterRoute
+  AppRenewalsRoute: typeof AppRenewalsRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppTeamsRoute: typeof AppTeamsRoute
+  AppUsersRoute: typeof AppUsersRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppClientsRoute: AppClientsRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppDealsRoute: AppDealsRouteWithChildren,
+  AppMasterRoute: AppMasterRoute,
+  AppRenewalsRoute: AppRenewalsRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppTeamsRoute: AppTeamsRoute,
+  AppUsersRoute: AppUsersRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
