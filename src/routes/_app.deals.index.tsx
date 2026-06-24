@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { Plus, Search } from "lucide-react";
 
-export const Route = createFileRoute("/_app/deals")({
+export const Route = createFileRoute("/_app/deals/")({
   component: DealsList,
 });
 

@@ -17,9 +17,9 @@ import { Route as AppTeamsRouteImport } from './routes/_app.teams'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppRenewalsRouteImport } from './routes/_app.renewals'
 import { Route as AppMasterRouteImport } from './routes/_app.master'
-import { Route as AppDealsRouteImport } from './routes/_app.deals'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app.clients'
+import { Route as AppDealsIndexRouteImport } from './routes/_app.deals.index'
 import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
 import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
 
@@ -62,11 +62,6 @@ const AppMasterRoute = AppMasterRouteImport.update({
   path: '/master',
   getParentRoute: () => AppRoute,
 } as any)
-const AppDealsRoute = AppDealsRouteImport.update({
-  id: '/deals',
-  path: '/deals',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -77,15 +72,20 @@ const AppClientsRoute = AppClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDealsIndexRoute = AppDealsIndexRouteImport.update({
+  id: '/deals/',
+  path: '/deals/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDealsNewRoute = AppDealsNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => AppDealsRoute,
+  id: '/deals/new',
+  path: '/deals/new',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppDealsIdRoute = AppDealsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppDealsRoute,
+  id: '/deals/$id',
+  path: '/deals/$id',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -93,7 +93,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
-  '/deals': typeof AppDealsRouteWithChildren
   '/master': typeof AppMasterRoute
   '/renewals': typeof AppRenewalsRoute
   '/settings': typeof AppSettingsRoute
@@ -101,13 +100,13 @@ export interface FileRoutesByFullPath {
   '/users': typeof AppUsersRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
+  '/deals/': typeof AppDealsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
-  '/deals': typeof AppDealsRouteWithChildren
   '/master': typeof AppMasterRoute
   '/renewals': typeof AppRenewalsRoute
   '/settings': typeof AppSettingsRoute
@@ -115,6 +114,7 @@ export interface FileRoutesByTo {
   '/users': typeof AppUsersRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
+  '/deals': typeof AppDealsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,7 +123,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/clients': typeof AppClientsRoute
   '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/deals': typeof AppDealsRouteWithChildren
   '/_app/master': typeof AppMasterRoute
   '/_app/renewals': typeof AppRenewalsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -131,6 +130,7 @@ export interface FileRoutesById {
   '/_app/users': typeof AppUsersRoute
   '/_app/deals/$id': typeof AppDealsIdRoute
   '/_app/deals/new': typeof AppDealsNewRoute
+  '/_app/deals/': typeof AppDealsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -139,7 +139,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/clients'
     | '/dashboard'
-    | '/deals'
     | '/master'
     | '/renewals'
     | '/settings'
@@ -147,13 +146,13 @@ export interface FileRouteTypes {
     | '/users'
     | '/deals/$id'
     | '/deals/new'
+    | '/deals/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/clients'
     | '/dashboard'
-    | '/deals'
     | '/master'
     | '/renewals'
     | '/settings'
@@ -161,6 +160,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/deals/$id'
     | '/deals/new'
+    | '/deals'
   id:
     | '__root__'
     | '/'
@@ -168,7 +168,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/clients'
     | '/_app/dashboard'
-    | '/_app/deals'
     | '/_app/master'
     | '/_app/renewals'
     | '/_app/settings'
@@ -176,6 +175,7 @@ export interface FileRouteTypes {
     | '/_app/users'
     | '/_app/deals/$id'
     | '/_app/deals/new'
+    | '/_app/deals/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -242,13 +242,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMasterRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/deals': {
-      id: '/_app/deals'
-      path: '/deals'
-      fullPath: '/deals'
-      preLoaderRoute: typeof AppDealsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -263,57 +256,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/deals/': {
+      id: '/_app/deals/'
+      path: '/deals'
+      fullPath: '/deals/'
+      preLoaderRoute: typeof AppDealsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/deals/new': {
       id: '/_app/deals/new'
-      path: '/new'
+      path: '/deals/new'
       fullPath: '/deals/new'
       preLoaderRoute: typeof AppDealsNewRouteImport
-      parentRoute: typeof AppDealsRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/deals/$id': {
       id: '/_app/deals/$id'
-      path: '/$id'
+      path: '/deals/$id'
       fullPath: '/deals/$id'
       preLoaderRoute: typeof AppDealsIdRouteImport
-      parentRoute: typeof AppDealsRoute
+      parentRoute: typeof AppRoute
     }
   }
 }
 
-interface AppDealsRouteChildren {
-  AppDealsIdRoute: typeof AppDealsIdRoute
-  AppDealsNewRoute: typeof AppDealsNewRoute
-}
-
-const AppDealsRouteChildren: AppDealsRouteChildren = {
-  AppDealsIdRoute: AppDealsIdRoute,
-  AppDealsNewRoute: AppDealsNewRoute,
-}
-
-const AppDealsRouteWithChildren = AppDealsRoute._addFileChildren(
-  AppDealsRouteChildren,
-)
-
 interface AppRouteChildren {
   AppClientsRoute: typeof AppClientsRoute
   AppDashboardRoute: typeof AppDashboardRoute
-  AppDealsRoute: typeof AppDealsRouteWithChildren
   AppMasterRoute: typeof AppMasterRoute
   AppRenewalsRoute: typeof AppRenewalsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTeamsRoute: typeof AppTeamsRoute
   AppUsersRoute: typeof AppUsersRoute
+  AppDealsIdRoute: typeof AppDealsIdRoute
+  AppDealsNewRoute: typeof AppDealsNewRoute
+  AppDealsIndexRoute: typeof AppDealsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppClientsRoute: AppClientsRoute,
   AppDashboardRoute: AppDashboardRoute,
-  AppDealsRoute: AppDealsRouteWithChildren,
   AppMasterRoute: AppMasterRoute,
   AppRenewalsRoute: AppRenewalsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTeamsRoute: AppTeamsRoute,
   AppUsersRoute: AppUsersRoute,
+  AppDealsIdRoute: AppDealsIdRoute,
+  AppDealsNewRoute: AppDealsNewRoute,
+  AppDealsIndexRoute: AppDealsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
