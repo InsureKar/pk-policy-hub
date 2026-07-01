@@ -103,6 +103,14 @@ function ClientsPage() {
         }
       />
 
+      <Tabs value={tab} onValueChange={setTab} className="mb-3">
+        <TabsList>
+          <TabsTrigger value="all">All ({(data?.clients ?? []).length})</TabsTrigger>
+          <TabsTrigger value="corporate">Corporate ({(data?.clients ?? []).filter(c => c.client_type === "corporate").length})</TabsTrigger>
+          <TabsTrigger value="individual">Individual ({(data?.clients ?? []).filter(c => c.client_type === "individual").length})</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <Card className="mb-4">
         <CardContent className="p-3">
           <div className="relative">
