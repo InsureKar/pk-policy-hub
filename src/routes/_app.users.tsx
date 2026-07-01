@@ -12,8 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
-import { createUser, deleteUser } from "@/lib/users.functions";
+import { Plus, Trash2, KeyRound, Lock, Unlock } from "lucide-react";
+import { createUser, deleteUser, resetUserPassword, setUserLocked } from "@/lib/users.functions";
 
 const ROLES: AppRole[] = ["admin", "management", "team_lead", "do"];
 
