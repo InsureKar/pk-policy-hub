@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -23,6 +24,7 @@ function ClientsPage() {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [tab, setTab] = useState("all");
   const [open, setOpen] = useState(false);
 
   const { data } = useQuery({
@@ -39,6 +41,7 @@ function ClientsPage() {
   const [form, setForm] = useState({
     company_name: "", poc_name: "", poc_number: "", poc_email: "", poc_address: "",
     industry: "", ntn: "", existing_insurance_company: "", notes: "", team_id: "",
+    client_type: "corporate" as "individual" | "corporate",
   });
   const set = (k: keyof typeof form, v: string) => setForm(f=>({ ...f, [k]: v }));
 
@@ -51,12 +54,13 @@ function ClientsPage() {
     if (error) { toast.error(error.message); return; }
     toast.success("Client created");
     setOpen(false);
-    setForm({ company_name:"", poc_name:"", poc_number:"", poc_email:"", poc_address:"", industry:"", ntn:"", existing_insurance_company:"", notes:"", team_id:"" });
+    setForm({ company_name:"", poc_name:"", poc_number:"", poc_email:"", poc_address:"", industry:"", ntn:"", existing_insurance_company:"", notes:"", team_id:"", client_type: "corporate" });
     qc.invalidateQueries({ queryKey: ["clients"] });
   };
 
   const filtered = (data?.clients ?? []).filter((c) =>
-    !q || [c.company_name, c.poc_name, c.poc_email, c.industry, c.ntn].some((x) => x && x.toLowerCase().includes(q.toLowerCase()))
+    (tab === "all" || c.client_type === tab) &&
+    (!q || [c.company_name, c.poc_name, c.poc_email, c.industry, c.ntn].some((x) => x && x.toLowerCase().includes(q.toLowerCase())))
   );
 
   return (
@@ -68,7 +72,16 @@ function ClientsPage() {
             <DialogContent className="max-w-2xl">
               <DialogHeader><DialogTitle>New Client</DialogTitle></DialogHeader>
               <div className="grid sm:grid-cols-2 gap-3">
-                <F label="Company Name *"><Input value={form.company_name} onChange={(e)=>set("company_name", e.target.value)}/></F>
+                <F label="Type" full>
+                  <Select value={form.client_type} onValueChange={(v)=>set("client_type", v)}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="corporate">Corporate</SelectItem>
+                      <SelectItem value="individual">Individual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </F>
+                <F label={form.client_type === "individual" ? "Full Name *" : "Company Name *"}><Input value={form.company_name} onChange={(e)=>set("company_name", e.target.value)}/></F>
                 <F label="Industry"><Input value={form.industry} onChange={(e)=>set("industry", e.target.value)}/></F>
                 <F label="POC Name"><Input value={form.poc_name} onChange={(e)=>set("poc_name", e.target.value)}/></F>
                 <F label="POC Number"><Input value={form.poc_number} onChange={(e)=>set("poc_number", e.target.value)}/></F>
@@ -89,6 +102,14 @@ function ClientsPage() {
           </Dialog>
         }
       />
+
+      <Tabs value={tab} onValueChange={setTab} className="mb-3">
+        <TabsList>
+          <TabsTrigger value="all">All ({(data?.clients ?? []).length})</TabsTrigger>
+          <TabsTrigger value="corporate">Corporate ({(data?.clients ?? []).filter(c => c.client_type === "corporate").length})</TabsTrigger>
+          <TabsTrigger value="individual">Individual ({(data?.clients ?? []).filter(c => c.client_type === "individual").length})</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <Card className="mb-4">
         <CardContent className="p-3">

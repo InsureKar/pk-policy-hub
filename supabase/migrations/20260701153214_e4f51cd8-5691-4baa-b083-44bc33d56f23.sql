@@ -1,0 +1,1 @@
+ALTER VIEW public.v_renewals SET (security_invoker = true);

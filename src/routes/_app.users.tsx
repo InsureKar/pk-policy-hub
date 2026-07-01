@@ -12,8 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
-import { createUser, deleteUser } from "@/lib/users.functions";
+import { Plus, Trash2, KeyRound, Lock, Unlock } from "lucide-react";
+import { createUser, deleteUser, resetUserPassword, setUserLocked } from "@/lib/users.functions";
 
 const ROLES: AppRole[] = ["admin", "management", "team_lead", "do"];
 
@@ -67,6 +67,26 @@ function UsersPage() {
     } catch (e) { toast.error((e as Error).message); }
   };
 
+  const resetFn = useServerFn(resetUserPassword);
+  const lockFn = useServerFn(setUserLocked);
+
+  const onReset = async (userId: string, name: string) => {
+    const pw = prompt(`Set a new password for ${name}:`);
+    if (!pw || pw.length < 8) { if (pw) toast.error("Password must be at least 8 characters"); return; }
+    try {
+      await resetFn({ data: { user_id: userId, password: pw } });
+      toast.success("Password reset. User will be prompted to change on next login.");
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+  const onToggleLock = async (userId: string, locked: boolean) => {
+    try {
+      await lockFn({ data: { user_id: userId, locked: !locked } });
+      toast.success(locked ? "Account unlocked" : "Account locked");
+      qc.invalidateQueries({ queryKey: ["users-admin"] });
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
       <PageHeader
@@ -108,7 +128,13 @@ function UsersPage() {
             <tbody>
               {(data?.profiles ?? []).map(p => {
                 const userRole = (data?.rolesByUser.get(p.id) ?? ["do"])[0];
-                return <UserRow key={p.id} p={p} teams={data?.teams ?? []} role={userRole} onRole={(r: AppRole)=>setUserRole(p.id, r)} onTeam={(t: string)=>setTeam(p.id, t)} onDelete={()=>onDelete(p.id)} />;
+                return <UserRow key={p.id} p={p} teams={data?.teams ?? []} role={userRole}
+                  onRole={(r: AppRole)=>setUserRole(p.id, r)}
+                  onTeam={(t: string)=>setTeam(p.id, t)}
+                  onDelete={()=>onDelete(p.id)}
+                  onReset={()=>onReset(p.id, p.full_name || p.email)}
+                  onLock={()=>onToggleLock(p.id, p.is_locked)}
+                />;
               })}
             </tbody>
           </table>
@@ -118,7 +144,7 @@ function UsersPage() {
   );
 }
 
-function UserRow({ p, teams, role, onRole, onTeam, onDelete }: any) {
+function UserRow({ p, teams, role, onRole, onTeam, onDelete, onReset, onLock }: any) {
   const [phone, setPhone] = useState(p.phone ?? "");
   const [designation, setDesignation] = useState(p.designation ?? "");
 
@@ -129,7 +155,10 @@ function UserRow({ p, teams, role, onRole, onTeam, onDelete }: any) {
 
   return (
     <tr className="border-t">
-      <td className="px-4 py-2 font-medium">{p.full_name || "—"}</td>
+      <td className="px-4 py-2 font-medium">
+        {p.full_name || "—"}
+        {p.is_locked && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-destructive text-destructive-foreground">LOCKED</span>}
+      </td>
       <td className="px-4 py-2 text-muted-foreground">{p.email}</td>
       <td className="px-4 py-2"><Input className="h-8" value={phone} onChange={(e)=>setPhone(e.target.value)} onBlur={saveProfile}/></td>
       <td className="px-4 py-2"><Input className="h-8" value={designation} onChange={(e)=>setDesignation(e.target.value)} onBlur={saveProfile}/></td>
@@ -145,7 +174,11 @@ function UserRow({ p, teams, role, onRole, onTeam, onDelete }: any) {
           <SelectContent>{ROLES.map(r=><SelectItem key={r} value={r}>{r.replace("_"," ")}</SelectItem>)}</SelectContent>
         </Select>
       </td>
-      <td className="px-4 py-2">
+      <td className="px-4 py-2 whitespace-nowrap">
+        <Button variant="ghost" size="icon" onClick={onReset} title="Reset password"><KeyRound className="w-4 h-4"/></Button>
+        <Button variant="ghost" size="icon" onClick={onLock} title={p.is_locked ? "Unlock" : "Lock"}>
+          {p.is_locked ? <Unlock className="w-4 h-4"/> : <Lock className="w-4 h-4"/>}
+        </Button>
         <Button variant="ghost" size="icon" onClick={onDelete} title="Delete user"><Trash2 className="w-4 h-4 text-destructive"/></Button>
       </td>
     </tr>
