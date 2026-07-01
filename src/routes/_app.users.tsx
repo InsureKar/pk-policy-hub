@@ -67,6 +67,26 @@ function UsersPage() {
     } catch (e) { toast.error((e as Error).message); }
   };
 
+  const resetFn = useServerFn(resetUserPassword);
+  const lockFn = useServerFn(setUserLocked);
+
+  const onReset = async (userId: string, name: string) => {
+    const pw = prompt(`Set a new password for ${name}:`);
+    if (!pw || pw.length < 8) { if (pw) toast.error("Password must be at least 8 characters"); return; }
+    try {
+      await resetFn({ data: { user_id: userId, password: pw } });
+      toast.success("Password reset. User will be prompted to change on next login.");
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+  const onToggleLock = async (userId: string, locked: boolean) => {
+    try {
+      await lockFn({ data: { user_id: userId, locked: !locked } });
+      toast.success(locked ? "Account unlocked" : "Account locked");
+      qc.invalidateQueries({ queryKey: ["users-admin"] });
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
       <PageHeader
