@@ -10,6 +10,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -42,8 +43,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "InsureBroker CRM" },
-      { name: "description", content: "Insurance brokerage CRM & ERP — clients, deals, commissions and team performance." },
+      { title: "InsureBroker CRM — Insurance Brokerage Platform" },
+      { name: "description", content: "Enterprise insurance brokerage CRM & ERP — clients, deals, commissions, renewals, documents and team performance." },
+      { property: "og:title", content: "InsureBroker CRM" },
+      { property: "og:description", content: "Enterprise insurance brokerage CRM & ERP for Pakistan." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -71,10 +76,12 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Outlet />
-        <Toaster richColors position="top-right" />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Outlet />
+          <Toaster richColors position="top-right" />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

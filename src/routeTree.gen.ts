@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -16,13 +17,23 @@ import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTeamsRouteImport } from './routes/_app.teams'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppRenewalsRouteImport } from './routes/_app.renewals'
+import { Route as AppPipelineRouteImport } from './routes/_app.pipeline'
 import { Route as AppMasterRouteImport } from './routes/_app.master'
+import { Route as AppIncomeRouteImport } from './routes/_app.income'
+import { Route as AppDocumentsRouteImport } from './routes/_app.documents'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app.clients'
+import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
+import { Route as AppAgentsRouteImport } from './routes/_app.agents'
 import { Route as AppDealsIndexRouteImport } from './routes/_app.deals.index'
 import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
 import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -57,9 +68,24 @@ const AppRenewalsRoute = AppRenewalsRouteImport.update({
   path: '/renewals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPipelineRoute = AppPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMasterRoute = AppMasterRouteImport.update({
   id: '/master',
   path: '/master',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIncomeRoute = AppIncomeRouteImport.update({
+  id: '/income',
+  path: '/income',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDocumentsRoute = AppDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -70,6 +96,16 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
 const AppClientsRoute = AppClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentsRoute = AppAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDealsIndexRoute = AppDealsIndexRouteImport.update({
@@ -91,9 +127,15 @@ const AppDealsIdRoute = AppDealsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/agents': typeof AppAgentsRoute
+  '/analytics': typeof AppAnalyticsRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/documents': typeof AppDocumentsRoute
+  '/income': typeof AppIncomeRoute
   '/master': typeof AppMasterRoute
+  '/pipeline': typeof AppPipelineRoute
   '/renewals': typeof AppRenewalsRoute
   '/settings': typeof AppSettingsRoute
   '/teams': typeof AppTeamsRoute
@@ -105,9 +147,15 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/agents': typeof AppAgentsRoute
+  '/analytics': typeof AppAnalyticsRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/documents': typeof AppDocumentsRoute
+  '/income': typeof AppIncomeRoute
   '/master': typeof AppMasterRoute
+  '/pipeline': typeof AppPipelineRoute
   '/renewals': typeof AppRenewalsRoute
   '/settings': typeof AppSettingsRoute
   '/teams': typeof AppTeamsRoute
@@ -121,9 +169,15 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/_app/agents': typeof AppAgentsRoute
+  '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/clients': typeof AppClientsRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/documents': typeof AppDocumentsRoute
+  '/_app/income': typeof AppIncomeRoute
   '/_app/master': typeof AppMasterRoute
+  '/_app/pipeline': typeof AppPipelineRoute
   '/_app/renewals': typeof AppRenewalsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/teams': typeof AppTeamsRoute
@@ -137,9 +191,15 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/reset-password'
+    | '/agents'
+    | '/analytics'
     | '/clients'
     | '/dashboard'
+    | '/documents'
+    | '/income'
     | '/master'
+    | '/pipeline'
     | '/renewals'
     | '/settings'
     | '/teams'
@@ -151,9 +211,15 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/reset-password'
+    | '/agents'
+    | '/analytics'
     | '/clients'
     | '/dashboard'
+    | '/documents'
+    | '/income'
     | '/master'
+    | '/pipeline'
     | '/renewals'
     | '/settings'
     | '/teams'
@@ -166,9 +232,15 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/auth'
+    | '/reset-password'
+    | '/_app/agents'
+    | '/_app/analytics'
     | '/_app/clients'
     | '/_app/dashboard'
+    | '/_app/documents'
+    | '/_app/income'
     | '/_app/master'
+    | '/_app/pipeline'
     | '/_app/renewals'
     | '/_app/settings'
     | '/_app/teams'
@@ -182,10 +254,18 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -235,11 +315,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRenewalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/pipeline': {
+      id: '/_app/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof AppPipelineRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/master': {
       id: '/_app/master'
       path: '/master'
       fullPath: '/master'
       preLoaderRoute: typeof AppMasterRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/income': {
+      id: '/_app/income'
+      path: '/income'
+      fullPath: '/income'
+      preLoaderRoute: typeof AppIncomeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/documents': {
+      id: '/_app/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof AppDocumentsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -254,6 +355,20 @@ declare module '@tanstack/react-router' {
       path: '/clients'
       fullPath: '/clients'
       preLoaderRoute: typeof AppClientsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/analytics': {
+      id: '/_app/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/agents': {
+      id: '/_app/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AppAgentsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/deals/': {
@@ -281,9 +396,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAgentsRoute: typeof AppAgentsRoute
+  AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppClientsRoute: typeof AppClientsRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDocumentsRoute: typeof AppDocumentsRoute
+  AppIncomeRoute: typeof AppIncomeRoute
   AppMasterRoute: typeof AppMasterRoute
+  AppPipelineRoute: typeof AppPipelineRoute
   AppRenewalsRoute: typeof AppRenewalsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTeamsRoute: typeof AppTeamsRoute
@@ -294,9 +414,14 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAgentsRoute: AppAgentsRoute,
+  AppAnalyticsRoute: AppAnalyticsRoute,
   AppClientsRoute: AppClientsRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppDocumentsRoute: AppDocumentsRoute,
+  AppIncomeRoute: AppIncomeRoute,
   AppMasterRoute: AppMasterRoute,
+  AppPipelineRoute: AppPipelineRoute,
   AppRenewalsRoute: AppRenewalsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTeamsRoute: AppTeamsRoute,
@@ -312,17 +437,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

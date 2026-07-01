@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           key: string
@@ -34,6 +72,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          client_type: string
           company_name: string
           created_at: string
           created_by: string
@@ -50,6 +89,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          client_type?: string
           company_name: string
           created_at?: string
           created_by: string
@@ -66,6 +106,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          client_type?: string
           company_name?: string
           created_at?: string
           created_by?: string
@@ -87,6 +128,41 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_commission_rates: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          line_of_business: Database["public"]["Enums"]["line_of_business"]
+          percentage: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          line_of_business: Database["public"]["Enums"]["line_of_business"]
+          percentage?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          line_of_business?: Database["public"]["Enums"]["line_of_business"]
+          percentage?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_commission_rates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_companies"
             referencedColumns: ["id"]
           },
         ]
@@ -305,6 +381,148 @@ export type Database = {
           },
         ]
       }
+      document_versions: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          size_bytes: number | null
+          storage_path: string
+          uploaded_by: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_by?: string | null
+          version: number
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_versions_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          client_id: string | null
+          company_id: string | null
+          created_at: string
+          document_type: string
+          id: string
+          mime_type: string | null
+          name: string
+          policy_id: string | null
+          size_bytes: number | null
+          storage_path: string
+          tags: string[]
+          team_id: string | null
+          updated_at: string
+          uploaded_by: string | null
+          version: number
+        }
+        Insert: {
+          client_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          document_type: string
+          id?: string
+          mime_type?: string | null
+          name: string
+          policy_id?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          tags?: string[]
+          team_id?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: number
+        }
+        Update: {
+          client_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          document_type?: string
+          id?: string
+          mime_type?: string | null
+          name?: string
+          policy_id?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          tags?: string[]
+          team_id?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "v_renewals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurance_companies: {
         Row: {
           active: boolean
@@ -368,6 +586,99 @@ export type Database = {
         }
         Relationships: []
       }
+      policies: {
+        Row: {
+          client_id: string
+          company_id: string | null
+          created_at: string
+          deal_id: string | null
+          end_date: string
+          id: string
+          line_of_business:
+            | Database["public"]["Enums"]["line_of_business"]
+            | null
+          owner_id: string | null
+          policy_number: string
+          premium: number
+          start_date: string
+          status: string
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          company_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          end_date: string
+          id?: string
+          line_of_business?:
+            | Database["public"]["Enums"]["line_of_business"]
+            | null
+          owner_id?: string | null
+          policy_number: string
+          premium?: number
+          start_date: string
+          status?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          company_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          end_date?: string
+          id?: string
+          line_of_business?:
+            | Database["public"]["Enums"]["line_of_business"]
+            | null
+          owner_id?: string | null
+          policy_number?: string
+          premium?: number
+          start_date?: string
+          status?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policies_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policies_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policies_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policies_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -375,6 +686,8 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_locked: boolean
+          must_reset_password: boolean
           phone: string | null
           team_id: string | null
           updated_at: string
@@ -385,6 +698,8 @@ export type Database = {
           email: string
           full_name?: string
           id: string
+          is_locked?: boolean
+          must_reset_password?: boolean
           phone?: string | null
           team_id?: string | null
           updated_at?: string
@@ -395,6 +710,8 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          is_locked?: boolean
+          must_reset_password?: boolean
           phone?: string | null
           team_id?: string | null
           updated_at?: string
@@ -459,7 +776,102 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_renewals: {
+        Row: {
+          client_id: string | null
+          company_id: string | null
+          created_at: string | null
+          deal_id: string | null
+          end_date: string | null
+          id: string | null
+          line_of_business:
+            | Database["public"]["Enums"]["line_of_business"]
+            | null
+          owner_id: string | null
+          policy_number: string | null
+          premium: number | null
+          renewal_status: string | null
+          start_date: string | null
+          status: string | null
+          team_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          deal_id?: string | null
+          end_date?: string | null
+          id?: string | null
+          line_of_business?:
+            | Database["public"]["Enums"]["line_of_business"]
+            | null
+          owner_id?: string | null
+          policy_number?: string | null
+          premium?: number | null
+          renewal_status?: never
+          start_date?: string | null
+          status?: string | null
+          team_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          deal_id?: string | null
+          end_date?: string | null
+          id?: string | null
+          line_of_business?:
+            | Database["public"]["Enums"]["line_of_business"]
+            | null
+          owner_id?: string | null
+          policy_number?: string | null
+          premium?: number | null
+          renewal_status?: never
+          start_date?: string | null
+          status?: string | null
+          team_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policies_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policies_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policies_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policies_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       current_user_team: { Args: never; Returns: string }
@@ -473,6 +885,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "management" | "team_lead" | "do"
+      line_of_business:
+        | "group_health"
+        | "motor"
+        | "marine"
+        | "travel"
+        | "fire"
+        | "misc"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -601,6 +1020,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "management", "team_lead", "do"],
+      line_of_business: [
+        "group_health",
+        "motor",
+        "marine",
+        "travel",
+        "fire",
+        "misc",
+      ],
     },
   },
 } as const
