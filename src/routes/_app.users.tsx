@@ -144,7 +144,7 @@ function UsersPage() {
   );
 }
 
-function UserRow({ p, teams, role, onRole, onTeam, onDelete }: any) {
+function UserRow({ p, teams, role, onRole, onTeam, onDelete, onReset, onLock }: any) {
   const [phone, setPhone] = useState(p.phone ?? "");
   const [designation, setDesignation] = useState(p.designation ?? "");
 
@@ -155,7 +155,10 @@ function UserRow({ p, teams, role, onRole, onTeam, onDelete }: any) {
 
   return (
     <tr className="border-t">
-      <td className="px-4 py-2 font-medium">{p.full_name || "—"}</td>
+      <td className="px-4 py-2 font-medium">
+        {p.full_name || "—"}
+        {p.is_locked && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-destructive text-destructive-foreground">LOCKED</span>}
+      </td>
       <td className="px-4 py-2 text-muted-foreground">{p.email}</td>
       <td className="px-4 py-2"><Input className="h-8" value={phone} onChange={(e)=>setPhone(e.target.value)} onBlur={saveProfile}/></td>
       <td className="px-4 py-2"><Input className="h-8" value={designation} onChange={(e)=>setDesignation(e.target.value)} onBlur={saveProfile}/></td>
@@ -171,7 +174,11 @@ function UserRow({ p, teams, role, onRole, onTeam, onDelete }: any) {
           <SelectContent>{ROLES.map(r=><SelectItem key={r} value={r}>{r.replace("_"," ")}</SelectItem>)}</SelectContent>
         </Select>
       </td>
-      <td className="px-4 py-2">
+      <td className="px-4 py-2 whitespace-nowrap">
+        <Button variant="ghost" size="icon" onClick={onReset} title="Reset password"><KeyRound className="w-4 h-4"/></Button>
+        <Button variant="ghost" size="icon" onClick={onLock} title={p.is_locked ? "Unlock" : "Lock"}>
+          {p.is_locked ? <Unlock className="w-4 h-4"/> : <Lock className="w-4 h-4"/>}
+        </Button>
         <Button variant="ghost" size="icon" onClick={onDelete} title="Delete user"><Trash2 className="w-4 h-4 text-destructive"/></Button>
       </td>
     </tr>
