@@ -72,7 +72,16 @@ function ClientsPage() {
             <DialogContent className="max-w-2xl">
               <DialogHeader><DialogTitle>New Client</DialogTitle></DialogHeader>
               <div className="grid sm:grid-cols-2 gap-3">
-                <F label="Company Name *"><Input value={form.company_name} onChange={(e)=>set("company_name", e.target.value)}/></F>
+                <F label="Type" full>
+                  <Select value={form.client_type} onValueChange={(v)=>set("client_type", v)}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="corporate">Corporate</SelectItem>
+                      <SelectItem value="individual">Individual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </F>
+                <F label={form.client_type === "individual" ? "Full Name *" : "Company Name *"}><Input value={form.company_name} onChange={(e)=>set("company_name", e.target.value)}/></F>
                 <F label="Industry"><Input value={form.industry} onChange={(e)=>set("industry", e.target.value)}/></F>
                 <F label="POC Name"><Input value={form.poc_name} onChange={(e)=>set("poc_name", e.target.value)}/></F>
                 <F label="POC Number"><Input value={form.poc_number} onChange={(e)=>set("poc_number", e.target.value)}/></F>
