@@ -165,11 +165,11 @@ function NavGroupBlock({ group, items, pathname, defaultOpen }: { group: NavGrou
       {open && (
         <div className="mt-0.5 space-y-0.5 pl-2">
           {items.map((item) => {
-            const base = item.to.split("?")[0];
+            const base = item.to;
             const active = pathname === base || pathname.startsWith(base + "/");
             const ItemIcon = item.icon;
             return (
-              <Link key={item.to} to={item.to as string}
+              <Link key={item.label} to={item.to as string} search={item.search as any}
                 className={cn(
                   "flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors",
                   active
@@ -178,6 +178,8 @@ function NavGroupBlock({ group, items, pathname, defaultOpen }: { group: NavGrou
                 )}>
                 <ItemIcon className="w-4 h-4"/> {item.label}
               </Link>
+            );
+          })}
             );
           })}
         </div>
