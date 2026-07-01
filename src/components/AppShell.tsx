@@ -180,8 +180,6 @@ function NavGroupBlock({ group, items, pathname, defaultOpen }: { group: NavGrou
               </Link>
             );
           })}
-            );
-          })}
         </div>
       )}
     </div>
