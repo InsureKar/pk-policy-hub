@@ -41,6 +41,7 @@ function ClientsPage() {
   const [form, setForm] = useState({
     company_name: "", poc_name: "", poc_number: "", poc_email: "", poc_address: "",
     industry: "", ntn: "", existing_insurance_company: "", notes: "", team_id: "",
+    client_type: "corporate" as "individual" | "corporate",
   });
   const set = (k: keyof typeof form, v: string) => setForm(f=>({ ...f, [k]: v }));
 
