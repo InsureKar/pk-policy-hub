@@ -54,12 +54,13 @@ function ClientsPage() {
     if (error) { toast.error(error.message); return; }
     toast.success("Client created");
     setOpen(false);
-    setForm({ company_name:"", poc_name:"", poc_number:"", poc_email:"", poc_address:"", industry:"", ntn:"", existing_insurance_company:"", notes:"", team_id:"" });
+    setForm({ company_name:"", poc_name:"", poc_number:"", poc_email:"", poc_address:"", industry:"", ntn:"", existing_insurance_company:"", notes:"", team_id:"", client_type: "corporate" });
     qc.invalidateQueries({ queryKey: ["clients"] });
   };
 
   const filtered = (data?.clients ?? []).filter((c) =>
-    !q || [c.company_name, c.poc_name, c.poc_email, c.industry, c.ntn].some((x) => x && x.toLowerCase().includes(q.toLowerCase()))
+    (tab === "all" || c.client_type === tab) &&
+    (!q || [c.company_name, c.poc_name, c.poc_email, c.industry, c.ntn].some((x) => x && x.toLowerCase().includes(q.toLowerCase())))
   );
 
   return (
