@@ -63,11 +63,11 @@ const groups: NavGroup[] = [
   {
     label: "Master Data", icon: Database, roles: ["admin"], expandable: true,
     items: [
-      { to: "/master?tab=companies", label: "Insurance Companies", icon: Building2, roles: ["admin"] },
-      { to: "/master?tab=commissions", label: "Commission Settings", icon: DollarSign, roles: ["admin"] },
-      { to: "/master?tab=categories", label: "Categories", icon: Database, roles: ["admin"] },
-      { to: "/master?tab=products", label: "Products", icon: Database, roles: ["admin"] },
-      { to: "/master?tab=policy_types", label: "Policy Types", icon: Database, roles: ["admin"] },
+      { to: "/master", label: "Insurance Companies", icon: Building2, roles: ["admin"], search: { tab: "companies" } },
+      { to: "/master", label: "Commission Settings", icon: DollarSign, roles: ["admin"], search: { tab: "commissions" } },
+      { to: "/master", label: "Categories", icon: Database, roles: ["admin"], search: { tab: "categories" } },
+      { to: "/master", label: "Products", icon: Database, roles: ["admin"], search: { tab: "products" } },
+      { to: "/master", label: "Policy Types", icon: Database, roles: ["admin"], search: { tab: "policy_types" } },
     ],
   },
   {
