@@ -24,6 +24,7 @@ function ClientsPage() {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [tab, setTab] = useState("all");
   const [open, setOpen] = useState(false);
 
   const { data } = useQuery({
