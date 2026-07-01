@@ -15,6 +15,7 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles?: AppRole[];
+  search?: Record<string, string>;
 };
 
 type NavGroup = {
