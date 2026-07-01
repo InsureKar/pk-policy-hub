@@ -128,7 +128,13 @@ function UsersPage() {
             <tbody>
               {(data?.profiles ?? []).map(p => {
                 const userRole = (data?.rolesByUser.get(p.id) ?? ["do"])[0];
-                return <UserRow key={p.id} p={p} teams={data?.teams ?? []} role={userRole} onRole={(r: AppRole)=>setUserRole(p.id, r)} onTeam={(t: string)=>setTeam(p.id, t)} onDelete={()=>onDelete(p.id)} />;
+                return <UserRow key={p.id} p={p} teams={data?.teams ?? []} role={userRole}
+                  onRole={(r: AppRole)=>setUserRole(p.id, r)}
+                  onTeam={(t: string)=>setTeam(p.id, t)}
+                  onDelete={()=>onDelete(p.id)}
+                  onReset={()=>onReset(p.id, p.full_name || p.email)}
+                  onLock={()=>onToggleLock(p.id, p.is_locked)}
+                />;
               })}
             </tbody>
           </table>
