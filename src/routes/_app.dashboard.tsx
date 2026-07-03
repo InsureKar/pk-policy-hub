@@ -7,12 +7,15 @@ import { fmtPKR } from "@/lib/format";
 import { computeDeal } from "@/lib/calc";
 import { Briefcase, TrendingUp, CheckCircle2, XCircle, Activity, Wallet, BadgePercent, Coins } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
 });
 
 function DashboardPage() {
+  const { hasRole } = useAuth();
+  const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
