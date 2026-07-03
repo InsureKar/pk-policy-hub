@@ -52,7 +52,7 @@ function IncomePage() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
-      <PageHeader title="Income" subtitle="Premium received, commission earned, pending balances and company-wise revenue."/>
+      <PageHeader title="Income" subtitle="Premium received, commission earned, pending balances and company-wise revenue. Lost deals are excluded."/>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <KPI label="Total Premium" value={fmtPKR(totalPremium)}/>
         <KPI label="Commission Earned" value={fmtPKR(totalIncome)}/>
