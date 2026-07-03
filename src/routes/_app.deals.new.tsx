@@ -194,7 +194,7 @@ function NewDealPage() {
         {canSeeLiveCalc && (
           <div className="space-y-4">
             <Card>
-              <CardHeader><CardTitle className="text-base">Live Calculations <span className="text-xs font-normal text-muted-foreground">(Admin only)</span></CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Live Calculations</CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <Row k="Net Premium (Gross − Commission)" v={fmtPKR(netPremium)} />
                 <Row k="Commission Before Tax" v={fmtPKR(calc.commission_before_tax)} />
