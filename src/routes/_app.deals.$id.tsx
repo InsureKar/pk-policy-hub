@@ -174,7 +174,7 @@ function DealDetail() {
               <hr/>
               <KV k="Commission Before Tax" v={fmtPKR(Number(d.commission_before_tax))} />
               <KV k="Commission After Tax" v={fmtPKR(Number(d.commission_after_tax))} />
-              {isAdmin && <KV k="Marketing After Tax" v={fmtPKR(Number(d.marketing_after_tax))} />}
+              <KV k="Marketing After Tax" v={fmtPKR(Number(d.marketing_after_tax))} />
               <KV k="Total Income" v={<span className="font-semibold">{fmtPKR(Number(d.total_income))}</span>} />
               <KV k="Income %" v={fmtPct(Number(d.income_percentage))} />
               {calc && <>
