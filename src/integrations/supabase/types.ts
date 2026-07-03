@@ -72,62 +72,103 @@ export type Database = {
       }
       clients: {
         Row: {
+          address: string | null
+          city: string | null
           client_type: string
+          cnic: string | null
           company_name: string
           created_at: string
           created_by: string
+          date_of_birth: string | null
+          do_id: string | null
+          email: string | null
           existing_insurance_company: string | null
+          full_name: string | null
           id: string
           industry: string | null
           notes: string | null
           ntn: string | null
+          phone: string | null
           poc_address: string | null
           poc_email: string | null
           poc_name: string | null
           poc_number: string | null
           team_id: string | null
+          team_lead_id: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          city?: string | null
           client_type?: string
+          cnic?: string | null
           company_name: string
           created_at?: string
           created_by: string
+          date_of_birth?: string | null
+          do_id?: string | null
+          email?: string | null
           existing_insurance_company?: string | null
+          full_name?: string | null
           id?: string
           industry?: string | null
           notes?: string | null
           ntn?: string | null
+          phone?: string | null
           poc_address?: string | null
           poc_email?: string | null
           poc_name?: string | null
           poc_number?: string | null
           team_id?: string | null
+          team_lead_id?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          city?: string | null
           client_type?: string
+          cnic?: string | null
           company_name?: string
           created_at?: string
           created_by?: string
+          date_of_birth?: string | null
+          do_id?: string | null
+          email?: string | null
           existing_insurance_company?: string | null
+          full_name?: string | null
           id?: string
           industry?: string | null
           notes?: string | null
           ntn?: string | null
+          phone?: string | null
           poc_address?: string | null
           poc_email?: string | null
           poc_name?: string | null
           poc_number?: string | null
           team_id?: string | null
+          team_lead_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_do_id_fkey"
+            columns: ["do_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clients_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_team_lead_id_fkey"
+            columns: ["team_lead_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -246,6 +287,7 @@ export type Database = {
         Row: {
           assigned_do_id: string | null
           b2b_commission: number
+          base_premium: number | null
           client_id: string | null
           commission_after_tax: number | null
           commission_before_tax: number | null
@@ -265,18 +307,26 @@ export type Database = {
           marketing_budget_percentage: number
           net_premium: number
           notes: string | null
+          payment_mode: string | null
+          payment_receive_date: string | null
+          payment_remarks: string | null
+          payment_schedule: string | null
           policy_end_date: string | null
           policy_number: string | null
           policy_start_date: string | null
+          received_by: string | null
           source_id: string | null
           stage_id: string | null
           team_id: string | null
+          team_lead_id: string | null
           total_income: number | null
+          transaction_reference: string | null
           updated_at: string
         }
         Insert: {
           assigned_do_id?: string | null
           b2b_commission?: number
+          base_premium?: number | null
           client_id?: string | null
           commission_after_tax?: number | null
           commission_before_tax?: number | null
@@ -296,18 +346,26 @@ export type Database = {
           marketing_budget_percentage?: number
           net_premium?: number
           notes?: string | null
+          payment_mode?: string | null
+          payment_receive_date?: string | null
+          payment_remarks?: string | null
+          payment_schedule?: string | null
           policy_end_date?: string | null
           policy_number?: string | null
           policy_start_date?: string | null
+          received_by?: string | null
           source_id?: string | null
           stage_id?: string | null
           team_id?: string | null
+          team_lead_id?: string | null
           total_income?: number | null
+          transaction_reference?: string | null
           updated_at?: string
         }
         Update: {
           assigned_do_id?: string | null
           b2b_commission?: number
+          base_premium?: number | null
           client_id?: string | null
           commission_after_tax?: number | null
           commission_before_tax?: number | null
@@ -327,13 +385,20 @@ export type Database = {
           marketing_budget_percentage?: number
           net_premium?: number
           notes?: string | null
+          payment_mode?: string | null
+          payment_receive_date?: string | null
+          payment_remarks?: string | null
+          payment_schedule?: string | null
           policy_end_date?: string | null
           policy_number?: string | null
           policy_start_date?: string | null
+          received_by?: string | null
           source_id?: string | null
           stage_id?: string | null
           team_id?: string | null
+          team_lead_id?: string | null
           total_income?: number | null
+          transaction_reference?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -359,6 +424,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "deals_received_by_fkey"
+            columns: ["received_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "deals_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
@@ -377,6 +449,13 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_team_lead_id_fkey"
+            columns: ["team_lead_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
