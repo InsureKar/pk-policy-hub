@@ -22,10 +22,12 @@ function NewDealPage() {
   const nav = useNavigate();
   const { user, hasRole } = useAuth();
   const isAdmin = hasRole("admin");
-  const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
-  // Marketing budget & Live Calculations panel are Admin-only per spec
-  const canSeeMarketing = isAdmin;
-  const canSeeLiveCalc = isAdmin;
+  // Premium & Commission section is available to every user creating a deal,
+  // matching the original spec — no tax or marketing-budget restrictions.
+  const canSeeFinancials = true;
+  const canSeeMarketing = true;
+  const canSeeLiveCalc = true;
+
 
   const { data: lists } = useQuery({
     queryKey: ["deal-form-lists"],
