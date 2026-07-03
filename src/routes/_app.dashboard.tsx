@@ -81,16 +81,22 @@ function DashboardPage() {
 
   const chartColors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))", "oklch(0.6 0.15 30)"];
 
-  const kpis = [
+  const financialKpis = [
     { label: "Gross Premium", value: fmtPKR(gross), icon: Wallet, tone: "primary" },
     { label: "Net Premium", value: fmtPKR(net), icon: Coins, tone: "accent" },
     { label: "Tagged Premium", value: fmtPKR(tagged), icon: BadgePercent, tone: "accent" },
     { label: "Total Income", value: fmtPKR(income), icon: TrendingUp, tone: "success" },
+  ];
+  const activityKpis = [
+    { label: "Gross Premium", value: fmtPKR(gross), icon: Wallet, tone: "primary" },
     { label: "Total Deals", value: total.toString(), icon: Briefcase, tone: "muted" },
     { label: "Won", value: won.toString(), icon: CheckCircle2, tone: "success" },
     { label: "Lost", value: lost.toString(), icon: XCircle, tone: "destructive" },
     { label: "Active", value: active.toString(), icon: Activity, tone: "primary" },
   ];
+  const kpis = canSeeFinancials
+    ? [...financialKpis, ...activityKpis.slice(1)]
+    : activityKpis;
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
