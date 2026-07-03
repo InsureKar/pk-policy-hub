@@ -7,12 +7,15 @@ import { fmtPKR } from "@/lib/format";
 import { computeDeal } from "@/lib/calc";
 import { Briefcase, TrendingUp, CheckCircle2, XCircle, Activity, Wallet, BadgePercent, Coins } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
 });
 
 function DashboardPage() {
+  const { hasRole } = useAuth();
+  const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
@@ -78,16 +81,22 @@ function DashboardPage() {
 
   const chartColors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))", "oklch(0.6 0.15 30)"];
 
-  const kpis = [
+  const financialKpis = [
     { label: "Gross Premium", value: fmtPKR(gross), icon: Wallet, tone: "primary" },
     { label: "Net Premium", value: fmtPKR(net), icon: Coins, tone: "accent" },
     { label: "Tagged Premium", value: fmtPKR(tagged), icon: BadgePercent, tone: "accent" },
     { label: "Total Income", value: fmtPKR(income), icon: TrendingUp, tone: "success" },
+  ];
+  const activityKpis = [
+    { label: "Gross Premium", value: fmtPKR(gross), icon: Wallet, tone: "primary" },
     { label: "Total Deals", value: total.toString(), icon: Briefcase, tone: "muted" },
     { label: "Won", value: won.toString(), icon: CheckCircle2, tone: "success" },
     { label: "Lost", value: lost.toString(), icon: XCircle, tone: "destructive" },
     { label: "Active", value: active.toString(), icon: Activity, tone: "primary" },
   ];
+  const kpis = canSeeFinancials
+    ? [...financialKpis, ...activityKpis.slice(1)]
+    : activityKpis;
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
@@ -116,7 +125,7 @@ function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle className="text-base">Monthly Premium & Income</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">{canSeeFinancials ? "Monthly Premium & Income" : "Monthly Gross Premium"}</CardTitle></CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={months}>
@@ -125,7 +134,7 @@ function DashboardPage() {
                 <YAxis fontSize={12} tickFormatter={(v)=> v>=1e6?`${(v/1e6).toFixed(1)}M`: v>=1e3?`${(v/1e3).toFixed(0)}k`:String(v)}/>
                 <Tooltip formatter={(v: number) => fmtPKR(v)} />
                 <Bar dataKey="gross" fill="oklch(0.55 0.18 252)" name="Gross Premium" radius={[4,4,0,0]}/>
-                <Bar dataKey="income" fill="oklch(0.62 0.16 155)" name="Income" radius={[4,4,0,0]}/>
+                {canSeeFinancials && <Bar dataKey="income" fill="oklch(0.62 0.16 155)" name="Income" radius={[4,4,0,0]}/>}
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

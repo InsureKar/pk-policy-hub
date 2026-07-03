@@ -39,14 +39,12 @@ function MasterDataPage() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
-      <PageHeader title="Master Data" subtitle="Insurance companies, commission rates, categories, products and pipeline configuration." />
+      <PageHeader title="Master Data" subtitle="Insurance companies, commission rates, products and pipeline configuration." />
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="mb-4 flex-wrap h-auto">
           <TabsTrigger value="companies">Insurance Companies</TabsTrigger>
           <TabsTrigger value="commissions">Commission Settings</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="policy_types">Policy Types</TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline Stages</TabsTrigger>
           <TabsTrigger value="sources">Lead Sources</TabsTrigger>
           <TabsTrigger value="premium">Tagged Premium</TabsTrigger>
@@ -54,9 +52,7 @@ function MasterDataPage() {
 
         <TabsContent value="companies"><CompaniesTab/></TabsContent>
         <TabsContent value="commissions"><CommissionsTab/></TabsContent>
-        <TabsContent value="categories"><SimpleTab table="insurance_types" label="Category" description="Insurance categories (used as deal category)."/></TabsContent>
         <TabsContent value="products"><SimpleTab table="insurance_types" label="Product" description="Insurance products offered."/></TabsContent>
-        <TabsContent value="policy_types"><SimpleTab table="insurance_types" label="Policy Type" description="Policy classification types."/></TabsContent>
         <TabsContent value="pipeline"><SimpleTab table="deal_stages" label="Pipeline Stage" description="Order controls the Kanban columns." ordered/></TabsContent>
         <TabsContent value="sources"><SimpleTab table="lead_sources" label="Lead Source" description="Where leads come from."/></TabsContent>
         <TabsContent value="premium"><TaggedPremiumTab/></TabsContent>

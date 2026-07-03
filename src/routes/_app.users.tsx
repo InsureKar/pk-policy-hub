@@ -91,7 +91,7 @@ function UsersPage() {
     <div className="p-6 max-w-[1400px] mx-auto">
       <PageHeader
         title="Users"
-        subtitle="Manage roles, teams and DO profiles. Create accounts for new agents and managers."
+        subtitle="Manage roles, teams and DO profiles. Create accounts for new Development Officers and Team Leads."
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
