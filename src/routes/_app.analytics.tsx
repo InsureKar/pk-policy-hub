@@ -22,11 +22,13 @@ function AnalyticsPage() {
         supabase.from("insurance_companies").select("id, name"),
         supabase.from("profiles").select("id, full_name"),
         supabase.from("teams").select("id, name"),
-        supabase.from("deal_stages").select("id, name"),
+        supabase.from("deal_stages").select("id, name, is_lost"),
         supabase.from("policies").select("id, end_date, premium"),
       ]);
+      const lostIds = new Set((stages.data ?? []).filter((s: any) => s.is_lost).map(s => s.id));
       return {
         deals: deals.data ?? [],
+        activeDeals: (deals.data ?? []).filter(d => !d.stage_id || !lostIds.has(d.stage_id)),
         coMap: new Map((cos.data ?? []).map(c=>[c.id, c.name])),
         profMap: new Map((profs.data ?? []).map(p=>[p.id, p.full_name])),
         teamMap: new Map((teams.data ?? []).map(t=>[t.id, t.name])),
@@ -36,9 +38,9 @@ function AnalyticsPage() {
     },
   });
 
-  const bySales = agg(data?.deals ?? [], d => d.assigned_do_id ? (data?.profMap.get(d.assigned_do_id) ?? "—") : "Unassigned", d => Number(d.gross_premium));
-  const byRev = agg(data?.deals ?? [], d => d.insurance_company_id ? (data?.coMap.get(d.insurance_company_id) ?? "—") : "—", d => Number(d.total_income ?? 0));
-  const byTeam = agg(data?.deals ?? [], d => d.team_id ? (data?.teamMap.get(d.team_id) ?? "—") : "Unassigned", d => Number(d.total_income ?? 0));
+  const bySales = agg(data?.activeDeals ?? [], d => d.assigned_do_id ? (data?.profMap.get(d.assigned_do_id) ?? "—") : "Unassigned", d => Number(d.gross_premium));
+  const byRev = agg(data?.activeDeals ?? [], d => d.insurance_company_id ? (data?.coMap.get(d.insurance_company_id) ?? "—") : "—", d => Number(d.total_income ?? 0));
+  const byTeam = agg(data?.activeDeals ?? [], d => d.team_id ? (data?.teamMap.get(d.team_id) ?? "—") : "Unassigned", d => Number(d.total_income ?? 0));
   const byStage = agg(data?.deals ?? [], d => d.stage_id ? (data?.stageMap.get(d.stage_id) ?? "—") : "—", d => 1);
 
   const renewalBuckets = { upcoming: 0, due: 0, expired: 0, completed: 0 };
