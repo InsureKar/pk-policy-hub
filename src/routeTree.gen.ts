@@ -17,6 +17,7 @@ import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTeamsRouteImport } from './routes/_app.teams'
 import { Route as AppTargetsRouteImport } from './routes/_app.targets'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppReviewRouteImport } from './routes/_app.review'
 import { Route as AppRenewalsRouteImport } from './routes/_app.renewals'
 import { Route as AppPipelineRouteImport } from './routes/_app.pipeline'
 import { Route as AppMasterRouteImport } from './routes/_app.master'
@@ -66,6 +67,11 @@ const AppTargetsRoute = AppTargetsRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReviewRoute = AppReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRenewalsRoute = AppRenewalsRouteImport.update({
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/master': typeof AppMasterRoute
   '/pipeline': typeof AppPipelineRoute
   '/renewals': typeof AppRenewalsRoute
+  '/review': typeof AppReviewRoute
   '/settings': typeof AppSettingsRoute
   '/targets': typeof AppTargetsRoute
   '/teams': typeof AppTeamsRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/master': typeof AppMasterRoute
   '/pipeline': typeof AppPipelineRoute
   '/renewals': typeof AppRenewalsRoute
+  '/review': typeof AppReviewRoute
   '/settings': typeof AppSettingsRoute
   '/targets': typeof AppTargetsRoute
   '/teams': typeof AppTeamsRoute
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/_app/master': typeof AppMasterRoute
   '/_app/pipeline': typeof AppPipelineRoute
   '/_app/renewals': typeof AppRenewalsRoute
+  '/_app/review': typeof AppReviewRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/targets': typeof AppTargetsRoute
   '/_app/teams': typeof AppTeamsRoute
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
     | '/master'
     | '/pipeline'
     | '/renewals'
+    | '/review'
     | '/settings'
     | '/targets'
     | '/teams'
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/master'
     | '/pipeline'
     | '/renewals'
+    | '/review'
     | '/settings'
     | '/targets'
     | '/teams'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
     | '/_app/master'
     | '/_app/pipeline'
     | '/_app/renewals'
+    | '/_app/review'
     | '/_app/settings'
     | '/_app/targets'
     | '/_app/teams'
@@ -313,6 +325,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/review': {
+      id: '/_app/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AppReviewRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/renewals': {
@@ -403,6 +422,7 @@ interface AppRouteChildren {
   AppMasterRoute: typeof AppMasterRoute
   AppPipelineRoute: typeof AppPipelineRoute
   AppRenewalsRoute: typeof AppRenewalsRoute
+  AppReviewRoute: typeof AppReviewRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTargetsRoute: typeof AppTargetsRoute
   AppTeamsRoute: typeof AppTeamsRoute
@@ -421,6 +441,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMasterRoute: AppMasterRoute,
   AppPipelineRoute: AppPipelineRoute,
   AppRenewalsRoute: AppRenewalsRoute,
+  AppReviewRoute: AppReviewRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTargetsRoute: AppTargetsRoute,
   AppTeamsRoute: AppTeamsRoute,
