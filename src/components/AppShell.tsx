@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Briefcase, Users, Building2, UsersRound, Settings2, Database, LogOut,
-  Shield, RefreshCw, BarChart3, KanbanSquare, FileText, DollarSign, UserCog, ChevronDown,
+  Shield, RefreshCw, BarChart3, KanbanSquare, DollarSign, UserCog, ChevronDown,
   ChevronRight, Sun, Moon, Plus,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth";
