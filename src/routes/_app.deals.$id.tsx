@@ -145,6 +145,7 @@ function DealDetail() {
           <CardContent className="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
             <KV k="Cover Note #" v={d.cover_note_number || "—"} />
             <KV k="Policy #" v={d.policy_number || "—"} />
+            <KV k="Deal Type" v={<Badge variant="outline">{(d as any).deal_type === "renewal" ? "Renewal" : "Fresh"}</Badge>} />
             <KV k="Insurance Company" v={company || "—"} />
             <KV k="Product" v={type || "—"} />
             <KV k="Source" v={source || "—"} />
