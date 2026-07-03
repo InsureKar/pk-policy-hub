@@ -296,6 +296,7 @@ export type Database = {
           created_at: string
           created_by: string
           deal_number: string
+          deal_type: Database["public"]["Enums"]["deal_type"]
           gross_premium: number
           id: string
           income_percentage: number | null
@@ -335,6 +336,7 @@ export type Database = {
           created_at?: string
           created_by: string
           deal_number?: string
+          deal_type?: Database["public"]["Enums"]["deal_type"]
           gross_premium?: number
           id?: string
           income_percentage?: number | null
@@ -374,6 +376,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           deal_number?: string
+          deal_type?: Database["public"]["Enums"]["deal_type"]
           gross_premium?: number
           id?: string
           income_percentage?: number | null
@@ -853,6 +856,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_targets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          period_month: string
+          target_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          period_month: string
+          target_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          period_month?: string
+          target_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_targets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       v_renewals: {
@@ -964,6 +1005,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "management" | "team_lead" | "do"
+      deal_type: "fresh" | "renewal"
       line_of_business:
         | "group_health"
         | "motor"
@@ -1099,6 +1141,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "management", "team_lead", "do"],
+      deal_type: ["fresh", "renewal"],
       line_of_business: [
         "group_health",
         "motor",
