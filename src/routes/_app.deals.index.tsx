@@ -10,12 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { Plus, Search } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/deals/")({
   component: DealsList,
 });
 
 function DealsList() {
+  const { hasRole } = useAuth();
+  const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
   const [q, setQ] = useState("");
   const [stage, setStage] = useState<string>("all");
 
