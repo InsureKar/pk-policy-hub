@@ -168,7 +168,7 @@ function DealDetail() {
               <KV k="Gross Premium" v={fmtPKR(Number(d.gross_premium))} />
               <KV k="Net Premium" v={fmtPKR(Number(d.net_premium))} />
               <KV k="Commission %" v={fmtPct(Number(d.commission_percentage))} />
-              {isAdmin && <KV k="Marketing % (Admin)" v={fmtPct(Number(d.marketing_budget_percentage))} />}
+              <KV k="Marketing %" v={fmtPct(Number(d.marketing_budget_percentage))} />
               <KV k="Loading" v={fmtPKR(Number(d.loading))} />
               <KV k="B2B Commission" v={fmtPKR(Number(d.b2b_commission))} />
               <hr/>
