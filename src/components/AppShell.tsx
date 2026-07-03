@@ -48,15 +48,13 @@ const groups: NavGroup[] = [
     label: "Operations", icon: RefreshCw,
     items: [
       { to: "/renewals", label: "Renewals", icon: RefreshCw },
-      { to: "/documents", label: "Documents", icon: FileText },
-      { to: "/income", label: "Income", icon: DollarSign },
+      { to: "/income", label: "Income", icon: DollarSign, roles: ["admin", "management", "team_lead"] },
     ],
   },
   {
     label: "Admin", icon: UserCog, roles: ["admin", "management"],
     items: [
       { to: "/teams", label: "Teams", icon: UsersRound, roles: ["admin", "management"] },
-      { to: "/agents", label: "Agents (DOs)", icon: Users, roles: ["admin", "management"] },
       { to: "/users", label: "User Management", icon: Users, roles: ["admin"] },
     ],
   },
@@ -65,9 +63,7 @@ const groups: NavGroup[] = [
     items: [
       { to: "/master", label: "Insurance Companies", icon: Building2, roles: ["admin"], search: { tab: "companies" } },
       { to: "/master", label: "Commission Settings", icon: DollarSign, roles: ["admin"], search: { tab: "commissions" } },
-      { to: "/master", label: "Categories", icon: Database, roles: ["admin"], search: { tab: "categories" } },
       { to: "/master", label: "Products", icon: Database, roles: ["admin"], search: { tab: "products" } },
-      { to: "/master", label: "Policy Types", icon: Database, roles: ["admin"], search: { tab: "policy_types" } },
     ],
   },
   {

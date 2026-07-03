@@ -20,11 +20,9 @@ import { Route as AppRenewalsRouteImport } from './routes/_app.renewals'
 import { Route as AppPipelineRouteImport } from './routes/_app.pipeline'
 import { Route as AppMasterRouteImport } from './routes/_app.master'
 import { Route as AppIncomeRouteImport } from './routes/_app.income'
-import { Route as AppDocumentsRouteImport } from './routes/_app.documents'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app.clients'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
-import { Route as AppAgentsRouteImport } from './routes/_app.agents'
 import { Route as AppDealsIndexRouteImport } from './routes/_app.deals.index'
 import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
 import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
@@ -83,11 +81,6 @@ const AppIncomeRoute = AppIncomeRouteImport.update({
   path: '/income',
   getParentRoute: () => AppRoute,
 } as any)
-const AppDocumentsRoute = AppDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -101,11 +94,6 @@ const AppClientsRoute = AppClientsRouteImport.update({
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAgentsRoute = AppAgentsRouteImport.update({
-  id: '/agents',
-  path: '/agents',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDealsIndexRoute = AppDealsIndexRouteImport.update({
@@ -128,11 +116,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/agents': typeof AppAgentsRoute
   '/analytics': typeof AppAnalyticsRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
-  '/documents': typeof AppDocumentsRoute
   '/income': typeof AppIncomeRoute
   '/master': typeof AppMasterRoute
   '/pipeline': typeof AppPipelineRoute
@@ -148,11 +134,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/agents': typeof AppAgentsRoute
   '/analytics': typeof AppAnalyticsRoute
   '/clients': typeof AppClientsRoute
   '/dashboard': typeof AppDashboardRoute
-  '/documents': typeof AppDocumentsRoute
   '/income': typeof AppIncomeRoute
   '/master': typeof AppMasterRoute
   '/pipeline': typeof AppPipelineRoute
@@ -170,11 +154,9 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/_app/agents': typeof AppAgentsRoute
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/clients': typeof AppClientsRoute
   '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/documents': typeof AppDocumentsRoute
   '/_app/income': typeof AppIncomeRoute
   '/_app/master': typeof AppMasterRoute
   '/_app/pipeline': typeof AppPipelineRoute
@@ -192,11 +174,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
-    | '/agents'
     | '/analytics'
     | '/clients'
     | '/dashboard'
-    | '/documents'
     | '/income'
     | '/master'
     | '/pipeline'
@@ -212,11 +192,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
-    | '/agents'
     | '/analytics'
     | '/clients'
     | '/dashboard'
-    | '/documents'
     | '/income'
     | '/master'
     | '/pipeline'
@@ -233,11 +211,9 @@ export interface FileRouteTypes {
     | '/_app'
     | '/auth'
     | '/reset-password'
-    | '/_app/agents'
     | '/_app/analytics'
     | '/_app/clients'
     | '/_app/dashboard'
-    | '/_app/documents'
     | '/_app/income'
     | '/_app/master'
     | '/_app/pipeline'
@@ -336,13 +312,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIncomeRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/documents': {
-      id: '/_app/documents'
-      path: '/documents'
-      fullPath: '/documents'
-      preLoaderRoute: typeof AppDocumentsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -362,13 +331,6 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/analytics'
       preLoaderRoute: typeof AppAnalyticsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/agents': {
-      id: '/_app/agents'
-      path: '/agents'
-      fullPath: '/agents'
-      preLoaderRoute: typeof AppAgentsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/deals/': {
@@ -396,11 +358,9 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
-  AppAgentsRoute: typeof AppAgentsRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppClientsRoute: typeof AppClientsRoute
   AppDashboardRoute: typeof AppDashboardRoute
-  AppDocumentsRoute: typeof AppDocumentsRoute
   AppIncomeRoute: typeof AppIncomeRoute
   AppMasterRoute: typeof AppMasterRoute
   AppPipelineRoute: typeof AppPipelineRoute
@@ -414,11 +374,9 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppAgentsRoute: AppAgentsRoute,
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppClientsRoute: AppClientsRoute,
   AppDashboardRoute: AppDashboardRoute,
-  AppDocumentsRoute: AppDocumentsRoute,
   AppIncomeRoute: AppIncomeRoute,
   AppMasterRoute: AppMasterRoute,
   AppPipelineRoute: AppPipelineRoute,
