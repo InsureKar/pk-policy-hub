@@ -28,7 +28,9 @@ function DealDetail() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
   const isAdmin = hasRole("admin");
-  const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
+  // Premium & Commission section matches the original spec — visible to all roles.
+  const canSeeFinancials = true;
+
 
   const { data } = useQuery({
     queryKey: ["deal", id],
