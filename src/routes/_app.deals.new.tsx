@@ -23,6 +23,9 @@ function NewDealPage() {
   const { user, hasRole } = useAuth();
   const isAdmin = hasRole("admin");
   const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
+  // Marketing budget & Live Calculations panel are Admin-only per spec
+  const canSeeMarketing = isAdmin;
+  const canSeeLiveCalc = isAdmin;
 
   const { data: lists } = useQuery({
     queryKey: ["deal-form-lists"],
@@ -52,6 +55,7 @@ function NewDealPage() {
     gross_premium: 0, commission_percentage: 0,
     marketing_budget_percentage: 0, loading: 0, b2b_commission: 0,
     policy_start_date: "", policy_end_date: "", notes: "",
+    deal_type: "fresh" as "fresh" | "renewal",
   });
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
