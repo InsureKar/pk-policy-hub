@@ -57,7 +57,7 @@ function IncomePage() {
         <KPI label="Total Premium" value={fmtPKR(totalPremium)}/>
         <KPI label="Commission Earned" value={fmtPKR(totalIncome)}/>
         <KPI label="Pending Commission (est.)" value={fmtPKR(pending)}/>
-        <KPI label="Deals" value={String((data?.deals ?? []).length)}/>
+        <KPI label="Active Deals (excl. Lost)" value={String(activeDeals.length)}/>
       </div>
       <div className="grid lg:grid-cols-2 gap-4">
         <Card>
