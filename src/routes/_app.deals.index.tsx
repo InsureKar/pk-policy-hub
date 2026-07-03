@@ -71,6 +71,14 @@ function DealsList() {
               {(data?.stages ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={dealType} onValueChange={setDealType}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Deal Type"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="fresh">Fresh</SelectItem>
+              <SelectItem value="renewal">Renewal</SelectItem>
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
