@@ -14,20 +14,28 @@ function IncomePage() {
   const { data } = useQuery({
     queryKey: ["income"],
     queryFn: async () => {
-      const [deals, cos] = await Promise.all([
+      const [deals, cos, stages] = await Promise.all([
         supabase.from("deals").select("id, gross_premium, total_income, insurance_company_id, created_at, stage_id"),
         supabase.from("insurance_companies").select("id, name"),
+        supabase.from("deal_stages").select("id, is_lost"),
       ]);
-      return { deals: deals.data ?? [], coMap: new Map((cos.data ?? []).map(c=>[c.id, c.name])) };
+      return {
+        deals: deals.data ?? [],
+        coMap: new Map((cos.data ?? []).map(c=>[c.id, c.name])),
+        lostIds: new Set((stages.data ?? []).filter(s => s.is_lost).map(s => s.id)),
+      };
     },
   });
 
-  const totalPremium = (data?.deals ?? []).reduce((a, d) => a + Number(d.gross_premium), 0);
-  const totalIncome = (data?.deals ?? []).reduce((a, d) => a + Number(d.total_income ?? 0), 0);
-  const pending = totalIncome * 0.35; // placeholder proxy: portion not yet received
+  // Exclude Lost deals from all financial aggregates
+  const activeDeals = (data?.deals ?? []).filter(d => !d.stage_id || !data?.lostIds.has(d.stage_id));
+
+  const totalPremium = activeDeals.reduce((a, d) => a + Number(d.gross_premium), 0);
+  const totalIncome = activeDeals.reduce((a, d) => a + Number(d.total_income ?? 0), 0);
+  const pending = totalIncome * 0.35;
 
   const byCompany = Object.entries(
-    (data?.deals ?? []).reduce<Record<string, number>>((acc, d) => {
+    activeDeals.reduce<Record<string, number>>((acc, d) => {
       const name = d.insurance_company_id ? (data?.coMap.get(d.insurance_company_id) ?? "—") : "—";
       acc[name] = (acc[name] ?? 0) + Number(d.total_income ?? 0);
       return acc;
@@ -35,7 +43,7 @@ function IncomePage() {
   ).map(([name, income]) => ({ name, income }));
 
   const byMonth = Object.entries(
-    (data?.deals ?? []).reduce<Record<string, number>>((acc, d) => {
+    activeDeals.reduce<Record<string, number>>((acc, d) => {
       const key = new Date(d.created_at).toISOString().slice(0, 7);
       acc[key] = (acc[key] ?? 0) + Number(d.total_income ?? 0);
       return acc;
@@ -44,12 +52,12 @@ function IncomePage() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
-      <PageHeader title="Income" subtitle="Premium received, commission earned, pending balances and company-wise revenue."/>
+      <PageHeader title="Income" subtitle="Premium received, commission earned, pending balances and company-wise revenue. Lost deals are excluded."/>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <KPI label="Total Premium" value={fmtPKR(totalPremium)}/>
         <KPI label="Commission Earned" value={fmtPKR(totalIncome)}/>
         <KPI label="Pending Commission (est.)" value={fmtPKR(pending)}/>
-        <KPI label="Deals" value={String((data?.deals ?? []).length)}/>
+        <KPI label="Active Deals (excl. Lost)" value={String(activeDeals.length)}/>
       </div>
       <div className="grid lg:grid-cols-2 gap-4">
         <Card>

@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Briefcase, Users, Building2, UsersRound, Settings2, Database, LogOut,
   Shield, RefreshCw, BarChart3, KanbanSquare, DollarSign, UserCog, ChevronDown,
-  ChevronRight, Sun, Moon, Plus,
+  ChevronRight, Sun, Moon, Plus, Inbox, Target, UserSearch,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ const groups: NavGroup[] = [
       { to: "/deals/new", label: "New Deal", icon: Plus },
       { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
       { to: "/clients", label: "Clients", icon: Building2 },
+      { to: "/leads/unassigned", label: "Unassigned Leads", icon: Inbox, roles: ["admin"] },
     ],
   },
   {
@@ -56,6 +57,8 @@ const groups: NavGroup[] = [
     items: [
       { to: "/teams", label: "Teams", icon: UsersRound, roles: ["admin", "management"] },
       { to: "/users", label: "User Management", icon: Users, roles: ["admin"] },
+      { to: "/review", label: "Review User", icon: UserSearch, roles: ["admin", "management"] },
+      { to: "/targets", label: "Monthly Targets", icon: Target, roles: ["admin", "management"] },
     ],
   },
   {

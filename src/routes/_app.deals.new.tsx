@@ -23,6 +23,9 @@ function NewDealPage() {
   const { user, hasRole } = useAuth();
   const isAdmin = hasRole("admin");
   const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
+  // Marketing budget & Live Calculations panel are Admin-only per spec
+  const canSeeMarketing = isAdmin;
+  const canSeeLiveCalc = isAdmin;
 
   const { data: lists } = useQuery({
     queryKey: ["deal-form-lists"],
@@ -52,6 +55,7 @@ function NewDealPage() {
     gross_premium: 0, commission_percentage: 0,
     marketing_budget_percentage: 0, loading: 0, b2b_commission: 0,
     policy_start_date: "", policy_end_date: "", notes: "",
+    deal_type: "fresh" as "fresh" | "renewal",
   });
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
@@ -67,19 +71,21 @@ function NewDealPage() {
     if (!user) return;
     if (!form.client_id) return toast.error("Please pick a client");
     if (!(form.gross_premium > 0)) return toast.error("Gross premium is required");
-    const payload = {
+    const payload: any = {
       ...form,
       created_by: user.id,
-      // Trigger fills team_id / team_lead_id / assigned_do_id for DO & TL; admin may set these later.
       client_id: form.client_id || null,
       source_id: form.source_id || null,
       insurance_company_id: form.insurance_company_id || null,
       insurance_type_id: form.insurance_type_id || null,
       stage_id: form.stage_id || null,
       base_premium: isAdmin ? (form.base_premium || null) : null,
-      net_premium: netPremium, // trigger recomputes but we send a safe value
+      // DO/TL cannot set marketing budget — force to 0
+      marketing_budget_percentage: canSeeMarketing ? form.marketing_budget_percentage : 0,
+      net_premium: netPremium,
       policy_start_date: form.policy_start_date || null,
       policy_end_date: form.policy_end_date || null,
+      deal_type: form.deal_type,
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
@@ -114,6 +120,15 @@ function NewDealPage() {
                 <Select value={form.stage_id} onValueChange={(v)=>set("stage_id", v)}>
                   <SelectTrigger><SelectValue placeholder="Stage"/></SelectTrigger>
                   <SelectContent>{lists?.stages.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </Field>
+              <Field label="Deal Type *">
+                <Select value={form.deal_type} onValueChange={(v)=>set("deal_type", v as "fresh" | "renewal")}>
+                  <SelectTrigger><SelectValue/></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fresh">Fresh</SelectItem>
+                    <SelectItem value="renewal">Renewal</SelectItem>
+                  </SelectContent>
                 </Select>
               </Field>
               <Field label="Cover Note Number"><Input value={form.cover_note_number} onChange={(e)=>set("cover_note_number", e.target.value)}/></Field>
@@ -152,7 +167,9 @@ function NewDealPage() {
                 <>
                   <Field label="Commission %"><Input type="number" step="0.001" value={form.commission_percentage} onChange={(e)=>setNum("commission_percentage", e.target.value)}/></Field>
                   <Field label="Net Premium (auto)"><Input readOnly value={fmtPKR(netPremium)} className="bg-muted/50"/></Field>
-                  <Field label="Marketing Budget %"><Input type="number" step="0.001" value={form.marketing_budget_percentage} onChange={(e)=>setNum("marketing_budget_percentage", e.target.value)}/></Field>
+                  {canSeeMarketing && (
+                    <Field label="Marketing Budget % (Admin only)"><Input type="number" step="0.001" value={form.marketing_budget_percentage} onChange={(e)=>setNum("marketing_budget_percentage", e.target.value)}/></Field>
+                  )}
                   <Field label="Loading (PKR)"><Input type="number" step="0.01" value={form.loading} onChange={(e)=>setNum("loading", e.target.value)}/></Field>
                   <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={form.b2b_commission} onChange={(e)=>setNum("b2b_commission", e.target.value)}/></Field>
                 </>
@@ -171,10 +188,10 @@ function NewDealPage() {
           </div>
         </div>
 
-        {canSeeFinancials && (
+        {canSeeLiveCalc && (
           <div className="space-y-4">
             <Card>
-              <CardHeader><CardTitle className="text-base">Live Calculations</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Live Calculations <span className="text-xs font-normal text-muted-foreground">(Admin only)</span></CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <Row k="Net Premium (Gross − Commission)" v={fmtPKR(netPremium)} />
                 <Row k="Commission Before Tax" v={fmtPKR(calc.commission_before_tax)} />

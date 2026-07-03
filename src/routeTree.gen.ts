@@ -15,7 +15,9 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTeamsRouteImport } from './routes/_app.teams'
+import { Route as AppTargetsRouteImport } from './routes/_app.targets'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppReviewRouteImport } from './routes/_app.review'
 import { Route as AppRenewalsRouteImport } from './routes/_app.renewals'
 import { Route as AppPipelineRouteImport } from './routes/_app.pipeline'
 import { Route as AppMasterRouteImport } from './routes/_app.master'
@@ -24,6 +26,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app.clients'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppDealsIndexRouteImport } from './routes/_app.deals.index'
+import { Route as AppLeadsUnassignedRouteImport } from './routes/_app.leads.unassigned'
 import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
 import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
 
@@ -56,9 +59,19 @@ const AppTeamsRoute = AppTeamsRouteImport.update({
   path: '/teams',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTargetsRoute = AppTargetsRouteImport.update({
+  id: '/targets',
+  path: '/targets',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReviewRoute = AppReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRenewalsRoute = AppRenewalsRouteImport.update({
@@ -101,6 +114,11 @@ const AppDealsIndexRoute = AppDealsIndexRouteImport.update({
   path: '/deals/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLeadsUnassignedRoute = AppLeadsUnassignedRouteImport.update({
+  id: '/leads/unassigned',
+  path: '/leads/unassigned',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDealsNewRoute = AppDealsNewRouteImport.update({
   id: '/deals/new',
   path: '/deals/new',
@@ -123,11 +141,14 @@ export interface FileRoutesByFullPath {
   '/master': typeof AppMasterRoute
   '/pipeline': typeof AppPipelineRoute
   '/renewals': typeof AppRenewalsRoute
+  '/review': typeof AppReviewRoute
   '/settings': typeof AppSettingsRoute
+  '/targets': typeof AppTargetsRoute
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
+  '/leads/unassigned': typeof AppLeadsUnassignedRoute
   '/deals/': typeof AppDealsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -141,11 +162,14 @@ export interface FileRoutesByTo {
   '/master': typeof AppMasterRoute
   '/pipeline': typeof AppPipelineRoute
   '/renewals': typeof AppRenewalsRoute
+  '/review': typeof AppReviewRoute
   '/settings': typeof AppSettingsRoute
+  '/targets': typeof AppTargetsRoute
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
+  '/leads/unassigned': typeof AppLeadsUnassignedRoute
   '/deals': typeof AppDealsIndexRoute
 }
 export interface FileRoutesById {
@@ -161,11 +185,14 @@ export interface FileRoutesById {
   '/_app/master': typeof AppMasterRoute
   '/_app/pipeline': typeof AppPipelineRoute
   '/_app/renewals': typeof AppRenewalsRoute
+  '/_app/review': typeof AppReviewRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/targets': typeof AppTargetsRoute
   '/_app/teams': typeof AppTeamsRoute
   '/_app/users': typeof AppUsersRoute
   '/_app/deals/$id': typeof AppDealsIdRoute
   '/_app/deals/new': typeof AppDealsNewRoute
+  '/_app/leads/unassigned': typeof AppLeadsUnassignedRoute
   '/_app/deals/': typeof AppDealsIndexRoute
 }
 export interface FileRouteTypes {
@@ -181,11 +208,14 @@ export interface FileRouteTypes {
     | '/master'
     | '/pipeline'
     | '/renewals'
+    | '/review'
     | '/settings'
+    | '/targets'
     | '/teams'
     | '/users'
     | '/deals/$id'
     | '/deals/new'
+    | '/leads/unassigned'
     | '/deals/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -199,11 +229,14 @@ export interface FileRouteTypes {
     | '/master'
     | '/pipeline'
     | '/renewals'
+    | '/review'
     | '/settings'
+    | '/targets'
     | '/teams'
     | '/users'
     | '/deals/$id'
     | '/deals/new'
+    | '/leads/unassigned'
     | '/deals'
   id:
     | '__root__'
@@ -218,11 +251,14 @@ export interface FileRouteTypes {
     | '/_app/master'
     | '/_app/pipeline'
     | '/_app/renewals'
+    | '/_app/review'
     | '/_app/settings'
+    | '/_app/targets'
     | '/_app/teams'
     | '/_app/users'
     | '/_app/deals/$id'
     | '/_app/deals/new'
+    | '/_app/leads/unassigned'
     | '/_app/deals/'
   fileRoutesById: FileRoutesById
 }
@@ -277,11 +313,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTeamsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/targets': {
+      id: '/_app/targets'
+      path: '/targets'
+      fullPath: '/targets'
+      preLoaderRoute: typeof AppTargetsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/review': {
+      id: '/_app/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AppReviewRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/renewals': {
@@ -340,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDealsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/leads/unassigned': {
+      id: '/_app/leads/unassigned'
+      path: '/leads/unassigned'
+      fullPath: '/leads/unassigned'
+      preLoaderRoute: typeof AppLeadsUnassignedRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/deals/new': {
       id: '/_app/deals/new'
       path: '/deals/new'
@@ -365,11 +422,14 @@ interface AppRouteChildren {
   AppMasterRoute: typeof AppMasterRoute
   AppPipelineRoute: typeof AppPipelineRoute
   AppRenewalsRoute: typeof AppRenewalsRoute
+  AppReviewRoute: typeof AppReviewRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppTargetsRoute: typeof AppTargetsRoute
   AppTeamsRoute: typeof AppTeamsRoute
   AppUsersRoute: typeof AppUsersRoute
   AppDealsIdRoute: typeof AppDealsIdRoute
   AppDealsNewRoute: typeof AppDealsNewRoute
+  AppLeadsUnassignedRoute: typeof AppLeadsUnassignedRoute
   AppDealsIndexRoute: typeof AppDealsIndexRoute
 }
 
@@ -381,11 +441,14 @@ const AppRouteChildren: AppRouteChildren = {
   AppMasterRoute: AppMasterRoute,
   AppPipelineRoute: AppPipelineRoute,
   AppRenewalsRoute: AppRenewalsRoute,
+  AppReviewRoute: AppReviewRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppTargetsRoute: AppTargetsRoute,
   AppTeamsRoute: AppTeamsRoute,
   AppUsersRoute: AppUsersRoute,
   AppDealsIdRoute: AppDealsIdRoute,
   AppDealsNewRoute: AppDealsNewRoute,
+  AppLeadsUnassignedRoute: AppLeadsUnassignedRoute,
   AppDealsIndexRoute: AppDealsIndexRoute,
 }
 
@@ -400,13 +463,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

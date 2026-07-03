@@ -21,6 +21,7 @@ function DealsList() {
   const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
   const [q, setQ] = useState("");
   const [stage, setStage] = useState<string>("all");
+  const [dealType, setDealType] = useState<string>("all");
 
   const { data } = useQuery({
     queryKey: ["deals-list"],
@@ -44,8 +45,9 @@ function DealsList() {
   const typeMap = useMemo(() => new Map((data?.types ?? []).map(t => [t.id, t.name])), [data]);
   const profileMap = useMemo(() => new Map((data?.profiles ?? []).map(p => [p.id, p.full_name])), [data]);
 
-  const filtered = (data?.deals ?? []).filter((d) => {
+  const filtered = (data?.deals ?? []).filter((d: any) => {
     if (stage !== "all" && d.stage_id !== stage) return false;
+    if (dealType !== "all" && d.deal_type !== dealType) return false;
     if (!q) return true;
     const needle = q.toLowerCase();
     return [d.deal_number, d.cover_note_number, d.policy_number].some((x) => x && x.toLowerCase().includes(needle));
@@ -69,6 +71,14 @@ function DealsList() {
               {(data?.stages ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={dealType} onValueChange={setDealType}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Deal Type"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="fresh">Fresh</SelectItem>
+              <SelectItem value="renewal">Renewal</SelectItem>
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
@@ -80,6 +90,7 @@ function DealsList() {
                 <th className="text-left px-4 py-2.5">Deal #</th>
                 <th className="text-left px-4 py-2.5">Company</th>
                 <th className="text-left px-4 py-2.5">Type</th>
+                <th className="text-left px-4 py-2.5">Deal Type</th>
                 <th className="text-left px-4 py-2.5">Stage</th>
                 <th className="text-left px-4 py-2.5">DO</th>
                 <th className="text-right px-4 py-2.5">Gross Premium</th>
@@ -88,17 +99,18 @@ function DealsList() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((d) => {
+              {filtered.map((d: any) => {
                 const s = d.stage_id ? stageMap.get(d.stage_id) : null;
                 return (
                   <tr key={d.id} className="border-t hover:bg-muted/30">
                     <td className="px-4 py-2.5"><Link to="/deals/$id" params={{ id: d.id }} className="font-medium text-primary hover:underline">{d.deal_number}</Link></td>
                     <td className="px-4 py-2.5">{d.insurance_company_id ? companyMap.get(d.insurance_company_id) : "—"}</td>
                     <td className="px-4 py-2.5">{d.insurance_type_id ? typeMap.get(d.insurance_type_id) : "—"}</td>
+                    <td className="px-4 py-2.5"><Badge variant="outline">{d.deal_type === "renewal" ? "Renewal" : "Fresh"}</Badge></td>
                     <td className="px-4 py-2.5">
                       {s ? <Badge variant={s.is_won ? "default" : s.is_lost ? "destructive" : "secondary"}>{s.name}</Badge> : "—"}
                     </td>
-                    <td className="px-4 py-2.5">{d.assigned_do_id ? profileMap.get(d.assigned_do_id) ?? "—" : "—"}</td>
+                    <td className="px-4 py-2.5">{d.assigned_do_id ? profileMap.get(d.assigned_do_id) ?? "—" : <span className="text-muted-foreground italic">Unassigned</span>}</td>
                     <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(Number(d.gross_premium))}</td>
                     {canSeeFinancials && <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(Number(d.total_income))}</td>}
                     <td className="px-4 py-2.5 text-muted-foreground">{fmtDate(d.created_at)}</td>
@@ -106,7 +118,7 @@ function DealsList() {
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={canSeeFinancials ? 8 : 7} className="text-center py-12 text-muted-foreground">No deals found. <Link to="/deals/new" className="text-primary hover:underline">Create your first deal</Link>.</td></tr>
+                <tr><td colSpan={canSeeFinancials ? 9 : 8} className="text-center py-12 text-muted-foreground">No deals found. <Link to="/deals/new" className="text-primary hover:underline">Create your first deal</Link>.</td></tr>
               )}
             </tbody>
           </table>
