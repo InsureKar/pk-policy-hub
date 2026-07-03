@@ -122,6 +122,15 @@ function NewDealPage() {
                   <SelectContent>{lists?.stages.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
+              <Field label="Deal Type *">
+                <Select value={form.deal_type} onValueChange={(v)=>set("deal_type", v as "fresh" | "renewal")}>
+                  <SelectTrigger><SelectValue/></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fresh">Fresh</SelectItem>
+                    <SelectItem value="renewal">Renewal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
               <Field label="Cover Note Number"><Input value={form.cover_note_number} onChange={(e)=>set("cover_note_number", e.target.value)}/></Field>
               <Field label="Policy Number"><Input value={form.policy_number} onChange={(e)=>set("policy_number", e.target.value)}/></Field>
               <Field label="Source">
