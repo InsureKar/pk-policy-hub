@@ -21,6 +21,7 @@ function DealsList() {
   const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
   const [q, setQ] = useState("");
   const [stage, setStage] = useState<string>("all");
+  const [dealType, setDealType] = useState<string>("all");
 
   const { data } = useQuery({
     queryKey: ["deals-list"],
@@ -44,8 +45,9 @@ function DealsList() {
   const typeMap = useMemo(() => new Map((data?.types ?? []).map(t => [t.id, t.name])), [data]);
   const profileMap = useMemo(() => new Map((data?.profiles ?? []).map(p => [p.id, p.full_name])), [data]);
 
-  const filtered = (data?.deals ?? []).filter((d) => {
+  const filtered = (data?.deals ?? []).filter((d: any) => {
     if (stage !== "all" && d.stage_id !== stage) return false;
+    if (dealType !== "all" && d.deal_type !== dealType) return false;
     if (!q) return true;
     const needle = q.toLowerCase();
     return [d.deal_number, d.cover_note_number, d.policy_number].some((x) => x && x.toLowerCase().includes(needle));
