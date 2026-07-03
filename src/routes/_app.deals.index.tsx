@@ -83,7 +83,7 @@ function DealsList() {
                 <th className="text-left px-4 py-2.5">Stage</th>
                 <th className="text-left px-4 py-2.5">DO</th>
                 <th className="text-right px-4 py-2.5">Gross Premium</th>
-                <th className="text-right px-4 py-2.5">Total Income</th>
+                {canSeeFinancials && <th className="text-right px-4 py-2.5">Total Income</th>}
                 <th className="text-left px-4 py-2.5">Created</th>
               </tr>
             </thead>
@@ -100,13 +100,13 @@ function DealsList() {
                     </td>
                     <td className="px-4 py-2.5">{d.assigned_do_id ? profileMap.get(d.assigned_do_id) ?? "—" : "—"}</td>
                     <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(Number(d.gross_premium))}</td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(Number(d.total_income))}</td>
+                    {canSeeFinancials && <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(Number(d.total_income))}</td>}
                     <td className="px-4 py-2.5 text-muted-foreground">{fmtDate(d.created_at)}</td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="text-center py-12 text-muted-foreground">No deals found. <Link to="/deals/new" className="text-primary hover:underline">Create your first deal</Link>.</td></tr>
+                <tr><td colSpan={canSeeFinancials ? 8 : 7} className="text-center py-12 text-muted-foreground">No deals found. <Link to="/deals/new" className="text-primary hover:underline">Create your first deal</Link>.</td></tr>
               )}
             </tbody>
           </table>
