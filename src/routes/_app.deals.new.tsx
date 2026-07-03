@@ -22,10 +22,12 @@ function NewDealPage() {
   const nav = useNavigate();
   const { user, hasRole } = useAuth();
   const isAdmin = hasRole("admin");
-  const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
-  // Marketing budget & Live Calculations panel are Admin-only per spec
-  const canSeeMarketing = isAdmin;
-  const canSeeLiveCalc = isAdmin;
+  // Premium & Commission section is available to every user creating a deal,
+  // matching the original spec — no tax or marketing-budget restrictions.
+  const canSeeFinancials = true;
+  const canSeeMarketing = true;
+  const canSeeLiveCalc = true;
+
 
   const { data: lists } = useQuery({
     queryKey: ["deal-form-lists"],
@@ -168,8 +170,9 @@ function NewDealPage() {
                   <Field label="Commission %"><Input type="number" step="0.001" value={form.commission_percentage} onChange={(e)=>setNum("commission_percentage", e.target.value)}/></Field>
                   <Field label="Net Premium (auto)"><Input readOnly value={fmtPKR(netPremium)} className="bg-muted/50"/></Field>
                   {canSeeMarketing && (
-                    <Field label="Marketing Budget % (Admin only)"><Input type="number" step="0.001" value={form.marketing_budget_percentage} onChange={(e)=>setNum("marketing_budget_percentage", e.target.value)}/></Field>
+                    <Field label="Marketing Budget %"><Input type="number" step="0.001" value={form.marketing_budget_percentage} onChange={(e)=>setNum("marketing_budget_percentage", e.target.value)}/></Field>
                   )}
+
                   <Field label="Loading (PKR)"><Input type="number" step="0.01" value={form.loading} onChange={(e)=>setNum("loading", e.target.value)}/></Field>
                   <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={form.b2b_commission} onChange={(e)=>setNum("b2b_commission", e.target.value)}/></Field>
                 </>
@@ -191,7 +194,7 @@ function NewDealPage() {
         {canSeeLiveCalc && (
           <div className="space-y-4">
             <Card>
-              <CardHeader><CardTitle className="text-base">Live Calculations <span className="text-xs font-normal text-muted-foreground">(Admin only)</span></CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Live Calculations</CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <Row k="Net Premium (Gross − Commission)" v={fmtPKR(netPremium)} />
                 <Row k="Commission Before Tax" v={fmtPKR(calc.commission_before_tax)} />
