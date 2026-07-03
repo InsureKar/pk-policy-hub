@@ -125,7 +125,7 @@ function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle className="text-base">Monthly Premium & Income</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">{canSeeFinancials ? "Monthly Premium & Income" : "Monthly Gross Premium"}</CardTitle></CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={months}>
@@ -134,7 +134,7 @@ function DashboardPage() {
                 <YAxis fontSize={12} tickFormatter={(v)=> v>=1e6?`${(v/1e6).toFixed(1)}M`: v>=1e3?`${(v/1e3).toFixed(0)}k`:String(v)}/>
                 <Tooltip formatter={(v: number) => fmtPKR(v)} />
                 <Bar dataKey="gross" fill="oklch(0.55 0.18 252)" name="Gross Premium" radius={[4,4,0,0]}/>
-                <Bar dataKey="income" fill="oklch(0.62 0.16 155)" name="Income" radius={[4,4,0,0]}/>
+                {canSeeFinancials && <Bar dataKey="income" fill="oklch(0.62 0.16 155)" name="Income" radius={[4,4,0,0]}/>}
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
