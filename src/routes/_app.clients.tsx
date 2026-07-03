@@ -67,7 +67,7 @@ function ClientsPage() {
       return toast.error("CNIC must look like 12345-1234567-1");
     if (!form.city.trim()) return toast.error("City is required");
 
-    const payload: Record<string, unknown> = {
+    const payload = {
       client_type: form.client_type,
       created_by: user.id,
       phone: form.phone.trim(),
