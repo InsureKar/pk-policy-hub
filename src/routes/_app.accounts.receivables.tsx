@@ -68,7 +68,9 @@ function ReceivablesPage() {
     const headers = ["Receivable No","Deal","Client","Policy","Company","Gross","Net","Commission","Total","Paid","Outstanding","Status","Due"];
     const rows = filtered.map(r => {
       const d = data?.deals.get(r.deal_id);
-      return [r.receivable_number, d?.deal_number, data?.clients.get(r.client_id ?? "")?(c?.company_name ?? c?.full_name ?? ""), d?.policy_number ?? "",
+      const c = r.client_id ? data?.clients.get(r.client_id) : null;
+      const cname = c ? (c.company_name ?? c.full_name ?? "") : "";
+      return [r.receivable_number, d?.deal_number, cname, d?.policy_number ?? "",
         (d?.insurance_company_id ? data?.cos.get(d.insurance_company_id) : "") ?? "",
         r.gross_premium, r.net_premium, r.commission_receivable, r.total_amount, r.paid_amount, r.outstanding_amount, r.status, r.first_due_date ?? ""];
     });
