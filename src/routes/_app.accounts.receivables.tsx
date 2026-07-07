@@ -32,7 +32,7 @@ function ReceivablesPage() {
     queryFn: async () => {
       const [r, clients, deals, cos, profiles] = await Promise.all([
         supabase.from("receivables").select("*").order("created_at", { ascending: false }),
-        supabase.from("clients").select("id,name,client_type"),
+        supabase.from("clients").select("id,company_name,full_name,client_type"),
         supabase.from("deals").select("id,deal_number,policy_number,insurance_company_id,insurance_type_id"),
         supabase.from("insurance_companies").select("id,name"),
         supabase.from("profiles").select("id,full_name"),
@@ -56,7 +56,7 @@ function ReceivablesPage() {
       if (search) {
         const d = data?.deals.get(r.deal_id);
         const c = r.client_id ? data?.clients.get(r.client_id) : null;
-        const hay = `${r.receivable_number} ${d?.deal_number ?? ""} ${d?.policy_number ?? ""} ${c?.name ?? ""}`.toLowerCase();
+        const hay = `${r.receivable_number} ${d?.deal_number ?? ""} ${d?.policy_number ?? ""} ${c?(c?.company_name ?? c?.full_name ?? "")}`.toLowerCase();
         if (!hay.includes(search.toLowerCase())) return false;
       }
       return true;
@@ -67,7 +67,7 @@ function ReceivablesPage() {
     const headers = ["Receivable No","Deal","Client","Policy","Company","Gross","Net","Commission","Total","Paid","Outstanding","Status","Due"];
     const rows = filtered.map(r => {
       const d = data?.deals.get(r.deal_id);
-      return [r.receivable_number, d?.deal_number, data?.clients.get(r.client_id ?? "")?.name ?? "", d?.policy_number ?? "",
+      return [r.receivable_number, d?.deal_number, data?.clients.get(r.client_id ?? "")?(c?.company_name ?? c?.full_name ?? ""), d?.policy_number ?? "",
         (d?.insurance_company_id ? data?.cos.get(d.insurance_company_id) : "") ?? "",
         r.gross_premium, r.net_premium, r.commission_receivable, r.total_amount, r.paid_amount, r.outstanding_amount, r.status, r.first_due_date ?? ""];
     });
@@ -122,7 +122,7 @@ function ReceivablesPage() {
                 <TableRow key={r.id}>
                   <TableCell className="font-mono text-xs">{r.receivable_number}</TableCell>
                   <TableCell className="font-mono text-xs">{d?.deal_number ?? "—"}</TableCell>
-                  <TableCell>{c?.name ?? "—"}</TableCell>
+                  <TableCell>{c?(c?.company_name ?? c?.full_name ?? "—")}</TableCell>
                   <TableCell>{d?.insurance_company_id ? data?.cos.get(d.insurance_company_id) : "—"}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmtPKR(r.gross_premium)}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmtPKR(r.paid_amount)}</TableCell>
