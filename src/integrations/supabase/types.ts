@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          ip_address: string | null
+          new_value: Json | null
+          previous_value: Json | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          previous_value?: Json | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          previous_value?: Json | null
+        }
+        Relationships: []
+      }
       activity_log: {
         Row: {
           action: string
@@ -169,6 +205,91 @@ export type Database = {
             columns: ["team_lead_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_payables: {
+        Row: {
+          beneficiary_id: string
+          beneficiary_role: string
+          commission_amount: number
+          created_at: string
+          deal_id: string
+          id: string
+          paid_date: string | null
+          payable_date: string
+          payable_number: string
+          payment_method:
+            | Database["public"]["Enums"]["payment_method_type"]
+            | null
+          proof_url: string | null
+          receivable_id: string
+          reference_number: string | null
+          remarks: string | null
+          status: Database["public"]["Enums"]["payable_status"]
+          updated_at: string
+        }
+        Insert: {
+          beneficiary_id: string
+          beneficiary_role: string
+          commission_amount?: number
+          created_at?: string
+          deal_id: string
+          id?: string
+          paid_date?: string | null
+          payable_date?: string
+          payable_number?: string
+          payment_method?:
+            | Database["public"]["Enums"]["payment_method_type"]
+            | null
+          proof_url?: string | null
+          receivable_id: string
+          reference_number?: string | null
+          remarks?: string | null
+          status?: Database["public"]["Enums"]["payable_status"]
+          updated_at?: string
+        }
+        Update: {
+          beneficiary_id?: string
+          beneficiary_role?: string
+          commission_amount?: number
+          created_at?: string
+          deal_id?: string
+          id?: string
+          paid_date?: string | null
+          payable_date?: string
+          payable_number?: string
+          payment_method?:
+            | Database["public"]["Enums"]["payment_method_type"]
+            | null
+          proof_url?: string | null
+          receivable_id?: string
+          reference_number?: string | null
+          remarks?: string | null
+          status?: Database["public"]["Enums"]["payable_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_payables_beneficiary_id_fkey"
+            columns: ["beneficiary_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_payables_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_payables_receivable_id_fkey"
+            columns: ["receivable_id"]
+            isOneToOne: false
+            referencedRelation: "receivables"
             referencedColumns: ["id"]
           },
         ]
@@ -605,6 +726,56 @@ export type Database = {
           },
         ]
       }
+      installments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          installment_number: number
+          paid_amount: number
+          paid_at: string | null
+          receivable_id: string
+          remaining_amount: number
+          status: Database["public"]["Enums"]["installment_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          due_date: string
+          id?: string
+          installment_number: number
+          paid_amount?: number
+          paid_at?: string | null
+          receivable_id: string
+          remaining_amount?: number
+          status?: Database["public"]["Enums"]["installment_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          installment_number?: number
+          paid_amount?: number
+          paid_at?: string | null
+          receivable_id?: string
+          remaining_amount?: number
+          status?: Database["public"]["Enums"]["installment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installments_receivable_id_fkey"
+            columns: ["receivable_id"]
+            isOneToOne: false
+            referencedRelation: "receivables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurance_companies: {
         Row: {
           active: boolean
@@ -647,6 +818,70 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          deal_id: string
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          receivable_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          deal_id: string
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          receivable_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          deal_id?: string
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          receivable_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_receivable_id_fkey"
+            columns: ["receivable_id"]
+            isOneToOne: true
+            referencedRelation: "receivables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_sources: {
         Row: {
           active: boolean
@@ -667,6 +902,88 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          attachment_url: string | null
+          cash_voucher_number: string | null
+          cheque_number: string | null
+          created_at: string
+          ibft_reference: string | null
+          id: string
+          installment_id: string | null
+          notes: string | null
+          payment_date: string
+          payment_method: Database["public"]["Enums"]["payment_method_type"]
+          receivable_id: string
+          received_by: string | null
+          receiving_account: string | null
+          receiving_bank: string | null
+          recorded_by: string | null
+          transaction_reference: string | null
+        }
+        Insert: {
+          amount: number
+          attachment_url?: string | null
+          cash_voucher_number?: string | null
+          cheque_number?: string | null
+          created_at?: string
+          ibft_reference?: string | null
+          id?: string
+          installment_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: Database["public"]["Enums"]["payment_method_type"]
+          receivable_id: string
+          received_by?: string | null
+          receiving_account?: string | null
+          receiving_bank?: string | null
+          recorded_by?: string | null
+          transaction_reference?: string | null
+        }
+        Update: {
+          amount?: number
+          attachment_url?: string | null
+          cash_voucher_number?: string | null
+          cheque_number?: string | null
+          created_at?: string
+          ibft_reference?: string | null
+          id?: string
+          installment_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: Database["public"]["Enums"]["payment_method_type"]
+          receivable_id?: string
+          received_by?: string | null
+          receiving_account?: string | null
+          receiving_bank?: string | null
+          recorded_by?: string | null
+          transaction_reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_receivable_id_fkey"
+            columns: ["receivable_id"]
+            isOneToOne: false
+            referencedRelation: "receivables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_received_by_fkey"
+            columns: ["received_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       policies: {
         Row: {
@@ -763,6 +1080,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          commission_share_percentage: number
           created_at: string
           designation: string | null
           email: string
@@ -775,6 +1093,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          commission_share_percentage?: number
           created_at?: string
           designation?: string | null
           email: string
@@ -787,6 +1106,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          commission_share_percentage?: number
           created_at?: string
           designation?: string | null
           email?: string
@@ -804,6 +1124,116 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receivables: {
+        Row: {
+          assigned_do_id: string | null
+          base_premium: number | null
+          client_id: string | null
+          commission_receivable: number
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          expected_collection_date: string | null
+          first_due_date: string | null
+          fully_paid_at: string | null
+          gross_premium: number
+          id: string
+          installment_count: number
+          net_premium: number
+          notes: string | null
+          outstanding_amount: number
+          paid_amount: number
+          payment_schedule: Database["public"]["Enums"]["payment_schedule_type"]
+          receivable_number: string
+          status: Database["public"]["Enums"]["receivable_status"]
+          team_id: string | null
+          team_lead_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          assigned_do_id?: string | null
+          base_premium?: number | null
+          client_id?: string | null
+          commission_receivable?: number
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          expected_collection_date?: string | null
+          first_due_date?: string | null
+          fully_paid_at?: string | null
+          gross_premium?: number
+          id?: string
+          installment_count?: number
+          net_premium?: number
+          notes?: string | null
+          outstanding_amount?: number
+          paid_amount?: number
+          payment_schedule?: Database["public"]["Enums"]["payment_schedule_type"]
+          receivable_number?: string
+          status?: Database["public"]["Enums"]["receivable_status"]
+          team_id?: string | null
+          team_lead_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          assigned_do_id?: string | null
+          base_premium?: number | null
+          client_id?: string | null
+          commission_receivable?: number
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          expected_collection_date?: string | null
+          first_due_date?: string | null
+          fully_paid_at?: string | null
+          gross_premium?: number
+          id?: string
+          installment_count?: number
+          net_premium?: number
+          notes?: string | null
+          outstanding_amount?: number
+          paid_amount?: number
+          payment_schedule?: Database["public"]["Enums"]["payment_schedule_type"]
+          receivable_number?: string
+          status?: Database["public"]["Enums"]["receivable_status"]
+          team_id?: string | null
+          team_lead_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivables_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_team_lead_id_fkey"
+            columns: ["team_lead_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1006,6 +1436,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "management" | "team_lead" | "do"
       deal_type: "fresh" | "renewal"
+      installment_status: "pending" | "partial" | "paid" | "overdue"
       line_of_business:
         | "group_health"
         | "motor"
@@ -1013,6 +1444,16 @@ export type Database = {
         | "travel"
         | "fire"
         | "misc"
+      payable_status: "pending" | "paid" | "cancelled"
+      payment_method_type:
+        | "cash"
+        | "cheque"
+        | "ibft"
+        | "bank_transfer"
+        | "online"
+        | "other"
+      payment_schedule_type: "annual" | "half_yearly" | "quarterly" | "monthly"
+      receivable_status: "open" | "partial" | "paid" | "overdue" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1142,6 +1583,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "management", "team_lead", "do"],
       deal_type: ["fresh", "renewal"],
+      installment_status: ["pending", "partial", "paid", "overdue"],
       line_of_business: [
         "group_health",
         "motor",
@@ -1150,6 +1592,17 @@ export const Constants = {
         "fire",
         "misc",
       ],
+      payable_status: ["pending", "paid", "cancelled"],
+      payment_method_type: [
+        "cash",
+        "cheque",
+        "ibft",
+        "bank_transfer",
+        "online",
+        "other",
+      ],
+      payment_schedule_type: ["annual", "half_yearly", "quarterly", "monthly"],
+      receivable_status: ["open", "partial", "paid", "overdue", "cancelled"],
     },
   },
 } as const

@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Briefcase, Users, Building2, UsersRound, Settings2, Database, LogOut,
   Shield, RefreshCw, BarChart3, KanbanSquare, DollarSign, UserCog, ChevronDown,
-  ChevronRight, Sun, Moon, Plus, Inbox, Target, UserSearch,
+  ChevronRight, Sun, Moon, Plus, Inbox, Target, UserSearch, Wallet, Receipt, FileText, CreditCard, CalendarClock,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,18 @@ const groups: NavGroup[] = [
       { to: "/users", label: "User Management", icon: Users, roles: ["admin"] },
       { to: "/review", label: "Review User", icon: UserSearch, roles: ["admin", "management"] },
       { to: "/targets", label: "Monthly Targets", icon: Target, roles: ["admin", "management"] },
+    ],
+  },
+  {
+    label: "Accounts", icon: Wallet, roles: ["admin", "management", "team_lead", "do"],
+    items: [
+      { to: "/accounts", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/accounts/receivables", label: "Receivables", icon: Receipt },
+      { to: "/accounts/payables", label: "Payables", icon: Wallet, roles: ["admin", "management"] },
+      { to: "/accounts/installments", label: "Installments", icon: CalendarClock },
+      { to: "/accounts/invoices", label: "Invoices", icon: FileText },
+      { to: "/accounts/payments", label: "Payments", icon: CreditCard },
+      { to: "/accounts/reports", label: "Finance Reports", icon: BarChart3, roles: ["admin", "management", "team_lead"] },
     ],
   },
   {
