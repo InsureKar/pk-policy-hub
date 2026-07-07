@@ -93,7 +93,7 @@ function ReportsPage() {
       }
       case "overdue": {
         const rows = data.recv.filter(r => Number(r.outstanding_amount) > 0 && r.first_due_date && r.first_due_date < today);
-        return { columns: ["Receivable","Outstanding","Due Date","Days Overdue"], rows: rows.map(r => [r.receivable_number, fmtPKR(r.outstanding_amount), r.first_due_date, Math.floor((Date.now() - new Date(r.first_due_date).getTime()) / 86400000)]) };
+        return { columns: ["Receivable","Outstanding","Due Date","Days Overdue"], rows: rows.map(r => [r.receivable_number, fmtPKR(r.outstanding_amount), r.first_due_date, Math.floor((Date.now() - new Date(r.first_due_date as string).getTime()) / 86400000)]) };
       }
       case "monthly_revenue": {
         const map: Record<string, number> = {};
