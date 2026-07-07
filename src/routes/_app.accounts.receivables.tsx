@@ -56,7 +56,8 @@ function ReceivablesPage() {
       if (search) {
         const d = data?.deals.get(r.deal_id);
         const c = r.client_id ? data?.clients.get(r.client_id) : null;
-        const hay = `${r.receivable_number} ${d?.deal_number ?? ""} ${d?.policy_number ?? ""} ${c?(c?.company_name ?? c?.full_name ?? "")}`.toLowerCase();
+        const cname = c ? (c.company_name ?? c.full_name ?? "") : "";
+        const hay = `${r.receivable_number} ${d?.deal_number ?? ""} ${d?.policy_number ?? ""} ${cname}`.toLowerCase();
         if (!hay.includes(search.toLowerCase())) return false;
       }
       return true;
