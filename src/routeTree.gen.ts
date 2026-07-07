@@ -32,6 +32,7 @@ import { Route as AppLeadsUnassignedRouteImport } from './routes/_app.leads.unas
 import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
 import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
 import { Route as AppAccountsReceivablesRouteImport } from './routes/_app.accounts.receivables'
+import { Route as AppAccountsPaymentsRouteImport } from './routes/_app.accounts.payments'
 import { Route as AppAccountsPayablesRouteImport } from './routes/_app.accounts.payables'
 import { Route as AppAccountsInvoicesRouteImport } from './routes/_app.accounts.invoices'
 import { Route as AppAccountsInstallmentsRouteImport } from './routes/_app.accounts.installments'
@@ -150,6 +151,11 @@ const AppAccountsReceivablesRoute = AppAccountsReceivablesRouteImport.update({
   path: '/receivables',
   getParentRoute: () => AppAccountsRoute,
 } as any)
+const AppAccountsPaymentsRoute = AppAccountsPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AppAccountsRoute,
+} as any)
 const AppAccountsPayablesRoute = AppAccountsPayablesRouteImport.update({
   id: '/payables',
   path: '/payables',
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/accounts/payables': typeof AppAccountsPayablesRoute
+  '/accounts/payments': typeof AppAccountsPaymentsRoute
   '/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/accounts/payables': typeof AppAccountsPayablesRoute
+  '/accounts/payments': typeof AppAccountsPaymentsRoute
   '/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/_app/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/_app/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/_app/accounts/payables': typeof AppAccountsPayablesRoute
+  '/_app/accounts/payments': typeof AppAccountsPaymentsRoute
   '/_app/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/_app/deals/$id': typeof AppDealsIdRoute
   '/_app/deals/new': typeof AppDealsNewRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/accounts/installments'
     | '/accounts/invoices'
     | '/accounts/payables'
+    | '/accounts/payments'
     | '/accounts/receivables'
     | '/deals/$id'
     | '/deals/new'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/accounts/installments'
     | '/accounts/invoices'
     | '/accounts/payables'
+    | '/accounts/payments'
     | '/accounts/receivables'
     | '/deals/$id'
     | '/deals/new'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/_app/accounts/installments'
     | '/_app/accounts/invoices'
     | '/_app/accounts/payables'
+    | '/_app/accounts/payments'
     | '/_app/accounts/receivables'
     | '/_app/deals/$id'
     | '/_app/deals/new'
@@ -502,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsReceivablesRouteImport
       parentRoute: typeof AppAccountsRoute
     }
+    '/_app/accounts/payments': {
+      id: '/_app/accounts/payments'
+      path: '/payments'
+      fullPath: '/accounts/payments'
+      preLoaderRoute: typeof AppAccountsPaymentsRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
     '/_app/accounts/payables': {
       id: '/_app/accounts/payables'
       path: '/payables'
@@ -530,6 +549,7 @@ interface AppAccountsRouteChildren {
   AppAccountsInstallmentsRoute: typeof AppAccountsInstallmentsRoute
   AppAccountsInvoicesRoute: typeof AppAccountsInvoicesRoute
   AppAccountsPayablesRoute: typeof AppAccountsPayablesRoute
+  AppAccountsPaymentsRoute: typeof AppAccountsPaymentsRoute
   AppAccountsReceivablesRoute: typeof AppAccountsReceivablesRoute
   AppAccountsIndexRoute: typeof AppAccountsIndexRoute
 }
@@ -538,6 +558,7 @@ const AppAccountsRouteChildren: AppAccountsRouteChildren = {
   AppAccountsInstallmentsRoute: AppAccountsInstallmentsRoute,
   AppAccountsInvoicesRoute: AppAccountsInvoicesRoute,
   AppAccountsPayablesRoute: AppAccountsPayablesRoute,
+  AppAccountsPaymentsRoute: AppAccountsPaymentsRoute,
   AppAccountsReceivablesRoute: AppAccountsReceivablesRoute,
   AppAccountsIndexRoute: AppAccountsIndexRoute,
 }
