@@ -32,6 +32,7 @@ import { Route as AppLeadsUnassignedRouteImport } from './routes/_app.leads.unas
 import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
 import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
 import { Route as AppAccountsReceivablesRouteImport } from './routes/_app.accounts.receivables'
+import { Route as AppAccountsPayablesRouteImport } from './routes/_app.accounts.payables'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -147,6 +148,11 @@ const AppAccountsReceivablesRoute = AppAccountsReceivablesRouteImport.update({
   path: '/receivables',
   getParentRoute: () => AppAccountsRoute,
 } as any)
+const AppAccountsPayablesRoute = AppAccountsPayablesRouteImport.update({
+  id: '/payables',
+  path: '/payables',
+  getParentRoute: () => AppAccountsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/targets': typeof AppTargetsRoute
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
+  '/accounts/payables': typeof AppAccountsPayablesRoute
   '/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/targets': typeof AppTargetsRoute
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
+  '/accounts/payables': typeof AppAccountsPayablesRoute
   '/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/_app/targets': typeof AppTargetsRoute
   '/_app/teams': typeof AppTeamsRoute
   '/_app/users': typeof AppUsersRoute
+  '/_app/accounts/payables': typeof AppAccountsPayablesRoute
   '/_app/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/_app/deals/$id': typeof AppDealsIdRoute
   '/_app/deals/new': typeof AppDealsNewRoute
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/targets'
     | '/teams'
     | '/users'
+    | '/accounts/payables'
     | '/accounts/receivables'
     | '/deals/$id'
     | '/deals/new'
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/targets'
     | '/teams'
     | '/users'
+    | '/accounts/payables'
     | '/accounts/receivables'
     | '/deals/$id'
     | '/deals/new'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/_app/targets'
     | '/_app/teams'
     | '/_app/users'
+    | '/_app/accounts/payables'
     | '/_app/accounts/receivables'
     | '/_app/deals/$id'
     | '/_app/deals/new'
@@ -466,15 +478,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsReceivablesRouteImport
       parentRoute: typeof AppAccountsRoute
     }
+    '/_app/accounts/payables': {
+      id: '/_app/accounts/payables'
+      path: '/payables'
+      fullPath: '/accounts/payables'
+      preLoaderRoute: typeof AppAccountsPayablesRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
   }
 }
 
 interface AppAccountsRouteChildren {
+  AppAccountsPayablesRoute: typeof AppAccountsPayablesRoute
   AppAccountsReceivablesRoute: typeof AppAccountsReceivablesRoute
   AppAccountsIndexRoute: typeof AppAccountsIndexRoute
 }
 
 const AppAccountsRouteChildren: AppAccountsRouteChildren = {
+  AppAccountsPayablesRoute: AppAccountsPayablesRoute,
   AppAccountsReceivablesRoute: AppAccountsReceivablesRoute,
   AppAccountsIndexRoute: AppAccountsIndexRoute,
 }
