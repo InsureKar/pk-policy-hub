@@ -62,6 +62,27 @@ const groups: NavGroup[] = [
     ],
   },
   {
+    label: "Admin", icon: UserCog, roles: ["admin", "management"],
+    items: [
+      { to: "/teams", label: "Teams", icon: UsersRound, roles: ["admin", "management"] },
+      { to: "/users", label: "User Management", icon: Users, roles: ["admin"] },
+      { to: "/review", label: "Review User", icon: UserSearch, roles: ["admin", "management"] },
+      { to: "/targets", label: "Monthly Targets", icon: Target, roles: ["admin", "management"] },
+    ],
+  },
+  {
+    label: "Accounts", icon: Wallet, roles: ["admin", "management", "team_lead", "do"],
+    items: [
+      { to: "/accounts", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/accounts/receivables", label: "Receivables", icon: Receipt },
+      { to: "/accounts/payables", label: "Payables", icon: Wallet, roles: ["admin", "management"] },
+      { to: "/accounts/installments", label: "Installments", icon: CalendarClock },
+      { to: "/accounts/invoices", label: "Invoices", icon: FileText },
+      { to: "/accounts/payments", label: "Payments", icon: CreditCard },
+      { to: "/accounts/reports", label: "Finance Reports", icon: BarChart3, roles: ["admin", "management", "team_lead"] },
+    ],
+  },
+  {
     label: "Master Data", icon: Database, roles: ["admin"], expandable: true,
     items: [
       { to: "/master", label: "Insurance Companies", icon: Building2, roles: ["admin"], search: { tab: "companies" } },
