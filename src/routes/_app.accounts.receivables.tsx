@@ -125,7 +125,7 @@ function ReceivablesPage() {
                 <TableRow key={r.id}>
                   <TableCell className="font-mono text-xs">{r.receivable_number}</TableCell>
                   <TableCell className="font-mono text-xs">{d?.deal_number ?? "—"}</TableCell>
-                  <TableCell>{c?(c?.company_name ?? c?.full_name ?? "—")}</TableCell>
+                  <TableCell>{c ? (c.company_name ?? c.full_name ?? "—") : "—"}</TableCell>
                   <TableCell>{d?.insurance_company_id ? data?.cos.get(d.insurance_company_id) : "—"}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmtPKR(r.gross_premium)}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmtPKR(r.paid_amount)}</TableCell>
