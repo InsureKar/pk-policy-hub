@@ -76,6 +76,18 @@ const groups: NavGroup[] = [
     ],
   },
   {
+    label: "Operations", icon: Landmark, roles: ["admin", "management", "team_lead", "do"],
+    items: [
+      { to: "/operations", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "management"] },
+      { to: "/operations/payroll", label: "Payroll", icon: Wallet2, roles: ["admin", "management"] },
+      { to: "/operations/commissions", label: "Commissions", icon: HandCoins, roles: ["admin", "management"] },
+      { to: "/operations/performance", label: "Employee Performance", icon: Award, roles: ["admin", "management"] },
+      { to: "/operations/expenses", label: "Expenses", icon: ReceiptText, roles: ["admin", "management"] },
+      { to: "/operations/reimbursements", label: "Reimbursements", icon: HandCoins },
+      { to: "/operations/reports", label: "Ops Reports", icon: BarChart3, roles: ["admin", "management"] },
+    ],
+  },
+  {
     label: "Master Data", icon: Database, roles: ["admin"], expandable: true,
     items: [
       { to: "/master", label: "Insurance Companies", icon: Building2, roles: ["admin"], search: { tab: "companies" } },
