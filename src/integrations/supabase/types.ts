@@ -110,6 +110,7 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
+          client_code: string | null
           client_type: string
           cnic: string | null
           company_name: string
@@ -136,6 +137,7 @@ export type Database = {
         Insert: {
           address?: string | null
           city?: string | null
+          client_code?: string | null
           client_type?: string
           cnic?: string | null
           company_name: string
@@ -162,6 +164,7 @@ export type Database = {
         Update: {
           address?: string | null
           city?: string | null
+          client_code?: string | null
           client_type?: string
           cnic?: string | null
           company_name?: string
@@ -853,6 +856,119 @@ export type Database = {
           },
         ]
       }
+      expense_categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_system: boolean
+          name: string
+          parent_id: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_system?: boolean
+          name: string
+          parent_id?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_system?: boolean
+          name?: string
+          parent_id?: string | null
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          approval_status: string
+          approved_by: string | null
+          attachment_url: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string
+          expense_code: string
+          expense_date: string
+          id: string
+          invoice_number: string | null
+          payment_date: string | null
+          payment_method: string | null
+          remarks: string | null
+          subcategory_id: string | null
+          tax_amount: number
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          amount?: number
+          approval_status?: string
+          approved_by?: string | null
+          attachment_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by: string
+          expense_code: string
+          expense_date?: string
+          id?: string
+          invoice_number?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          remarks?: string | null
+          subcategory_id?: string | null
+          tax_amount?: number
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          approval_status?: string
+          approved_by?: string | null
+          attachment_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string
+          expense_code?: string
+          expense_date?: string
+          id?: string
+          invoice_number?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          remarks?: string | null
+          subcategory_id?: string | null
+          tax_amount?: number
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       installments: {
         Row: {
           amount: number
@@ -1139,6 +1255,77 @@ export type Database = {
           },
         ]
       }
+      payroll_runs: {
+        Row: {
+          allowances: number
+          bonuses: number
+          created_at: string
+          created_by: string | null
+          deductions: number
+          gross_salary: number
+          id: string
+          net_salary: number
+          paid_at: string | null
+          payment_method: string | null
+          period_month: number
+          period_year: number
+          profile_id: string
+          reference_number: string | null
+          remarks: string | null
+          status: string
+          tax_amount: number
+          updated_at: string
+        }
+        Insert: {
+          allowances?: number
+          bonuses?: number
+          created_at?: string
+          created_by?: string | null
+          deductions?: number
+          gross_salary?: number
+          id?: string
+          net_salary?: number
+          paid_at?: string | null
+          payment_method?: string | null
+          period_month: number
+          period_year: number
+          profile_id: string
+          reference_number?: string | null
+          remarks?: string | null
+          status?: string
+          tax_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          allowances?: number
+          bonuses?: number
+          created_at?: string
+          created_by?: string | null
+          deductions?: number
+          gross_salary?: number
+          id?: string
+          net_salary?: number
+          paid_at?: string | null
+          payment_method?: string | null
+          period_month?: number
+          period_year?: number
+          profile_id?: string
+          reference_number?: string | null
+          remarks?: string | null
+          status?: string
+          tax_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_runs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       policies: {
         Row: {
           client_id: string
@@ -1236,39 +1423,60 @@ export type Database = {
         Row: {
           commission_share_percentage: number
           created_at: string
+          default_allowances: number | null
+          default_deductions: number | null
+          department: string | null
           designation: string | null
           email: string
+          employment_status: string | null
           full_name: string
           id: string
           is_locked: boolean
+          joining_date: string | null
+          monthly_salary: number | null
           must_reset_password: boolean
           phone: string | null
+          salary_tax_percentage: number | null
           team_id: string | null
           updated_at: string
         }
         Insert: {
           commission_share_percentage?: number
           created_at?: string
+          default_allowances?: number | null
+          default_deductions?: number | null
+          department?: string | null
           designation?: string | null
           email: string
+          employment_status?: string | null
           full_name?: string
           id: string
           is_locked?: boolean
+          joining_date?: string | null
+          monthly_salary?: number | null
           must_reset_password?: boolean
           phone?: string | null
+          salary_tax_percentage?: number | null
           team_id?: string | null
           updated_at?: string
         }
         Update: {
           commission_share_percentage?: number
           created_at?: string
+          default_allowances?: number | null
+          default_deductions?: number | null
+          department?: string | null
           designation?: string | null
           email?: string
+          employment_status?: string | null
           full_name?: string
           id?: string
           is_locked?: boolean
+          joining_date?: string | null
+          monthly_salary?: number | null
           must_reset_password?: boolean
           phone?: string | null
+          salary_tax_percentage?: number | null
           team_id?: string | null
           updated_at?: string
         }
@@ -1386,6 +1594,134 @@ export type Database = {
           {
             foreignKeyName: "receivables_team_lead_id_fkey"
             columns: ["team_lead_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reimbursements: {
+        Row: {
+          amount: number
+          attachment_url: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string
+          description: string
+          employee_id: string
+          expense_date: string
+          id: string
+          paid_at: string | null
+          paid_by: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          rejection_reason: string | null
+          remarks: string | null
+          request_code: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          attachment_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by: string
+          description: string
+          employee_id: string
+          expense_date: string
+          id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          rejection_reason?: string | null
+          remarks?: string | null
+          request_code: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          attachment_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          employee_id?: string
+          expense_date?: string
+          id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          rejection_reason?: string | null
+          remarks?: string | null
+          request_code?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reimbursements_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursements_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_revisions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          id: string
+          new_salary: number
+          previous_salary: number | null
+          profile_id: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          effective_date: string
+          id?: string
+          new_salary: number
+          previous_salary?: number | null
+          profile_id: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          id?: string
+          new_salary?: number
+          previous_salary?: number | null
+          profile_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_revisions_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

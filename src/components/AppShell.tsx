@@ -3,7 +3,9 @@ import {
   LayoutDashboard, Briefcase, Users, Building2, UsersRound, Settings2, Database, LogOut,
   Shield, RefreshCw, BarChart3, KanbanSquare, DollarSign, UserCog, ChevronDown,
   ChevronRight, Sun, Moon, Plus, Inbox, Target, UserSearch, Wallet, Receipt, FileText, CreditCard, CalendarClock,
+  Wallet2, Landmark, TrendingUp, Award, HandCoins, ReceiptText,
 } from "lucide-react";
+
 import { useAuth, type AppRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -71,6 +73,18 @@ const groups: NavGroup[] = [
       { to: "/accounts/invoices", label: "Invoices", icon: FileText },
       { to: "/accounts/payments", label: "Payments", icon: CreditCard },
       { to: "/accounts/reports", label: "Finance Reports", icon: BarChart3, roles: ["admin", "management", "team_lead"] },
+    ],
+  },
+  {
+    label: "Operations", icon: Landmark, roles: ["admin", "management", "team_lead", "do"],
+    items: [
+      { to: "/operations", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "management"] },
+      { to: "/operations/payroll", label: "Payroll", icon: Wallet2, roles: ["admin", "management"] },
+      { to: "/operations/commissions", label: "Commissions", icon: HandCoins, roles: ["admin", "management"] },
+      { to: "/operations/performance", label: "Employee Performance", icon: Award, roles: ["admin", "management"] },
+      { to: "/operations/expenses", label: "Expenses", icon: ReceiptText, roles: ["admin", "management"] },
+      { to: "/operations/reimbursements", label: "Reimbursements", icon: HandCoins },
+      { to: "/operations/reports", label: "Ops Reports", icon: BarChart3, roles: ["admin", "management"] },
     ],
   },
   {

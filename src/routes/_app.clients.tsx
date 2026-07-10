@@ -189,6 +189,7 @@ function ClientsPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
               <tr>
+                <th className="text-left px-4 py-2.5">Code</th>
                 <th className="text-left px-4 py-2.5">Name</th>
                 <th className="text-left px-4 py-2.5">Type</th>
                 <th className="text-left px-4 py-2.5">Phone</th>
@@ -201,6 +202,7 @@ function ClientsPage() {
             <tbody>
               {filtered.map(c => (
                 <tr key={c.id} className="border-t hover:bg-muted/30">
+                  <td className="px-4 py-2.5 font-mono text-xs">{(c as any).client_code ?? "—"}</td>
                   <td className="px-4 py-2.5 font-medium">{c.client_type === "individual" ? (c.full_name || c.company_name) : c.company_name}</td>
                   <td className="px-4 py-2.5 capitalize">{c.client_type}</td>
                   <td className="px-4 py-2.5">{c.phone || c.poc_number || "—"}</td>
@@ -210,7 +212,7 @@ function ClientsPage() {
                   <td className="px-4 py-2.5 text-muted-foreground">{fmtDate(c.created_at)}</td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={7} className="text-center py-12 text-muted-foreground">No clients yet.</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={8} className="text-center py-12 text-muted-foreground">No clients yet.</td></tr>}
             </tbody>
           </table>
         </CardContent>
