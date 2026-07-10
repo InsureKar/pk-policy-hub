@@ -108,7 +108,7 @@ function ReceivablesPage() {
               <TableHead>Deal</TableHead>
               <TableHead>Client</TableHead>
               <TableHead>Company</TableHead>
-              <TableHead className="text-right">Gross</TableHead>
+              <TableHead className="text-right">Premium Receivable</TableHead>
               <TableHead className="text-right">Paid</TableHead>
               <TableHead className="text-right">Outstanding</TableHead>
               <TableHead>Due</TableHead>

@@ -88,7 +88,7 @@ function AccountsDashboard() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <KPI label="Total Receivable" value={fmtPKR(totalReceivable)}/>
+        <KPI label="Total Premium Receivable" value={fmtPKR(totalReceivable)}/>
         <KPI label="Outstanding" value={fmtPKR(outstanding)}/>
         <KPI label="Overdue" value={fmtPKR(overdue)} tone="danger"/>
         <KPI label="Commission Receivable" value={fmtPKR(totalCommissionReceivable)}/>

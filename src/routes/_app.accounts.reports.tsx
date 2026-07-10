@@ -59,7 +59,7 @@ function ReportsPage() {
       case "receivables": {
         const rows = data.recv.filter(r => inRange(r.created_at?.slice(0,10)));
         return {
-          columns: ["Receivable", "Total", "Paid", "Outstanding", "Status"],
+          columns: ["Receivable", "Premium Receivable", "Paid", "Outstanding", "Status"],
           rows: rows.map(r => [r.receivable_number, fmtPKR(r.total_amount), fmtPKR(r.paid_amount), fmtPKR(r.outstanding_amount), r.status]),
         };
       }
@@ -166,7 +166,7 @@ function ReportsPage() {
         <Select value={reportType} onValueChange={(v: any) => setReportType(v)}>
           <SelectTrigger><SelectValue/></SelectTrigger>
           <SelectContent>
-            <SelectItem value="receivables">Receivables</SelectItem>
+            <SelectItem value="receivables">Premium Receivables</SelectItem>
             <SelectItem value="payables">Payables</SelectItem>
             <SelectItem value="commission">Commission</SelectItem>
             <SelectItem value="collections">Collections</SelectItem>

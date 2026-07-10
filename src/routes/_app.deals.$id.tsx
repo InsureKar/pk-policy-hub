@@ -230,15 +230,232 @@ function DealDetail() {
                 <Textarea rows={2} value={pay.payment_remarks} onChange={(e)=>setPay(p=>({...p, payment_remarks: e.target.value}))}/>
               </Field>
             </div>
-            <div className="sm:col-span-2 lg:col-span-3 flex justify-end">
+            <div className="sm:col-span-2 lg:col-span-3 flex justify-end gap-2">
               <Button onClick={savePayment}>Save Payment Info</Button>
+              <Button variant="secondary" onClick={async () => {
+                await savePayment();
+                if (!c) return;
+                const recipient = (c as any).email || prompt("Recipient email:");
+                if (!recipient) return;
+                const subject = `Payment received — ${d.deal_number}`;
+                const body = `Dear ${clientName ?? "Client"},\n\nWe confirm receipt of your payment on ${pay.payment_receive_date} via ${pay.payment_mode}. Reference: ${pay.transaction_reference}.\n\nThank you.`;
+                const { error } = await supabase.from("email_history").insert({
+                  deal_id: id, client_id: d.client_id, recipient, subject, body, status: "logged",
+                  sent_by: (await supabase.auth.getUser()).data.user?.id,
+                });
+                if (error) toast.error("Email log failed: " + error.message);
+                else toast.success("Payment saved & email logged. Configure email sending in Settings > Emails to deliver.");
+              }}>Save & Send Email</Button>
             </div>
           </CardContent>
         </Card>
       )}
 
+      <DealInvoicesAndTravel dealId={id} stage={stage} isTravel={(type ?? "").toLowerCase() === "travel"} />
+
       {d.notes && <Card className="mt-4"><CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader><CardContent className="text-sm whitespace-pre-wrap">{d.notes}</CardContent></Card>}
     </div>
+  );
+}
+
+function DealInvoicesAndTravel({ dealId, stage, isTravel }: { dealId: string; stage: any; isTravel: boolean }) {
+  const qc = useQueryClient();
+  const { data: invoices } = useQuery({
+    queryKey: ["deal-invoices", dealId],
+    queryFn: async () => (await supabase.from("invoices").select("*").eq("deal_id", dealId).order("created_at", { ascending: false })).data ?? [],
+  });
+  const { data: posting } = useQuery({
+    enabled: isTravel,
+    queryKey: ["travel-posting", dealId],
+    queryFn: async () => {
+      const p = await supabase.from("travel_postings").select("*").eq("deal_id", dealId).maybeSingle();
+      if (!p.data) return { header: null, rows: [] as any[] };
+      const rows = await supabase.from("travel_posting_rows").select("*").eq("posting_id", p.data.id).order("sr_no");
+      return { header: p.data, rows: rows.data ?? [] };
+    },
+  });
+
+  const isInvoiceStage = stage?.name === "Invoice Issued";
+
+  return (
+    <>
+      {(isInvoiceStage || (invoices?.length ?? 0) > 0) && (
+        <Card className="mt-4">
+          <CardHeader><CardTitle className="text-base">Invoices</CardTitle></CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {isInvoiceStage && (invoices?.length ?? 0) === 0 && (
+              <p className="text-muted-foreground">Draft invoice will appear here after stage change is persisted. If missing, click Generate.</p>
+            )}
+            {isInvoiceStage && (
+              <Button size="sm" variant="outline" onClick={async () => {
+                const { data: d } = await supabase.from("deals").select("*").eq("id", dealId).maybeSingle();
+                if (!d) return;
+                const invNum = `INV-M-${Date.now().toString().slice(-8)}`;
+                const { error } = await supabase.from("invoices").insert({
+                  invoice_number: invNum, deal_id: dealId, client_id: d.client_id,
+                  issue_date: new Date().toISOString().slice(0,10),
+                  due_date: d.policy_start_date ?? new Date().toISOString().slice(0,10),
+                  total_amount: d.gross_premium, status: "pending_approval", invoice_kind: "manual",
+                });
+                if (error) toast.error(error.message);
+                else { toast.success("Invoice generated (Pending Approval)"); qc.invalidateQueries({ queryKey: ["deal-invoices", dealId] }); }
+              }}>Generate Invoice</Button>
+            )}
+            {(invoices ?? []).map(inv => (
+              <div key={inv.id} className="flex items-center justify-between border-t pt-2">
+                <div className="font-mono text-xs">{inv.invoice_number}</div>
+                <div className="tabular-nums">{fmtPKR(Number(inv.total_amount))}</div>
+                <Badge variant="outline">{(inv.status as string).replace("_", " ")}</Badge>
+                <span className="text-xs text-muted-foreground">{fmtDate(inv.created_at)}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {isTravel && <TravelPostingSection dealId={dealId} posting={posting ?? null}/>}
+    </>
+  );
+}
+
+function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { header: any; rows: any[] } | null }) {
+  const qc = useQueryClient();
+  const header = posting?.header;
+  const rows = posting?.rows ?? [];
+  const [totalPolicy, setTotalPolicy] = useState(header?.total_policy_amount ?? 0);
+  const [totalPost, setTotalPost] = useState(header?.total_posting_amount ?? 0);
+  const [from, setFrom] = useState(header?.posting_from ?? "");
+  const [to, setTo] = useState(header?.posting_to ?? "");
+  useEffect(() => {
+    if (header) {
+      setTotalPolicy(header.total_policy_amount);
+      setTotalPost(header.total_posting_amount);
+      setFrom(header.posting_from ?? "");
+      setTo(header.posting_to ?? "");
+    }
+  }, [header]);
+
+  const totalPremium = rows.reduce((a, r) => a + Number(r.premium || 0), 0);
+  const diff = totalPremium - Number(totalPost || 0);
+  const status = Number(totalPost) === 0 ? "pending" : Math.abs(diff) < 0.01 ? "balanced" : diff > 0 ? "excess" : "deficit";
+  const badgeCls: Record<string,string> = {
+    balanced: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+    excess: "bg-red-500/15 text-red-600 border-red-500/30",
+    deficit: "bg-amber-500/15 text-amber-600 border-amber-500/30",
+    pending: "bg-muted text-muted-foreground",
+  };
+
+  const saveHeader = async () => {
+    if (Number(totalPolicy) <= 0 || Number(totalPost) <= 0) return toast.error("Enter Total Policy & Total Posting amounts");
+    if (from && to && to < from) return toast.error("To Date cannot be earlier than From Date");
+    const payload: any = { deal_id: dealId, total_policy_amount: totalPolicy, total_posting_amount: totalPost, posting_from: from || null, posting_to: to || null };
+    const { error } = header
+      ? await supabase.from("travel_postings").update(payload).eq("id", header.id)
+      : await supabase.from("travel_postings").insert(payload);
+    if (error) toast.error(error.message);
+    else { toast.success("Posting header saved"); qc.invalidateQueries({ queryKey: ["travel-posting", dealId] }); }
+  };
+
+  const addRow = async () => {
+    if (!header) return toast.error("Save posting header first");
+    const { error } = await supabase.from("travel_posting_rows").insert({
+      posting_id: header.id, sr_no: rows.length + 1, premium: 0, commission_percentage: 0,
+    });
+    if (error) toast.error(error.message);
+    else qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
+  };
+
+  const updateRow = async (id: string, patch: any) => {
+    const { error } = await supabase.from("travel_posting_rows").update(patch).eq("id", id);
+    if (error) toast.error(error.message);
+    else qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
+  };
+  const deleteRow = async (id: string) => {
+    const { error } = await supabase.from("travel_posting_rows").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
+  };
+
+  return (
+    <Card className="mt-4 border-blue-500/30">
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          Travel Posting
+          <Badge variant="outline" className={badgeCls[status]}>{status.toUpperCase()}</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        <div className="grid sm:grid-cols-4 gap-3">
+          <Field label="Total Policy Amount *"><Input type="number" step="0.01" value={totalPolicy} onChange={e => setTotalPolicy(Number(e.target.value) || 0)}/></Field>
+          <Field label="Total Posting Amount *"><Input type="number" step="0.01" value={totalPost} onChange={e => setTotalPost(Number(e.target.value) || 0)}/></Field>
+          <Field label="Posting From *"><Input type="date" value={from} onChange={e => setFrom(e.target.value)} onKeyDown={e => e.preventDefault()}/></Field>
+          <Field label="Posting To *"><Input type="date" value={to} onChange={e => setTo(e.target.value)} onKeyDown={e => e.preventDefault()} min={from || undefined}/></Field>
+        </div>
+        <div className="flex justify-end">
+          <Button size="sm" onClick={saveHeader}>{header ? "Update Header" : "Save Header"}</Button>
+        </div>
+
+        {header && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="text-muted-foreground">
+                <tr>
+                  <th className="text-left p-2">Sr</th>
+                  <th className="text-left p-2">Travel Agent</th>
+                  <th className="text-left p-2">Date Issued</th>
+                  <th className="text-left p-2">Policy #</th>
+                  <th className="text-right p-2">Premium</th>
+                  <th className="text-right p-2">Comm %</th>
+                  <th className="text-right p-2">Comm Amt</th>
+                  <th className="text-left p-2">Payable Co.</th>
+                  <th className="text-left p-2">Agent Name</th>
+                  <th className="text-left p-2">Remarks</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(r => {
+                  const commAmt = Number(r.premium || 0) * Number(r.commission_percentage || 0) / 100;
+                  return (
+                    <tr key={r.id} className="border-t">
+                      <td className="p-2">{r.sr_no}</td>
+                      <td className="p-2"><Input className="h-8" defaultValue={r.travel_agent ?? ""} onBlur={e => updateRow(r.id, { travel_agent: e.target.value })}/></td>
+                      <td className="p-2"><Input type="date" className="h-8" defaultValue={r.date_issued ?? ""} onBlur={e => updateRow(r.id, { date_issued: e.target.value || null })}/></td>
+                      <td className="p-2"><Input className="h-8" defaultValue={r.policy_number ?? ""} onBlur={e => updateRow(r.id, { policy_number: e.target.value })}/></td>
+                      <td className="p-2"><Input type="number" step="0.01" className="h-8 text-right" defaultValue={r.premium ?? 0} onBlur={e => updateRow(r.id, { premium: Number(e.target.value) || 0 })}/></td>
+                      <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={r.commission_percentage ?? 0} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>
+                      <td className="p-2 text-right tabular-nums">{fmtPKR(commAmt)}</td>
+                      <td className="p-2"><Input className="h-8" defaultValue={r.payable_company ?? ""} onBlur={e => updateRow(r.id, { payable_company: e.target.value })}/></td>
+                      <td className="p-2"><Input className="h-8" defaultValue={r.agent_name ?? ""} onBlur={e => updateRow(r.id, { agent_name: e.target.value })}/></td>
+                      <td className="p-2"><Input className="h-8" defaultValue={r.remarks ?? ""} onBlur={e => updateRow(r.id, { remarks: e.target.value })}/></td>
+                      <td className="p-2"><Button size="sm" variant="ghost" onClick={() => deleteRow(r.id)}>×</Button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot className="border-t font-medium">
+                <tr>
+                  <td className="p-2" colSpan={4}>Totals</td>
+                  <td className="p-2 text-right tabular-nums">{fmtPKR(totalPremium)}</td>
+                  <td></td>
+                  <td className="p-2 text-right tabular-nums">{fmtPKR(rows.reduce((a,r)=>a+(Number(r.premium||0)*Number(r.commission_percentage||0)/100),0))}</td>
+                  <td colSpan={4}></td>
+                </tr>
+              </tfoot>
+            </table>
+            <div className="flex items-center justify-between mt-3">
+              <Button size="sm" variant="outline" onClick={addRow}>+ Add Row</Button>
+              <div className="text-xs">
+                {status === "excess" && <span className="text-red-600">Excess: {fmtPKR(diff)}</span>}
+                {status === "deficit" && <span className="text-amber-600">Deficit: {fmtPKR(-diff)}</span>}
+                {status === "balanced" && <span className="text-emerald-600">Balanced ✓</span>}
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">Deal cannot progress to Won until posting is Balanced.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

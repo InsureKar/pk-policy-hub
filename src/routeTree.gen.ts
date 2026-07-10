@@ -37,6 +37,7 @@ import { Route as AppAccountsPaymentsRouteImport } from './routes/_app.accounts.
 import { Route as AppAccountsPayablesRouteImport } from './routes/_app.accounts.payables'
 import { Route as AppAccountsInvoicesRouteImport } from './routes/_app.accounts.invoices'
 import { Route as AppAccountsInstallmentsRouteImport } from './routes/_app.accounts.installments'
+import { Route as AppAccountsApprovalsRouteImport } from './routes/_app.accounts.approvals'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -177,6 +178,11 @@ const AppAccountsInstallmentsRoute = AppAccountsInstallmentsRouteImport.update({
   path: '/installments',
   getParentRoute: () => AppAccountsRoute,
 } as any)
+const AppAccountsApprovalsRoute = AppAccountsApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => AppAccountsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -195,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/targets': typeof AppTargetsRoute
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
+  '/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/accounts/payables': typeof AppAccountsPayablesRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/targets': typeof AppTargetsRoute
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
+  '/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/accounts/payables': typeof AppAccountsPayablesRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/_app/targets': typeof AppTargetsRoute
   '/_app/teams': typeof AppTeamsRoute
   '/_app/users': typeof AppUsersRoute
+  '/_app/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/_app/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/_app/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/_app/accounts/payables': typeof AppAccountsPayablesRoute
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/targets'
     | '/teams'
     | '/users'
+    | '/accounts/approvals'
     | '/accounts/installments'
     | '/accounts/invoices'
     | '/accounts/payables'
@@ -313,6 +323,7 @@ export interface FileRouteTypes {
     | '/targets'
     | '/teams'
     | '/users'
+    | '/accounts/approvals'
     | '/accounts/installments'
     | '/accounts/invoices'
     | '/accounts/payables'
@@ -343,6 +354,7 @@ export interface FileRouteTypes {
     | '/_app/targets'
     | '/_app/teams'
     | '/_app/users'
+    | '/_app/accounts/approvals'
     | '/_app/accounts/installments'
     | '/_app/accounts/invoices'
     | '/_app/accounts/payables'
@@ -561,10 +573,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsInstallmentsRouteImport
       parentRoute: typeof AppAccountsRoute
     }
+    '/_app/accounts/approvals': {
+      id: '/_app/accounts/approvals'
+      path: '/approvals'
+      fullPath: '/accounts/approvals'
+      preLoaderRoute: typeof AppAccountsApprovalsRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
   }
 }
 
 interface AppAccountsRouteChildren {
+  AppAccountsApprovalsRoute: typeof AppAccountsApprovalsRoute
   AppAccountsInstallmentsRoute: typeof AppAccountsInstallmentsRoute
   AppAccountsInvoicesRoute: typeof AppAccountsInvoicesRoute
   AppAccountsPayablesRoute: typeof AppAccountsPayablesRoute
@@ -575,6 +595,7 @@ interface AppAccountsRouteChildren {
 }
 
 const AppAccountsRouteChildren: AppAccountsRouteChildren = {
+  AppAccountsApprovalsRoute: AppAccountsApprovalsRoute,
   AppAccountsInstallmentsRoute: AppAccountsInstallmentsRoute,
   AppAccountsInvoicesRoute: AppAccountsInvoicesRoute,
   AppAccountsPayablesRoute: AppAccountsPayablesRoute,
@@ -639,13 +660,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
