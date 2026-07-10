@@ -25,7 +25,7 @@ function PerformancePage() {
         sb.from("payroll_runs").select("profile_id, net_salary, status"),
         sb.from("deal_stages").select("id, is_won, is_lost"),
       ]);
-      const stageMap = new Map((stages.data ?? []).map((s: any) => [s.id, s]));
+      const stageMap = new Map<string, any>((stages.data ?? []).map((s: any) => [s.id, s]));
       const rows = (profs.data ?? []).map((p: any) => {
         const myDeals = (deals.data ?? []).filter((d: any) => d.assigned_do_id === p.id);
         const won = myDeals.filter((d: any) => stageMap.get(d.stage_id)?.is_won);
