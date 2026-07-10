@@ -30,6 +30,8 @@ import { Route as AppAccountsRouteImport } from './routes/_app.accounts'
 import { Route as AppOperationsIndexRouteImport } from './routes/_app.operations.index'
 import { Route as AppDealsIndexRouteImport } from './routes/_app.deals.index'
 import { Route as AppAccountsIndexRouteImport } from './routes/_app.accounts.index'
+import { Route as AppOperationsReportsRouteImport } from './routes/_app.operations.reports'
+import { Route as AppOperationsReimbursementsRouteImport } from './routes/_app.operations.reimbursements'
 import { Route as AppOperationsPerformanceRouteImport } from './routes/_app.operations.performance'
 import { Route as AppOperationsPayrollRouteImport } from './routes/_app.operations.payroll'
 import { Route as AppOperationsExpensesRouteImport } from './routes/_app.operations.expenses'
@@ -149,6 +151,17 @@ const AppAccountsIndexRoute = AppAccountsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppAccountsRoute,
 } as any)
+const AppOperationsReportsRoute = AppOperationsReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppOperationsRoute,
+} as any)
+const AppOperationsReimbursementsRoute =
+  AppOperationsReimbursementsRouteImport.update({
+    id: '/reimbursements',
+    path: '/reimbursements',
+    getParentRoute: () => AppOperationsRoute,
+  } as any)
 const AppOperationsPerformanceRoute =
   AppOperationsPerformanceRouteImport.update({
     id: '/performance',
@@ -254,6 +267,8 @@ export interface FileRoutesByFullPath {
   '/operations/expenses': typeof AppOperationsExpensesRoute
   '/operations/payroll': typeof AppOperationsPayrollRoute
   '/operations/performance': typeof AppOperationsPerformanceRoute
+  '/operations/reimbursements': typeof AppOperationsReimbursementsRoute
+  '/operations/reports': typeof AppOperationsReportsRoute
   '/accounts/': typeof AppAccountsIndexRoute
   '/deals/': typeof AppDealsIndexRoute
   '/operations/': typeof AppOperationsIndexRoute
@@ -288,6 +303,8 @@ export interface FileRoutesByTo {
   '/operations/expenses': typeof AppOperationsExpensesRoute
   '/operations/payroll': typeof AppOperationsPayrollRoute
   '/operations/performance': typeof AppOperationsPerformanceRoute
+  '/operations/reimbursements': typeof AppOperationsReimbursementsRoute
+  '/operations/reports': typeof AppOperationsReportsRoute
   '/accounts': typeof AppAccountsIndexRoute
   '/deals': typeof AppDealsIndexRoute
   '/operations': typeof AppOperationsIndexRoute
@@ -326,6 +343,8 @@ export interface FileRoutesById {
   '/_app/operations/expenses': typeof AppOperationsExpensesRoute
   '/_app/operations/payroll': typeof AppOperationsPayrollRoute
   '/_app/operations/performance': typeof AppOperationsPerformanceRoute
+  '/_app/operations/reimbursements': typeof AppOperationsReimbursementsRoute
+  '/_app/operations/reports': typeof AppOperationsReportsRoute
   '/_app/accounts/': typeof AppAccountsIndexRoute
   '/_app/deals/': typeof AppDealsIndexRoute
   '/_app/operations/': typeof AppOperationsIndexRoute
@@ -364,6 +383,8 @@ export interface FileRouteTypes {
     | '/operations/expenses'
     | '/operations/payroll'
     | '/operations/performance'
+    | '/operations/reimbursements'
+    | '/operations/reports'
     | '/accounts/'
     | '/deals/'
     | '/operations/'
@@ -398,6 +419,8 @@ export interface FileRouteTypes {
     | '/operations/expenses'
     | '/operations/payroll'
     | '/operations/performance'
+    | '/operations/reimbursements'
+    | '/operations/reports'
     | '/accounts'
     | '/deals'
     | '/operations'
@@ -435,6 +458,8 @@ export interface FileRouteTypes {
     | '/_app/operations/expenses'
     | '/_app/operations/payroll'
     | '/_app/operations/performance'
+    | '/_app/operations/reimbursements'
+    | '/_app/operations/reports'
     | '/_app/accounts/'
     | '/_app/deals/'
     | '/_app/operations/'
@@ -596,6 +621,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsIndexRouteImport
       parentRoute: typeof AppAccountsRoute
     }
+    '/_app/operations/reports': {
+      id: '/_app/operations/reports'
+      path: '/reports'
+      fullPath: '/operations/reports'
+      preLoaderRoute: typeof AppOperationsReportsRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/operations/reimbursements': {
+      id: '/_app/operations/reimbursements'
+      path: '/reimbursements'
+      fullPath: '/operations/reimbursements'
+      preLoaderRoute: typeof AppOperationsReimbursementsRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
     '/_app/operations/performance': {
       id: '/_app/operations/performance'
       path: '/performance'
@@ -728,6 +767,8 @@ interface AppOperationsRouteChildren {
   AppOperationsExpensesRoute: typeof AppOperationsExpensesRoute
   AppOperationsPayrollRoute: typeof AppOperationsPayrollRoute
   AppOperationsPerformanceRoute: typeof AppOperationsPerformanceRoute
+  AppOperationsReimbursementsRoute: typeof AppOperationsReimbursementsRoute
+  AppOperationsReportsRoute: typeof AppOperationsReportsRoute
   AppOperationsIndexRoute: typeof AppOperationsIndexRoute
 }
 
@@ -736,6 +777,8 @@ const AppOperationsRouteChildren: AppOperationsRouteChildren = {
   AppOperationsExpensesRoute: AppOperationsExpensesRoute,
   AppOperationsPayrollRoute: AppOperationsPayrollRoute,
   AppOperationsPerformanceRoute: AppOperationsPerformanceRoute,
+  AppOperationsReimbursementsRoute: AppOperationsReimbursementsRoute,
+  AppOperationsReportsRoute: AppOperationsReportsRoute,
   AppOperationsIndexRoute: AppOperationsIndexRoute,
 }
 
