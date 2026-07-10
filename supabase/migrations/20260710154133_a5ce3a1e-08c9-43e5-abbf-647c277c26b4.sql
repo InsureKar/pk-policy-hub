@@ -1,0 +1,1 @@
+ALTER TABLE public.invoices ALTER COLUMN receivable_id DROP NOT NULL;

@@ -959,7 +959,7 @@ export type Database = {
           invoice_number: string
           issue_date: string
           notes: string | null
-          receivable_id: string
+          receivable_id: string | null
           rejected_at: string | null
           rejected_by: string | null
           rejection_reason: string | null
@@ -981,7 +981,7 @@ export type Database = {
           invoice_number?: string
           issue_date?: string
           notes?: string | null
-          receivable_id: string
+          receivable_id?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejection_reason?: string | null
@@ -1003,7 +1003,7 @@ export type Database = {
           invoice_number?: string
           issue_date?: string
           notes?: string | null
-          receivable_id?: string
+          receivable_id?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejection_reason?: string | null
