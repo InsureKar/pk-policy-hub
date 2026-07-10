@@ -377,6 +377,53 @@ export type Database = {
           },
         ]
       }
+      deal_policies: {
+        Row: {
+          cover_note_number: string | null
+          created_at: string
+          deal_id: string
+          gross_premium: number
+          id: string
+          net_premium: number
+          policy_number: string | null
+          remarks: string | null
+          row_number: number
+          updated_at: string
+        }
+        Insert: {
+          cover_note_number?: string | null
+          created_at?: string
+          deal_id: string
+          gross_premium?: number
+          id?: string
+          net_premium?: number
+          policy_number?: string | null
+          remarks?: string | null
+          row_number: number
+          updated_at?: string
+        }
+        Update: {
+          cover_note_number?: string | null
+          created_at?: string
+          deal_id?: string
+          gross_premium?: number
+          id?: string
+          net_premium?: number
+          policy_number?: string | null
+          remarks?: string | null
+          row_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_policies_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_stages: {
         Row: {
           created_at: string
@@ -422,6 +469,7 @@ export type Database = {
           id: string
           income_percentage: number | null
           insurance_company_id: string | null
+          insurance_company_id_payment: string | null
           insurance_type_id: string | null
           loading: number
           marketing_after_tax: number | null
@@ -436,6 +484,8 @@ export type Database = {
           policy_end_date: string | null
           policy_number: string | null
           policy_start_date: string | null
+          policy_type: Database["public"]["Enums"]["policy_type_kind"]
+          posting_status: string
           received_by: string | null
           source_id: string | null
           stage_id: string | null
@@ -462,6 +512,7 @@ export type Database = {
           id?: string
           income_percentage?: number | null
           insurance_company_id?: string | null
+          insurance_company_id_payment?: string | null
           insurance_type_id?: string | null
           loading?: number
           marketing_after_tax?: number | null
@@ -476,6 +527,8 @@ export type Database = {
           policy_end_date?: string | null
           policy_number?: string | null
           policy_start_date?: string | null
+          policy_type?: Database["public"]["Enums"]["policy_type_kind"]
+          posting_status?: string
           received_by?: string | null
           source_id?: string | null
           stage_id?: string | null
@@ -502,6 +555,7 @@ export type Database = {
           id?: string
           income_percentage?: number | null
           insurance_company_id?: string | null
+          insurance_company_id_payment?: string | null
           insurance_type_id?: string | null
           loading?: number
           marketing_after_tax?: number | null
@@ -516,6 +570,8 @@ export type Database = {
           policy_end_date?: string | null
           policy_number?: string | null
           policy_start_date?: string | null
+          policy_type?: Database["public"]["Enums"]["policy_type_kind"]
+          posting_status?: string
           received_by?: string | null
           source_id?: string | null
           stage_id?: string | null
@@ -536,6 +592,13 @@ export type Database = {
           {
             foreignKeyName: "deals_insurance_company_id_fkey"
             columns: ["insurance_company_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_insurance_company_id_payment_fkey"
+            columns: ["insurance_company_id_payment"]
             isOneToOne: false
             referencedRelation: "insurance_companies"
             referencedColumns: ["id"]
@@ -726,6 +789,70 @@ export type Database = {
           },
         ]
       }
+      email_history: {
+        Row: {
+          attachments: Json
+          body: string | null
+          client_id: string | null
+          created_at: string
+          deal_id: string | null
+          id: string
+          invoice_id: string | null
+          recipient: string
+          sent_by: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          attachments?: Json
+          body?: string | null
+          client_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          recipient: string
+          sent_by?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          attachments?: Json
+          body?: string | null
+          client_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          recipient?: string
+          sent_by?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_history_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_history_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       installments: {
         Row: {
           amount: number
@@ -820,41 +947,68 @@ export type Database = {
       }
       invoices: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           client_id: string | null
           created_at: string
+          created_by: string | null
           deal_id: string
           due_date: string | null
           id: string
+          invoice_kind: string
           invoice_number: string
           issue_date: string
           notes: string | null
-          receivable_id: string
+          receivable_id: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
           total_amount: number
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           client_id?: string | null
           created_at?: string
+          created_by?: string | null
           deal_id: string
           due_date?: string | null
           id?: string
+          invoice_kind?: string
           invoice_number?: string
           issue_date?: string
           notes?: string | null
-          receivable_id: string
+          receivable_id?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
           total_amount?: number
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           client_id?: string | null
           created_at?: string
+          created_by?: string | null
           deal_id?: string
           due_date?: string | null
           id?: string
+          invoice_kind?: string
           invoice_number?: string
           issue_date?: string
           notes?: string | null
-          receivable_id?: string
+          receivable_id?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
           total_amount?: number
           updated_at?: string
         }
@@ -1265,6 +1419,113 @@ export type Database = {
         }
         Relationships: []
       }
+      travel_posting_rows: {
+        Row: {
+          agent_name: string | null
+          commission_percentage: number
+          company_id: string | null
+          created_at: string
+          date_issued: string | null
+          id: string
+          payable_company: string | null
+          policy_number: string | null
+          posting_id: string
+          premium: number
+          remarks: string | null
+          sr_no: number
+          travel_agent: string | null
+        }
+        Insert: {
+          agent_name?: string | null
+          commission_percentage?: number
+          company_id?: string | null
+          created_at?: string
+          date_issued?: string | null
+          id?: string
+          payable_company?: string | null
+          policy_number?: string | null
+          posting_id: string
+          premium?: number
+          remarks?: string | null
+          sr_no: number
+          travel_agent?: string | null
+        }
+        Update: {
+          agent_name?: string | null
+          commission_percentage?: number
+          company_id?: string | null
+          created_at?: string
+          date_issued?: string | null
+          id?: string
+          payable_company?: string | null
+          policy_number?: string | null
+          posting_id?: string
+          premium?: number
+          remarks?: string | null
+          sr_no?: number
+          travel_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_posting_rows_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_posting_rows_posting_id_fkey"
+            columns: ["posting_id"]
+            isOneToOne: false
+            referencedRelation: "travel_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      travel_postings: {
+        Row: {
+          created_at: string
+          deal_id: string
+          id: string
+          posting_from: string | null
+          posting_to: string | null
+          status: string
+          total_policy_amount: number
+          total_posting_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          id?: string
+          posting_from?: string | null
+          posting_to?: string | null
+          status?: string
+          total_policy_amount?: number
+          total_posting_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          id?: string
+          posting_from?: string | null
+          posting_to?: string | null
+          status?: string
+          total_policy_amount?: number
+          total_posting_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_postings_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1437,6 +1698,12 @@ export type Database = {
       app_role: "admin" | "management" | "team_lead" | "do"
       deal_type: "fresh" | "renewal"
       installment_status: "pending" | "partial" | "paid" | "overdue"
+      invoice_status:
+        | "draft"
+        | "pending_approval"
+        | "approved"
+        | "rejected"
+        | "sent"
       line_of_business:
         | "group_health"
         | "motor"
@@ -1453,6 +1720,7 @@ export type Database = {
         | "online"
         | "other"
       payment_schedule_type: "annual" | "half_yearly" | "quarterly" | "monthly"
+      policy_type_kind: "single" | "bulk"
       receivable_status: "open" | "partial" | "paid" | "overdue" | "cancelled"
     }
     CompositeTypes: {
@@ -1584,6 +1852,13 @@ export const Constants = {
       app_role: ["admin", "management", "team_lead", "do"],
       deal_type: ["fresh", "renewal"],
       installment_status: ["pending", "partial", "paid", "overdue"],
+      invoice_status: [
+        "draft",
+        "pending_approval",
+        "approved",
+        "rejected",
+        "sent",
+      ],
       line_of_business: [
         "group_health",
         "motor",
@@ -1602,6 +1877,7 @@ export const Constants = {
         "other",
       ],
       payment_schedule_type: ["annual", "half_yearly", "quarterly", "monthly"],
+      policy_type_kind: ["single", "bulk"],
       receivable_status: ["open", "partial", "paid", "overdue", "cancelled"],
     },
   },

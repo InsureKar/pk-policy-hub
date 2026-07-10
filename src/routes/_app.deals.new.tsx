@@ -58,7 +58,23 @@ function NewDealPage() {
     marketing_budget_percentage: 0, loading: 0, b2b_commission: 0,
     policy_start_date: "", policy_end_date: "", notes: "",
     deal_type: "fresh" as "fresh" | "renewal",
+    policy_type: "single" as "single" | "bulk",
   });
+  const [bulkRows, setBulkRows] = useState<Array<{cover_note_number:string;policy_number:string;gross_premium:number;net_premium:number;remarks:string}>>([
+    { cover_note_number: "", policy_number: "", gross_premium: 0, net_premium: 0, remarks: "" },
+  ]);
+  const addBulkRow = () => setBulkRows(r => [...r, { cover_note_number: "", policy_number: "", gross_premium: 0, net_premium: 0, remarks: "" }]);
+  const removeBulkRow = (i: number) => setBulkRows(r => r.filter((_, idx) => idx !== i));
+  const updateBulkRow = (i: number, k: string, v: any) => setBulkRows(r => r.map((row, idx) => idx === i ? { ...row, [k]: v } : row));
+  const bulkTotals = useMemo(() => bulkRows.reduce((a, r) => ({
+    gross: a.gross + Number(r.gross_premium || 0),
+    net: a.net + Number(r.net_premium || 0),
+    count: a.count + 1,
+  }), { gross: 0, net: 0, count: 0 }), [bulkRows]);
+  const isTravel = useMemo(() => {
+    const t = lists?.types.find(x => x.id === form.insurance_type_id);
+    return (t?.name ?? "").toLowerCase() === "travel";
+  }, [form.insurance_type_id, lists?.types]);
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setNum = (k: keyof typeof form, v: string) => set(k, (Number(v) || 0) as never);
@@ -72,7 +88,10 @@ function NewDealPage() {
   const submit = async () => {
     if (!user) return;
     if (!form.client_id) return toast.error("Please pick a client");
-    if (!(form.gross_premium > 0)) return toast.error("Gross premium is required");
+    const effectiveGross = form.policy_type === "bulk" ? bulkTotals.gross : form.gross_premium;
+    const effectiveNet = form.policy_type === "bulk" ? bulkTotals.net : netPremium;
+    if (!(effectiveGross > 0)) return toast.error("Gross premium is required");
+    if (form.policy_type === "bulk" && bulkRows.length === 0) return toast.error("Add at least one bulk policy row");
     const payload: any = {
       ...form,
       created_by: user.id,
@@ -82,15 +101,21 @@ function NewDealPage() {
       insurance_type_id: form.insurance_type_id || null,
       stage_id: form.stage_id || null,
       base_premium: isAdmin ? (form.base_premium || null) : null,
-      // DO/TL cannot set marketing budget — force to 0
       marketing_budget_percentage: canSeeMarketing ? form.marketing_budget_percentage : 0,
-      net_premium: netPremium,
+      gross_premium: effectiveGross,
+      net_premium: effectiveNet,
       policy_start_date: form.policy_start_date || null,
       policy_end_date: form.policy_end_date || null,
       deal_type: form.deal_type,
+      policy_type: form.policy_type,
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
+    if (form.policy_type === "bulk" && data) {
+      const rows = bulkRows.map((r, idx) => ({ ...r, deal_id: data.id, row_number: idx + 1 }));
+      const { error: bErr } = await supabase.from("deal_policies").insert(rows);
+      if (bErr) toast.error("Deal created, but bulk rows failed: " + bErr.message);
+    }
     toast.success("Deal created");
     nav({ to: "/deals/$id", params: { id: data!.id } });
   };
@@ -133,6 +158,15 @@ function NewDealPage() {
                   </SelectContent>
                 </Select>
               </Field>
+              <Field label="Policy Type *">
+                <Select value={form.policy_type} onValueChange={(v)=>set("policy_type", v as "single" | "bulk")}>
+                  <SelectTrigger><SelectValue/></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single Policy</SelectItem>
+                    <SelectItem value="bulk">Bulk Policies</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
               <Field label="Cover Note Number"><Input value={form.cover_note_number} onChange={(e)=>set("cover_note_number", e.target.value)}/></Field>
               <Field label="Policy Number"><Input value={form.policy_number} onChange={(e)=>set("policy_number", e.target.value)}/></Field>
               <Field label="Source">
@@ -157,6 +191,61 @@ function NewDealPage() {
               <Field label="Policy End"><Input type="date" value={form.policy_end_date} onChange={(e)=>set("policy_end_date", e.target.value)}/></Field>
             </CardContent>
           </Card>
+
+          {form.policy_type === "bulk" && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Bulk Policies</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="text-xs text-muted-foreground">
+                      <tr>
+                        <th className="text-left p-2">#</th>
+                        <th className="text-left p-2">Cover Note</th>
+                        <th className="text-left p-2">Policy No.</th>
+                        <th className="text-right p-2">Gross Premium</th>
+                        <th className="text-right p-2">Net Premium</th>
+                        <th className="text-left p-2">Remarks</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bulkRows.map((r, i) => (
+                        <tr key={i} className="border-t">
+                          <td className="p-2">{i+1}</td>
+                          <td className="p-2"><Input value={r.cover_note_number} onChange={e=>updateBulkRow(i,"cover_note_number",e.target.value)}/></td>
+                          <td className="p-2"><Input value={r.policy_number} onChange={e=>updateBulkRow(i,"policy_number",e.target.value)}/></td>
+                          <td className="p-2"><Input type="number" step="0.01" className="text-right" value={r.gross_premium} onChange={e=>updateBulkRow(i,"gross_premium",Number(e.target.value)||0)}/></td>
+                          <td className="p-2"><Input type="number" step="0.01" className="text-right" value={r.net_premium} onChange={e=>updateBulkRow(i,"net_premium",Number(e.target.value)||0)}/></td>
+                          <td className="p-2"><Input value={r.remarks} onChange={e=>updateBulkRow(i,"remarks",e.target.value)}/></td>
+                          <td className="p-2"><Button size="sm" variant="ghost" onClick={()=>removeBulkRow(i)} disabled={bulkRows.length===1}>×</Button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="border-t font-medium">
+                      <tr>
+                        <td className="p-2" colSpan={3}>Totals ({bulkTotals.count} {bulkTotals.count===1?"policy":"policies"})</td>
+                        <td className="p-2 text-right tabular-nums">{fmtPKR(bulkTotals.gross)}</td>
+                        <td className="p-2 text-right tabular-nums">{fmtPKR(bulkTotals.net)}</td>
+                        <td colSpan={2}></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <Button variant="outline" size="sm" onClick={addBulkRow}>+ Add Row</Button>
+                <p className="text-xs text-muted-foreground">Deal totals (Gross & Net premium) will be set from the sum of these rows.</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {isTravel && (
+            <Card className="border-amber-500/50">
+              <CardHeader><CardTitle className="text-base">Travel Product Detected</CardTitle></CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Travel Posting details (Posting From/To, per-row postings, Balanced/Excess/Deficit reconciliation) will be entered on the Deal detail page after creation. The deal cannot be moved to Won until posting is Balanced.
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader><CardTitle className="text-base">Premium{canSeeFinancials ? " & Commission" : ""}</CardTitle></CardHeader>
