@@ -43,7 +43,7 @@ function ExpensesPage() {
 
   const rootCats = (data?.categories ?? []).filter((c: any) => !c.parent_id);
   const subCats = (data?.categories ?? []).filter((c: any) => c.parent_id === form.category_id);
-  const catMap = new Map((data?.categories ?? []).map((c: any) => [c.id, c]));
+  const catMap = new Map<string, any>((data?.categories ?? []).map((c: any) => [c.id, c]));
 
   const filtered = useMemo(() => {
     const list = data?.expenses ?? [];
