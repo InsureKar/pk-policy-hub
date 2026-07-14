@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_app/pipeline")({
 function PipelinePage() {
   return (
     <div className="p-6 max-w-[1600px] mx-auto">
-      <PageHeader title="Pipeline" subtitle="Monthly pipeline funnel across all stages." />
+      <PageHeader title="Pipeline" subtitle="Fresh, Renewal and Pipeline funnels." />
       <PipelineFunnel />
     </div>
   );

@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtPKR } from "@/lib/format";
 import { computeDeal } from "@/lib/calc";
 import { Briefcase, TrendingUp, CheckCircle2, XCircle, Activity, Wallet, BadgePercent, Coins, Target as TargetIcon, RefreshCw, Sparkles } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
 import { useAuth } from "@/lib/auth";
 import { Progress } from "@/components/ui/progress";
-import { PipelineFunnel } from "@/components/PipelineFunnel";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
@@ -225,8 +225,39 @@ function DashboardPage() {
         })}
       </div>
 
-      <div className="mt-6">
-        <PipelineFunnel title="Pipeline funnel by month" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
+        <Card className="lg:col-span-2">
+          <CardHeader><CardTitle className="text-base">{canSeeFinancials ? "Monthly Premium & Income (excl. Lost)" : "Monthly Gross Premium (excl. Lost)"}</CardTitle></CardHeader>
+          <CardContent className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={months}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3}/>
+                <XAxis dataKey="label" fontSize={12}/>
+                <YAxis fontSize={12} tickFormatter={(v)=> v>=1e6?`${(v/1e6).toFixed(1)}M`: v>=1e3?`${(v/1e3).toFixed(0)}k`:String(v)}/>
+                <Tooltip formatter={(v: number) => fmtPKR(v)} />
+                <Bar dataKey="gross" fill="oklch(0.55 0.18 252)" name="Gross Premium" radius={[4,4,0,0]}/>
+                {canSeeFinancials && <Bar dataKey="income" fill="oklch(0.62 0.16 155)" name="Income" radius={[4,4,0,0]}/>}
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle className="text-base">Premium by Insurance Company</CardTitle></CardHeader>
+          <CardContent className="h-72">
+            {byCompany.length === 0 ? (
+              <div className="h-full grid place-items-center text-sm text-muted-foreground">No deals yet</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={byCompany} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90}>
+                    {byCompany.map((_, i) => <Cell key={i} fill={chartColors[i % chartColors.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => fmtPKR(v)} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="mt-4">
