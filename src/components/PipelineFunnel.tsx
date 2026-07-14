@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,11 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { fmtPKR } from "@/lib/format";
 
 type Props = {
-  /** Optional initial ISO date (yyyy-mm-dd). Defaults to Jan 1 of current year. */
   defaultFrom?: string;
-  /** Optional initial ISO date (yyyy-mm-dd). Defaults to Dec 31 of current year. */
   defaultTo?: string;
-  /** Restrict deals to a specific user id. If provided, the user picker is hidden. */
   lockUserId?: string;
   title?: string;
 };
@@ -50,7 +48,7 @@ export function PipelineFunnel({ defaultFrom, defaultTo, lockUserId, title }: Pr
     queryKey: ["pipeline-funnel"],
     queryFn: async () => {
       const [deals, stages, profiles] = await Promise.all([
-        supabase.from("deals").select("id, gross_premium, stage_id, assigned_do_id, team_lead_id, created_at"),
+        supabase.from("deals").select("id, gross_premium, stage_id, assigned_do_id, team_lead_id, created_at, deal_type"),
         supabase.from("deal_stages").select("id, name, sort_order, is_won, is_lost").order("sort_order"),
         supabase.from("profiles").select("id, full_name"),
       ]);
@@ -62,30 +60,13 @@ export function PipelineFunnel({ defaultFrom, defaultTo, lockUserId, title }: Pr
     },
   });
 
-  const months = useMemo(() => {
-    const out: { key: string; label: string }[] = [];
-    if (!from || !to) return out;
-    const start = new Date(from);
-    const end = new Date(to);
-    if (isNaN(+start) || isNaN(+end) || start > end) return out;
-    let cur = new Date(start.getFullYear(), start.getMonth(), 1);
-    const stop = new Date(end.getFullYear(), end.getMonth(), 1);
-    while (cur <= stop) {
-      out.push({
-        key: `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, "0")}`,
-        label: cur.toLocaleString("en-US", { month: "long", year: "numeric" }),
-      });
-      cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
-    }
-    return out;
-  }, [from, to]);
-
   const filteredDeals = useMemo(() => {
     const start = new Date(from);
     const end = new Date(to);
     end.setHours(23, 59, 59, 999);
     return (data?.deals ?? []).filter((d: any) => {
       const dt = new Date(d.created_at);
+      if (isNaN(+start) || isNaN(+end)) return true;
       if (dt < start || dt > end) return false;
       if (userId !== "all") {
         if (d.assigned_do_id !== userId && d.team_lead_id !== userId) return false;
@@ -98,14 +79,31 @@ export function PipelineFunnel({ defaultFrom, defaultTo, lockUserId, title }: Pr
   const wonIds = new Set(stages.filter((s: any) => s.is_won).map((s: any) => s.id));
   const lostIds = new Set(stages.filter((s: any) => s.is_lost).map((s: any) => s.id));
 
-  const overallActive = filteredDeals.filter((d: any) => !d.stage_id || !lostIds.has(d.stage_id));
-  const overallTotal = overallActive.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
+  const overallTotal = filteredDeals.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
 
   const apply = () => {
     setFrom(fromDraft);
     setTo(toDraft);
     setUserId(userDraft);
   };
+
+  const sections: { key: string; label: string; deals: any[] }[] = [
+    {
+      key: "fresh",
+      label: "Fresh",
+      deals: filteredDeals.filter((d: any) => d.deal_type === "fresh"),
+    },
+    {
+      key: "renewal",
+      label: "Renewal",
+      deals: filteredDeals.filter((d: any) => d.deal_type === "renewal"),
+    },
+    {
+      key: "pipeline",
+      label: "Pipeline",
+      deals: filteredDeals.filter((d: any) => d.stage_id && !wonIds.has(d.stage_id) && !lostIds.has(d.stage_id)),
+    },
+  ];
 
   return (
     <div className="rounded-lg border bg-card">
@@ -127,34 +125,34 @@ export function PipelineFunnel({ defaultFrom, defaultTo, lockUserId, title }: Pr
           </Select>
         )}
         <Button variant="outline" onClick={apply}>Apply</Button>
-        <div className="ml-auto text-sm">
-          <span className="text-lg font-semibold tabular-nums">{fmtPKR(overallTotal)}</span>
-          <span className="text-muted-foreground ml-2">· {overallActive.length} deals</span>
-        </div>
+        <Link to="/master" search={{ tab: "pipeline" }} className="ml-auto">
+          <Button variant="outline" size="sm">Setup pipelines</Button>
+        </Link>
       </div>
 
       {title && <div className="px-4 pt-3 text-sm font-medium">{title}</div>}
 
-      {/* Monthly rows */}
-      <div className="p-4 space-y-6 overflow-x-auto">
-        {months.map((m) => {
-          const monthDeals = filteredDeals.filter((d: any) => {
-            const dt = new Date(d.created_at);
-            const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
-            return key === m.key;
-          });
-          const active = monthDeals.filter((d: any) => d.stage_id && !wonIds.has(d.stage_id) && !lostIds.has(d.stage_id));
-          const activeTotal = active.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
+      {/* Overall total */}
+      <div className="text-center pt-4">
+        <span className="text-xl font-semibold tabular-nums">{fmtPKR(overallTotal)}</span>
+        <span className="text-muted-foreground ml-2 text-sm">· {filteredDeals.length} deals</span>
+      </div>
+
+      {/* Sections */}
+      <div className="p-4 space-y-8 overflow-x-auto">
+        {sections.map((sec) => {
+          const inProgress = sec.deals.filter((d: any) => d.stage_id && !wonIds.has(d.stage_id) && !lostIds.has(d.stage_id));
+          const inProgressTotal = inProgress.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
           return (
-            <div key={m.key}>
+            <div key={sec.key}>
               <div className="text-center mb-2">
-                <span className="text-primary font-semibold">{m.label}</span>
-                <span className="text-sm ml-3 tabular-nums font-medium">{fmtPKR(activeTotal)}</span>
-                <span className="text-sm text-muted-foreground ml-2">· {active.length} deals in progress</span>
+                <span className="text-primary font-semibold">{sec.label}</span>
+                <span className="text-sm ml-3 tabular-nums font-medium">{fmtPKR(inProgressTotal)}</span>
+                <span className="text-sm text-muted-foreground ml-2">· {inProgress.length} deals in progress</span>
               </div>
               <div className="flex gap-0 min-w-max">
                 {stages.map((s: any, idx: number) => {
-                  const list = monthDeals.filter((d: any) => d.stage_id === s.id);
+                  const list = sec.deals.filter((d: any) => d.stage_id === s.id);
                   const total = list.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
                   const color = stageColor(s.name);
                   const isFirst = idx === 0;
@@ -181,8 +179,8 @@ export function PipelineFunnel({ defaultFrom, defaultTo, lockUserId, title }: Pr
             </div>
           );
         })}
-        {months.length === 0 && (
-          <div className="text-center text-sm text-muted-foreground py-8">Select a valid date range.</div>
+        {stages.length === 0 && (
+          <div className="text-center text-sm text-muted-foreground py-8">No pipeline stages configured.</div>
         )}
       </div>
     </div>
