@@ -9,6 +9,8 @@ import { Briefcase, TrendingUp, CheckCircle2, XCircle, Activity, Wallet, BadgePe
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
 import { useAuth } from "@/lib/auth";
 import { Progress } from "@/components/ui/progress";
+import { PipelineFunnel } from "@/components/PipelineFunnel";
+
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
