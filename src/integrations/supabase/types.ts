@@ -1068,13 +1068,21 @@ export type Database = {
           client_id: string | null
           created_at: string
           created_by: string | null
-          deal_id: string
+          deal_id: string | null
+          description: string | null
           due_date: string | null
           id: string
+          installment_index: number | null
+          installment_total: number | null
+          insurance_type_id: string | null
           invoice_kind: string
           invoice_number: string
           issue_date: string
           notes: string | null
+          parent_invoice_id: string | null
+          payment_schedule:
+            | Database["public"]["Enums"]["payment_schedule_type"]
+            | null
           receivable_id: string | null
           rejected_at: string | null
           rejected_by: string | null
@@ -1090,13 +1098,21 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           created_by?: string | null
-          deal_id: string
+          deal_id?: string | null
+          description?: string | null
           due_date?: string | null
           id?: string
+          installment_index?: number | null
+          installment_total?: number | null
+          insurance_type_id?: string | null
           invoice_kind?: string
           invoice_number?: string
           issue_date?: string
           notes?: string | null
+          parent_invoice_id?: string | null
+          payment_schedule?:
+            | Database["public"]["Enums"]["payment_schedule_type"]
+            | null
           receivable_id?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
@@ -1112,13 +1128,21 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           created_by?: string | null
-          deal_id?: string
+          deal_id?: string | null
+          description?: string | null
           due_date?: string | null
           id?: string
+          installment_index?: number | null
+          installment_total?: number | null
+          insurance_type_id?: string | null
           invoice_kind?: string
           invoice_number?: string
           issue_date?: string
           notes?: string | null
+          parent_invoice_id?: string | null
+          payment_schedule?:
+            | Database["public"]["Enums"]["payment_schedule_type"]
+            | null
           receivable_id?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
@@ -1141,6 +1165,20 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_insurance_type_id_fkey"
+            columns: ["insurance_type_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_parent_invoice_id_fkey"
+            columns: ["parent_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {

@@ -38,11 +38,14 @@ function ReimbursementsPage() {
         sb.from("profiles").select("id, full_name, email"),
         sb.from("expense_categories").select("id, name, parent_id"),
       ]);
+      const allCats = (cats.data ?? []) as any[];
+      const rmbParent = allCats.find((c) => c.slug === "reimbursement");
+      const rmbCats = rmbParent ? allCats.filter((c) => c.parent_id === rmbParent.id) : allCats.filter((c) => !c.parent_id);
       return {
         rows: rmb.data ?? [],
         profs: new Map<string, any>((profs.data ?? []).map((p: any) => [p.id, p])),
-        cats: (cats.data ?? []).filter((c: any) => !c.parent_id),
-        catMap: new Map<string, any>((cats.data ?? []).map((c: any) => [c.id, c])),
+        cats: rmbCats,
+        catMap: new Map<string, any>(allCats.map((c: any) => [c.id, c])),
       };
     },
   });
@@ -84,7 +87,7 @@ function ReimbursementsPage() {
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">{isAdmin ? "All reimbursement requests" : "Your reimbursement requests"}</div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1"/>New Request</Button></DialogTrigger>
+          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1"/>New Reimbursement</Button></DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader><DialogTitle>Submit Reimbursement</DialogTitle></DialogHeader>
             <div className="grid grid-cols-2 gap-3">

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -9,14 +10,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Shield, User, Lock, Bell, Monitor } from "lucide-react";
+import { listAllSessions, revokeUserSessions } from "@/lib/sessions.functions";
+import { fmtDate } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
 });
 
 function SettingsPage() {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <PageHeader title="Settings" subtitle="Manage your profile, password, notifications and security." />
@@ -26,13 +32,13 @@ function SettingsPage() {
           <TabsTrigger value="password"><Lock className="w-4 h-4 mr-1.5"/>Password</TabsTrigger>
           <TabsTrigger value="notifications"><Bell className="w-4 h-4 mr-1.5"/>Notifications</TabsTrigger>
           <TabsTrigger value="security"><Shield className="w-4 h-4 mr-1.5"/>Security</TabsTrigger>
-          <TabsTrigger value="sessions"><Monitor className="w-4 h-4 mr-1.5"/>Sessions</TabsTrigger>
+          {isAdmin && <TabsTrigger value="sessions"><Monitor className="w-4 h-4 mr-1.5"/>Sessions</TabsTrigger>}
         </TabsList>
         <TabsContent value="profile"><ProfileTab/></TabsContent>
         <TabsContent value="password"><PasswordTab/></TabsContent>
         <TabsContent value="notifications"><NotificationsTab/></TabsContent>
         <TabsContent value="security"><SecurityTab/></TabsContent>
-        <TabsContent value="sessions"><SessionsTab/></TabsContent>
+        {isAdmin && <TabsContent value="sessions"><SessionsTab/></TabsContent>}
       </Tabs>
     </div>
   );
@@ -146,22 +152,91 @@ function SecurityTab() {
 }
 
 function SessionsTab() {
-  const [busy, setBusy] = useState(false);
+  const qc = useQueryClient();
+  const listFn = useServerFn(listAllSessions);
+  const revokeFn = useServerFn(revokeUserSessions);
+  const [busyUser, setBusyUser] = useState<string | null>(null);
+  const [signOutBusy, setSignOutBusy] = useState(false);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-sessions"],
+    queryFn: async () => await listFn({ data: undefined as any }),
+  });
+
+  const revoke = async (user_id: string, email?: string) => {
+    if (!confirm(`Sign out all sessions for ${email ?? user_id}?`)) return;
+    setBusyUser(user_id);
+    try {
+      await revokeFn({ data: { user_id } });
+      toast.success("Sessions revoked");
+      qc.invalidateQueries({ queryKey: ["admin-sessions"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally { setBusyUser(null); }
+  };
+
   const signOutOthers = async () => {
-    setBusy(true);
+    setSignOutBusy(true);
     try {
       await supabase.auth.signOut({ scope: "others" });
-      toast.success("Signed out of other sessions");
-    } catch (e) { toast.error((e as Error).message); }
-    finally { setBusy(false); }
+      toast.success("Signed out of your other sessions");
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSignOutBusy(false); }
   };
+
+  const sessions: any[] = (data as any)?.sessions ?? [];
+
   return (
-    <Card>
-      <CardHeader><CardTitle className="text-base">Session Management</CardTitle><CardDescription>Manage active sessions across devices.</CardDescription></CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">You're currently signed in on this device. Sign out of all other browsers or devices you may have used.</p>
-        <Button variant="destructive" onClick={signOutOthers} disabled={busy}>Sign out of other sessions</Button>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader><CardTitle className="text-base">Your other sessions</CardTitle><CardDescription>Sign out any other browsers or devices where your account is signed in.</CardDescription></CardHeader>
+        <CardContent>
+          <Button variant="outline" onClick={signOutOthers} disabled={signOutBusy}>Sign out of my other sessions</Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">All active sessions (Admin)</CardTitle>
+          <CardDescription>Revoke sessions for any user across the organization.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          {isLoading && <div className="p-4 text-sm text-muted-foreground">Loading sessions…</div>}
+          {error && <div className="p-4 text-sm text-destructive">{(error as Error).message}</div>}
+          {!isLoading && !error && (
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Device / User-Agent</TableHead>
+                <TableHead>IP</TableHead>
+                <TableHead>Signed in</TableHead>
+                <TableHead>Expires</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {sessions.length === 0 && (
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No active sessions</TableCell></TableRow>
+                )}
+                {sessions.map((s) => (
+                  <TableRow key={s.session_id}>
+                    <TableCell className="font-medium">{s.email ?? s.user_id}</TableCell>
+                    <TableCell className="text-xs max-w-xs truncate" title={s.user_agent ?? ""}>{s.user_agent ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{s.ip ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{s.created_at ? fmtDate(s.created_at) : "—"}</TableCell>
+                    <TableCell className="text-xs">{s.not_after ? fmtDate(s.not_after) : "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="destructive" disabled={busyUser === s.user_id} onClick={() => revoke(s.user_id, s.email)}>
+                        {busyUser === s.user_id ? "Revoking…" : "Revoke"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+          <div className="p-3 text-xs text-muted-foreground">Revoking signs the user out of every device they are logged into.</div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
