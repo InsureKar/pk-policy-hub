@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -9,14 +10,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Shield, User, Lock, Bell, Monitor } from "lucide-react";
+import { listAllSessions, revokeUserSessions } from "@/lib/sessions.functions";
+import { fmtDate } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
 });
 
 function SettingsPage() {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <PageHeader title="Settings" subtitle="Manage your profile, password, notifications and security." />
@@ -26,13 +32,13 @@ function SettingsPage() {
           <TabsTrigger value="password"><Lock className="w-4 h-4 mr-1.5"/>Password</TabsTrigger>
           <TabsTrigger value="notifications"><Bell className="w-4 h-4 mr-1.5"/>Notifications</TabsTrigger>
           <TabsTrigger value="security"><Shield className="w-4 h-4 mr-1.5"/>Security</TabsTrigger>
-          <TabsTrigger value="sessions"><Monitor className="w-4 h-4 mr-1.5"/>Sessions</TabsTrigger>
+          {isAdmin && <TabsTrigger value="sessions"><Monitor className="w-4 h-4 mr-1.5"/>Sessions</TabsTrigger>}
         </TabsList>
         <TabsContent value="profile"><ProfileTab/></TabsContent>
         <TabsContent value="password"><PasswordTab/></TabsContent>
         <TabsContent value="notifications"><NotificationsTab/></TabsContent>
         <TabsContent value="security"><SecurityTab/></TabsContent>
-        <TabsContent value="sessions"><SessionsTab/></TabsContent>
+        {isAdmin && <TabsContent value="sessions"><SessionsTab/></TabsContent>}
       </Tabs>
     </div>
   );
