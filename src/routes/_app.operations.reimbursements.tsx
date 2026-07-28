@@ -38,11 +38,14 @@ function ReimbursementsPage() {
         sb.from("profiles").select("id, full_name, email"),
         sb.from("expense_categories").select("id, name, parent_id"),
       ]);
+      const allCats = (cats.data ?? []) as any[];
+      const rmbParent = allCats.find((c) => c.slug === "reimbursement");
+      const rmbCats = rmbParent ? allCats.filter((c) => c.parent_id === rmbParent.id) : allCats.filter((c) => !c.parent_id);
       return {
         rows: rmb.data ?? [],
         profs: new Map<string, any>((profs.data ?? []).map((p: any) => [p.id, p])),
-        cats: (cats.data ?? []).filter((c: any) => !c.parent_id),
-        catMap: new Map<string, any>((cats.data ?? []).map((c: any) => [c.id, c])),
+        cats: rmbCats,
+        catMap: new Map<string, any>(allCats.map((c: any) => [c.id, c])),
       };
     },
   });
