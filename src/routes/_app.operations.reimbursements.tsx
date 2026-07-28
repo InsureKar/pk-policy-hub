@@ -84,7 +84,7 @@ function ReimbursementsPage() {
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">{isAdmin ? "All reimbursement requests" : "Your reimbursement requests"}</div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1"/>New Request</Button></DialogTrigger>
+          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1"/>New Reimbursement</Button></DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader><DialogTitle>Submit Reimbursement</DialogTitle></DialogHeader>
             <div className="grid grid-cols-2 gap-3">
