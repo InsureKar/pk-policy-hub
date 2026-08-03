@@ -14,10 +14,29 @@ dist-ssr
 .vinxi
 .tanstack/**
 .nitro
+
+# Local-only / machine-specific files (e.g. *.local overrides)
 *.local
+
+# ---------------------------------------------------------------------------
+# Environment files
+# ---------------------------------------------------------------------------
+# Vite loads `.env*` from the project root. Real credentials must never be
+# committed. Lovable staging injects platform `SUPABASE_*` secrets and may keep
+# its own editor `.env` for build-time `VITE_*` — that is separate from Git.
+#
+# `.env`              — default local env file (copy from `.env.example`)
+# `.env.*`            — mode-specific files (`.env.development`, `.env.production`, …)
+# `!.env.example`     — committed template with placeholders only
+# `.env*.local`       — explicit local overrides (also covered by `*.local` above)
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
 
 # Wrangler / Cloudflare
 .wrangler/
+# Cloudflare Workers local secrets file (never commit)
 .dev.vars
 
 # Editor directories and files
