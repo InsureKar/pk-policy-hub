@@ -355,6 +355,8 @@ Database changes belong in `supabase/migrations/`. Prefer additive, reviewable m
 
 This repository has **two-way sync enabled with Lovable** on the `lovable_bot` branch.
 
+**Preferred release path:** feature branch → **`lovable_bot` (staging)** → test on Lovable preview → PR **`lovable_bot` → `main`** (production release) → tag the release on `main`.
+
 ### Branches
 
 #### `lovable_bot`
@@ -368,17 +370,16 @@ This repository has **two-way sync enabled with Lovable** on the `lovable_bot` b
 #### `main`
 
 - Production branch — keep it clean and release-ready.
-- Production app tracks intentional merges here.
+- Production app (e.g. Vercel) should track intentional merges here.
 - Changes that originated in Lovable should be **merged or cherry-picked intentionally**, not assumed to be production-ready by default.
 
 ### Syncing local work into Lovable (staging)
 
-To push local development into Lovable / staging:
-
-1. Create a feature branch from an up-to-date base (`main` or the appropriate starting point).
+1. Create a feature branch from an up-to-date base (`main` preferred, or `lovable_bot` if you must match staging).
 2. Commit your work on that feature branch.
 3. Merge (or open a PR into) **`lovable_bot`**.
 4. Lovable syncs `lovable_bot`; verify on the staging URL.
+5. If you added a migration, apply it to the **staging** Supabase project (`npx supabase db push` linked to staging) before relying on new schema in preview.
 
 ```sh
 git checkout -b feature/your-change
@@ -391,21 +392,73 @@ git push origin lovable_bot
 
 ### Releasing to production
 
-To ship a feature (whether it was built locally or in Lovable):
+After staging looks good on Lovable preview:
 
-1. Open a **pull request into `main`** from:
-   - your local feature branch, **or**
-   - `lovable_bot` (after staging validation)
+1. Open a **pull request into `main` from `lovable_bot`** (recommended path).
 2. Review for production readiness (migrations, RLS, role behavior, secrets).
 3. Merge the PR to `main` when approved.
+4. If there are new migrations, apply them to the **production** Supabase project before/with the deploy that needs them.
+5. Tag the release on `main` (see below).
 
 ```sh
-# Example: PR from a feature branch
-gh pr create --base main --head feature/your-change
-
-# Example: PR from staging after Lovable work is validated
-gh pr create --base main --head lovable_bot
+# Recommended: release from staging after validation
+gh pr create --base main --head lovable_bot \
+  --title "Release: <short summary>" \
+  --body "## Summary
+- …
+## Staging
+- Verified on https://pk-policy-hub.lovable.app/
+## Migrations
+- [ ] None / [ ] Applied to production Supabase
+"
 ```
+
+### Release tags (convention)
+
+Tag **only on `main`**, after the release PR is merged. Use [Semantic Versioning](https://semver.org/):
+
+| Change type | Version bump | Example tag |
+| --- | --- | --- |
+| Bug fix / docs / small safe tweak | Patch | `v1.0.1` |
+| New feature, backward compatible | Minor | `v1.1.0` |
+| Breaking schema/API/behavior | Major | `v2.0.0` |
+
+Annotated tag + push:
+
+```sh
+git checkout main
+git pull origin main
+
+# Pick the next version intentionally (do not retag)
+git tag -a v1.0.0 -m "Release v1.0.0
+
+- Summary of what shipped
+- Staging verified on Lovable preview
+"
+
+git push origin main
+git push origin v1.0.0
+```
+
+Optional GitHub Release UI from that tag:
+
+```sh
+gh release create v1.0.0 --title "v1.0.0" --notes "- …"
+```
+
+Rules:
+
+- Tags are **immutable pointers** to a production commit — do not move/delete published tags.
+- One tag per production ship (not on every staging merge to `lovable_bot`).
+- Start at `v1.0.0` for the first production cut; bump from there.
+- Include migration notes in the tag/release body when schema changed.
+
+### Generated files: `src/routeTree.gen.ts`
+
+- **Tracked in Git** — do **not** add it to `.gitignore`.
+- **Auto-generated** by TanStack Router when routes change — never hand-edit.
+- **Do push it** when `npm run dev` / build regenerates it as part of real route or Start tooling updates (include it in the same commit as the route change).
+- If it changed accidentally with no route work, you can `git restore src/routeTree.gen.ts` — but if the new `Register` / SSR types block appears after upgrading tooling, **commit it** so CI and teammates match your local tree.
 
 ### Lovable history rules
 
@@ -423,7 +476,7 @@ See [`AGENTS.md`](./AGENTS.md). In short:
 
 - All pages live under `src/routes/` (TanStack file routing). Do not invent `src/pages/` or Next.js-style `app/` layouts.
 - Authenticated app routes use the `_app` pathless layout (`src/routes/_app.tsx`).
-- `src/routeTree.gen.ts` is generated — never hand-edit.
+- `src/routeTree.gen.ts` is generated — never hand-edit. It **is** committed and pushed when routes/tooling regenerate it (see Git Workflow).
 
 ### Data access
 

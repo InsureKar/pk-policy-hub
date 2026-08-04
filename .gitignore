@@ -39,6 +39,12 @@ dist-ssr
 # Cloudflare Workers local secrets file (never commit)
 .dev.vars
 
+# Supabase CLI local link/cache (project-ref, versions) — never commit
+supabase/.temp/
+
+# Cursor IDE (plans, local agent state) — not application source
+.cursor/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
