@@ -50,45 +50,6 @@ There is **no separate Express API**. Most CRUD goes browser → Supabase under 
 
 ---
 
-## Project Structure
-
-```
-.
-├── src/
-│   ├── routes/                 # File-based routes (pages + layouts)
-│   │   ├── __root.tsx          # HTML shell, providers, error/404
-│   │   ├── auth.tsx            # Sign-in / forgot password
-│   │   ├── reset-password.tsx
-│   │   ├── _app.tsx            # Authenticated layout + AppShell
-│   │   └── _app.*.tsx          # Feature pages (dashboard, deals, accounts, …)
-│   ├── components/             # AppShell, shared UI, shadcn under ui/
-│   ├── lib/                    # auth, theme, calc, format, server functions
-│   ├── integrations/
-│   │   ├── supabase/           # clients, auth middleware, generated types
-│   │   └── lovable/            # Lovable cloud auth helper
-│   ├── hooks/
-│   ├── router.tsx              # Router + QueryClient
-│   ├── start.ts                # Start middleware (attach Supabase JWT)
-│   ├── server.ts               # SSR entry / error page wrapper
-│   ├── routeTree.gen.ts        # Generated — do not edit by hand
-│   └── styles.css              # Tailwind + design tokens
-├── supabase/
-│   ├── config.toml
-│   └── migrations/             # Schema, RLS, triggers (source of truth)
-├── .lovable/                   # Lovable metadata / plans
-├── docs/ENV_REVIEW.md          # Env-var strategy findings (local + Lovable)
-├── .env.example                # Env template (placeholders only; commit this)
-├── AGENTS.md                   # Agent rules for Lovable-connected repos
-├── CODEBASE_OVERVIEW.md        # Deep architecture onboarding
-├── components.json             # shadcn config
-├── vite.config.ts              # Lovable TanStack Start Vite config
-└── package.json
-```
-
-Routing conventions are documented in [`src/routes/README.md`](./src/routes/README.md).
-
----
-
 ## Local Development
 
 This guide gets a **new developer** from zero to first Super Admin login against their **own** Supabase project.
@@ -392,66 +353,13 @@ git push origin lovable_bot
 
 ### Releasing to production
 
-After staging looks good on Lovable preview:
+After staging looks good on Lovable preview (when applicable):
 
-1. Open a **pull request into `main` from `lovable_bot`** (recommended path).
+1. Open a **pull request into `main`** on GitHub (from your feature/fix branch, or from `lovable_bot` after staging validation). Use the GitHub web UI — see **[Release Process](#release-process)**.
 2. Review for production readiness (migrations, RLS, role behavior, secrets).
-3. Merge the PR to `main` when approved.
+3. Prefer **Squash and merge** into `main`.
 4. If there are new migrations, apply them to the **production** Supabase project before/with the deploy that needs them.
-5. Tag the release on `main` (see below).
-
-```sh
-# Recommended: release from staging after validation
-gh pr create --base main --head lovable_bot \
-  --title "Release: <short summary>" \
-  --body "## Summary
-- …
-## Staging
-- Verified on https://pk-policy-hub.lovable.app/
-## Migrations
-- [ ] None / [ ] Applied to production Supabase
-"
-```
-
-### Release tags (convention)
-
-Tag **only on `main`**, after the release PR is merged. Use [Semantic Versioning](https://semver.org/):
-
-| Change type | Version bump | Example tag |
-| --- | --- | --- |
-| Bug fix / docs / small safe tweak | Patch | `v1.0.1` |
-| New feature, backward compatible | Minor | `v1.1.0` |
-| Breaking schema/API/behavior | Major | `v2.0.0` |
-
-Annotated tag + push:
-
-```sh
-git checkout main
-git pull origin main
-
-# Pick the next version intentionally (do not retag)
-git tag -a v1.0.0 -m "Release v1.0.0
-
-- Summary of what shipped
-- Staging verified on Lovable preview
-"
-
-git push origin main
-git push origin v1.0.0
-```
-
-Optional GitHub Release UI from that tag:
-
-```sh
-gh release create v1.0.0 --title "v1.0.0" --notes "- …"
-```
-
-Rules:
-
-- Tags are **immutable pointers** to a production commit — do not move/delete published tags.
-- One tag per production ship (not on every staging merge to `lovable_bot`).
-- Start at `v1.0.0` for the first production cut; bump from there.
-- Include migration notes in the tag/release body when schema changed.
+5. Create the Git tag and GitHub Release on `main` as described in **[Release Process](#release-process)**.
 
 ### Generated files: `src/routeTree.gen.ts`
 
@@ -467,6 +375,123 @@ See [`AGENTS.md`](./AGENTS.md). In short:
 - **Do not force-push**, rebase, amend, or squash **already-pushed** history on the Lovable-connected branch.
 - Rewriting published history breaks Lovable’s sync and can erase editor history.
 - Keep `lovable_bot` in a working state — every push syncs into the Lovable editor.
+
+---
+
+## Release Process
+
+This section covers how we ship to production using **standard Git commands** and the **GitHub website only**. You do not need the GitHub CLI (`gh`).
+
+### Important: tags are not branches
+
+Version numbers such as `v1.0.0`, `v1.0.1`, or `v1.1.0` are **Git tags** (and later **GitHub Releases**). They are **not**:
+
+- Branch names (do **not** create a branch called `v1.0.0`)
+- PR titles (a PR can mention the version in its description, but the version itself is the tag)
+
+Everyday work stays on normal branches like `feature/…` or `fix/…`.
+
+### Concepts (quick glossary)
+
+| Concept | What it is |
+| --- | --- |
+| **Feature / fix branch** | A short-lived branch where you commit work (`feature/add-invoices`, `fix/login-redirect`). |
+| **Pull Request (PR)** | A GitHub review request to merge your branch into `main`. Created and merged in the browser. |
+| **Git tag** | A named pointer to an exact commit on `main` (e.g. `v1.0.0`). Created with `git tag`, then pushed. |
+| **GitHub Release** | A GitHub UI page attached to a tag, with title and release notes for humans. Optional but recommended. |
+
+### Semantic Versioning (how to pick the next tag)
+
+Use [Semantic Versioning](https://semver.org/): `vMAJOR.MINOR.PATCH`
+
+| Bump | When | Example |
+| --- | --- | --- |
+| **PATCH** | Bug fixes, docs, small safe tweaks | `v1.0.0` → `v1.0.1` |
+| **MINOR** | New backwards-compatible features | `v1.0.1` → `v1.1.0` |
+| **MAJOR** | Breaking changes (API, schema, behavior users must adapt to) | `v1.1.0` → `v2.0.0` |
+
+Start production at `v1.0.0`. Do not move or reuse an existing tag.
+
+### Step-by-step release workflow
+
+#### 1. Develop on a feature or fix branch
+
+```sh
+git checkout main
+git pull origin main
+git checkout -b feature/your-change
+# …commit your work…
+git push -u origin feature/your-change
+```
+
+(Optional for this project: also merge into `lovable_bot` first and verify on the Lovable staging preview — see [Git Workflow](#git-workflow).)
+
+#### 2. Open a Pull Request targeting `main` (GitHub web UI)
+
+1. Open the repository on GitHub.
+2. You should see a banner to open a PR for your recently pushed branch, or go to **Pull requests → New pull request**.
+3. Set **base** = `main` and **compare** = your feature/fix branch (or `lovable_bot` if releasing from staging).
+4. Add a clear title and description (what changed, how to test, migrations if any).
+5. Create the pull request.
+
+#### 3. Review and test
+
+- Get review as required by the team.
+- Confirm staging/manual testing is done.
+- Call out DB migrations and any env var needs in the PR.
+
+#### 4. Squash and merge into `main`
+
+On the PR page in GitHub:
+
+1. Prefer **Squash and merge** so `main` stays a clean, linear history (one commit per PR), unless there is a strong reason to use **Create a merge commit** or **Rebase and merge**.
+2. Confirm the squash commit message is readable.
+3. Merge, then delete the feature branch if prompted.
+
+#### 5. Tag the release on `main` (Git)
+
+After the PR is merged, tag the commit that is now on `main`:
+
+```sh
+git checkout main
+git pull
+git tag -a v1.0.0 -m "v1.0.0"
+git push origin v1.0.0
+```
+
+Replace `v1.0.0` with the correct next SemVer. Run these from a clean checkout of the latest `main` so the tag points at the intended release commit.
+
+#### 6. Create the GitHub Release (GitHub web UI)
+
+1. On GitHub: **Repository → Releases → Draft a new release** (or **Releases → New release**).
+2. **Choose an existing tag** → select `v1.0.0` (the tag you just pushed). Do not create a new branch.
+3. Set a **Release title** (often the same as the tag, e.g. `v1.0.0`).
+4. Write **Release notes** (what shipped, migrations, breaking changes).
+5. Click **Publish release**.
+
+#### 7. Deploy
+
+Whatever hosts production (e.g. Vercel on `main`) should pick up the merged commit. Apply any **production** Supabase migrations separately if this release includes schema changes — git tags do not run migrations.
+
+### Example (end-to-end)
+
+1. `git checkout -b feature/renewals-filter` → commit → `git push -u origin feature/renewals-filter`
+2. (Optional) Merge to `lovable_bot`, test on https://pk-policy-hub.lovable.app/
+3. GitHub: New PR → base `main` ← compare `feature/renewals-filter`
+4. Review + testing
+5. GitHub: **Squash and merge** into `main`
+6. Locally: `git checkout main` → `git pull` → `git tag -a v1.1.0 -m "v1.1.0"` → `git push origin v1.1.0`
+7. GitHub: **Releases → Draft a new release** → choose tag `v1.1.0` → notes → **Publish release**
+8. Confirm production deploy; run production `db push` if migrations were included
+
+### Rules of thumb
+
+- PRs target **`main`**.
+- Prefer **Squash and merge**.
+- Versions live on **tags**, not release branches.
+- Tag **after** merge, on the latest intended `main` commit.
+- Use the GitHub **website** for PRs and Releases; use **git** only for tagging/pushing the tag.
+- One production ship → one new tag (do not retag).
 
 ---
 
@@ -512,7 +537,7 @@ See [`AGENTS.md`](./AGENTS.md). In short:
 ### Commits & PRs
 
 - Use clear, intentional commit messages (avoid opaque “Changes” dumps on shared branches).
-- PRs into `main` should call out migrations, RLS impact, and role-sensitive UI.
+- PRs into `main` should call out migrations, RLS impact, and role-sensitive UI. Prefer **Squash and merge** (see [Release Process](#release-process)).
 - Validate on staging (`lovable_bot` preview) before production merge when the change is user-facing.
 - Never commit `.env`, service-role keys, or other secrets. Only `.env.example` belongs in Git.
 
