@@ -21,18 +21,15 @@ dist-ssr
 # ---------------------------------------------------------------------------
 # Environment files
 # ---------------------------------------------------------------------------
-# Vite loads `.env*` from the project root. Real credentials must never be
-# committed. Lovable staging injects platform `SUPABASE_*` secrets and may keep
-# its own editor `.env` for build-time `VITE_*` — that is separate from Git.
+# `.env` is TRACKED on purpose (public URL + anon/publishable key + project id).
+# Lovable builds inline VITE_* from the working-tree `.env`; gitignoring it
+# breaks staging previews. See https://docs.lovable.dev/features/secrets
 #
-# `.env`              — default local env file (copy from `.env.example`)
-# `.env.*`            — mode-specific files (`.env.development`, `.env.production`, …)
-# `!.env.example`     — committed template with placeholders only
-# `.env*.local`       — explicit local overrides (also covered by `*.local` above)
+# Secrets and personal overrides go in `.env.local` (wins over `.env`).
+# Also covered by `*.local` above; listed explicitly for clarity.
 # ---------------------------------------------------------------------------
-.env
-.env.*
-!.env.example
+.env.local
+.env.*.local
 
 # Wrangler / Cloudflare
 .wrangler/
