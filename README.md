@@ -44,7 +44,7 @@ Accounts are **admin-provisioned** (no public self-signup). Authorization is enf
 | Backend | Supabase — Postgres, Auth, Storage, RLS |
 | Validation | Zod (server functions) |
 | Tooling | TypeScript, Vite 8, ESLint, Prettier |
-| Hosting / build (staging) | Lovable Cloud preview only — Nitro / Cloudflare-oriented via `@lovable.dev/vite-tanstack-config`. Production hosting is not set up yet. |
+| Hosting / build | **Staging:** Lovable Cloud preview (Nitro / Cloudflare). **Production:** Vercel from `main` (Nitro `vercel` preset when `VERCEL` is set). See [`docs/HOSTING_VERCEL.md`](./docs/HOSTING_VERCEL.md). |
 
 There is **no separate Express API**. Most CRUD goes browser → Supabase under RLS. Server functions are reserved for operations that need the service role (create/delete users, password reset, lock, session admin).
 
@@ -294,16 +294,25 @@ npm run preview   # optional local smoke-check of the build
 
 ## Deployment
 
-| Environment | Branch | URL |
-| --- | --- | --- |
-| Staging | `lovable_bot` (Lovable preview) | https://pk-policy-hub.lovable.app/ |
-| Production | `main` | Not published yet |
+| Environment | Branch | Host | URL |
+| --- | --- | --- | --- |
+| Staging | `lovable_bot` | Lovable preview | https://pk-policy-hub.lovable.app/ |
+| Production | `main` | Vercel + custom domain (Hostinger DNS) | Set after first deploy — see hosting guide |
 
-Deployment is managed through the **Lovable-connected** workflow:
+### Staging (Lovable)
 
-1. Changes that land on `lovable_bot` sync into Lovable and power the **staging** preview.
-2. Production releases are intentional merges into `main` (via pull request). A production URL will be added here once it is published.
-3. Supabase (schema, Auth, Storage, RLS) is the backend; apply migrations carefully and keep staging/production data expectations clear.
+1. Merge feature work into `lovable_bot`.
+2. Lovable syncs and rebuilds the staging preview.
+3. Staging uses the tracked public `.env` for `VITE_*` (and Lovable Cloud for server secrets when connected).
+
+### Production (Vercel)
+
+1. Merge to `main` only after staging validation when the change is user-facing.
+2. Vercel auto-deploys from **`main`** (do not connect Vercel to `lovable_bot`).
+3. Set **production** Supabase env vars in the Vercel dashboard (they override the tracked staging `.env`).
+4. Apply production Supabase migrations separately with the CLI when the release includes schema changes — Vercel does **not** run migrations.
+
+Full checklist (production Supabase, env vars, Hostinger DNS, Auth URLs): **[`docs/HOSTING_VERCEL.md`](./docs/HOSTING_VERCEL.md)**.
 
 Database changes belong in `supabase/migrations/`. Prefer additive, reviewable migrations over ad-hoc production SQL.
 
@@ -545,6 +554,7 @@ Whatever hosts production (e.g. Vercel on `main`) should pick up the merged comm
 | Doc | Contents |
 | --- | --- |
 | [`docs/ENV_REVIEW.md`](./docs/ENV_REVIEW.md) | Env loading review, secrets findings, Lovable notes |
+| [`docs/HOSTING_VERCEL.md`](./docs/HOSTING_VERCEL.md) | Production: Vercel + Hostinger + Supabase |
 | [`docs/DATABASE_OVERVIEW.md`](./docs/DATABASE_OVERVIEW.md) | DB architecture, security, migrations |
 | [`docs/DATABASE_SCHEMA.md`](./docs/DATABASE_SCHEMA.md) | Per-table schema reference |
 | [`docs/DATABASE_RELATIONSHIPS.md`](./docs/DATABASE_RELATIONSHIPS.md) | Relationships + Mermaid ER diagrams |
