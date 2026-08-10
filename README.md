@@ -91,36 +91,35 @@ Optional: set `project_id` in `supabase/config.toml` to your new reference ID so
 
 ### 3. Configure local environment variables
 
+The repo ships a tracked **`.env`** with the shared staging project’s **public** values (URL, anon/publishable key, project id). Lovable needs that file in Git so previews can inline `VITE_*` at build time — [do not gitignore `.env`](https://docs.lovable.dev/features/secrets).
+
+For secrets and personal overrides, create a local file (gitignored; **wins over `.env`** for the same key):
+
 ```sh
-cp .env.example .env
+cp .env.example .env.local
 ```
 
-Edit `.env` with your new project values:
+Edit `.env.local` and set at least the service role (from Supabase → **Project Settings → API**):
 
 ```env
-VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_or_publishable_key
-VITE_SUPABASE_PROJECT_ID=YOUR_PROJECT_REF
-
-SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-SUPABASE_PUBLISHABLE_KEY=your_anon_or_publishable_key
-SUPABASE_PROJECT_ID=YOUR_PROJECT_REF
-
 # Required for /users admin APIs (create user, lock, reset password, sessions)
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
+If you use your **own** Supabase project instead of shared staging, put the full set of `VITE_*` / `SUPABASE_*` values in `.env.local` (they override the tracked `.env`). Do not commit those overrides.
+
 | File | In Git? | Purpose |
 | --- | --- | --- |
 | `.env.example` | Yes | Template with placeholders only |
-| `.env` | **No** (gitignored) | Your real local keys |
-| `.env.local` | **No** (gitignored) | Optional overrides (Vite loads these too) |
+| `.env` | **Yes** (tracked) | Shared public keys for Lovable + default local/staging |
+| `.env.local` | **No** (gitignored) | Secrets + personal overrides (takes precedence) |
 
 Rules:
 
-- Never commit `.env` or the service role key.
+- Never commit the service role key (or any true secret). Keep it in `.env.local` only.
 - Never put the service role in a `VITE_*` variable.
 - `VITE_*` values are public by design (embedded in the browser bundle); RLS protects data.
+- Host dashboards (Vercel, etc.) override file values when those env vars are set there.
 
 Full env notes: [`docs/ENV_REVIEW.md`](./docs/ENV_REVIEW.md).
 
@@ -199,7 +198,7 @@ WHERE p.id = 'PASTE_USER_UUID_HERE';
 
 You should see `role = admin`.
 
-After this first Super Admin exists, you can create more users from the app at **`/users`** (requires `SUPABASE_SERVICE_ROLE_KEY` in `.env`).
+After this first Super Admin exists, you can create more users from the app at **`/users`** (requires `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`).
 
 ### 7. Run the app and sign in
 
@@ -213,9 +212,9 @@ You should land on the dashboard with sidebar role **Super Admin**.
 
 ### 8. Checklist (fresh machine)
 
-- [ ] Supabase project created  
-- [ ] `.env` filled (including service role)  
-- [ ] `npx supabase db push` (or all migrations run in order)  
+- [ ] Supabase project created (or using shared staging `.env`)  
+- [ ] `.env.local` has `SUPABASE_SERVICE_ROLE_KEY` (and any personal overrides)  
+- [ ] `npx supabase db push` (or all migrations run in order) — skip if joining shared DB  
 - [ ] Storage bucket `crm-documents` created  
 - [ ] Auth user created + confirmed  
 - [ ] `user_roles.role = 'admin'` for that user  
@@ -237,21 +236,19 @@ You should land on the dashboard with sidebar role **Super Admin**.
 
 If your team already has a shared staging project and invites you:
 
-1. Get URL + anon key (+ service role only if you need admin APIs) from a teammate — do not invent a second schema.
-2. Put those values in `.env`.
+1. Use the tracked `.env` (public keys) as-is — do not invent a second schema.
+2. Put `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` only if you need admin APIs (ask a teammate or copy from the dashboard).
 3. **Do not** re-run migrations against a shared DB unless the team asks you to.
 4. Ask an existing Super Admin to create your login in **`/users`**, or use credentials they provide.
 
 ### Lovable / staging configuration
 
-Staging (`lovable_bot` preview) uses Lovable’s connected backend, not your personal `.env`:
+Staging (`lovable_bot` preview) depends on the **committed `.env`** for build-time `VITE_*`:
 
-1. Keep Supabase / Lovable Cloud connected in the Lovable UI so platform `SUPABASE_*` values are injected.
-2. Build-time `VITE_*` values live in Lovable’s project env / editor `.env` (not in Cloud Secrets — Lovable rejects `VITE_` names there).
-3. When merging `lovable_bot` → `main`, **do not promote a real `.env`**. Keep `.env.example` only.
+1. Keep `.env` tracked with public URL + publishable/anon key + project id. Do **not** gitignore it.
+2. Lovable Cloud Secrets can inject backend `SUPABASE_*` (including service role) when Supabase/Cloud is connected — but **not** `VITE_*` (Lovable rejects `VITE_` names in Secrets).
+3. When merging into `main`, keep the public `.env`; never add the service role to it. Production hosts (e.g. Vercel) should set their own env vars in the dashboard (those override the file).
 4. See [Lovable Secrets docs](https://docs.lovable.dev/features/secrets).
-
-> Lovable’s docs warn that gitignoring `.env` can break previews if `VITE_*` are missing from Lovable’s own config. Keep `main` clean; fix staging env inside Lovable, not by committing secrets.
 
 ### Scripts
 
@@ -539,7 +536,7 @@ Whatever hosts production (e.g. Vercel on `main`) should pick up the merged comm
 - Use clear, intentional commit messages (avoid opaque “Changes” dumps on shared branches).
 - PRs into `main` should call out migrations, RLS impact, and role-sensitive UI. Prefer **Squash and merge** (see [Release Process](#release-process)).
 - Validate on staging (`lovable_bot` preview) before production merge when the change is user-facing.
-- Never commit `.env`, service-role keys, or other secrets. Only `.env.example` belongs in Git.
+- Keep the public `.env` tracked (required for Lovable). Never commit `.env.local`, the service-role key, or other secrets.
 
 ---
 
