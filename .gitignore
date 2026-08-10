@@ -14,11 +14,33 @@ dist-ssr
 .vinxi
 .tanstack/**
 .nitro
+
+# Local-only / machine-specific files (e.g. *.local overrides)
 *.local
+
+# ---------------------------------------------------------------------------
+# Environment files
+# ---------------------------------------------------------------------------
+# `.env` is TRACKED on purpose (public URL + anon/publishable key + project id).
+# Lovable builds inline VITE_* from the working-tree `.env`; gitignoring it
+# breaks staging previews. See https://docs.lovable.dev/features/secrets
+#
+# Secrets and personal overrides go in `.env.local` (wins over `.env`).
+# Also covered by `*.local` above; listed explicitly for clarity.
+# ---------------------------------------------------------------------------
+.env.local
+.env.*.local
 
 # Wrangler / Cloudflare
 .wrangler/
+# Cloudflare Workers local secrets file (never commit)
 .dev.vars
+
+# Supabase CLI local link/cache (project-ref, versions) — never commit
+supabase/.temp/
+
+# Cursor IDE (plans, local agent state) — not application source
+.cursor/
 
 # Editor directories and files
 .vscode/*

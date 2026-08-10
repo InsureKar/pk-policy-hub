@@ -12,4 +12,8 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Pin Nitro to the Vercel preset when building on Vercel (`VERCEL=1`).
+  // Lovable sandbox builds force Cloudflare regardless of this override.
+  // Outside Lovable/Vercel, Nitro keeps its default (cloudflare-module / auto-detect).
+  nitro: process.env.VERCEL ? { preset: "vercel" } : undefined,
 });
