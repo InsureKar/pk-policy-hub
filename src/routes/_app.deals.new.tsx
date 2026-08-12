@@ -63,9 +63,28 @@ function NewDealPage() {
   const [bulkRows, setBulkRows] = useState<Array<{cover_note_number:string;policy_number:string;gross_premium:number;net_premium:number;remarks:string}>>([
     { cover_note_number: "", policy_number: "", gross_premium: 0, net_premium: 0, remarks: "" },
   ]);
+  const [dupErrors, setDupErrors] = useState<Record<number, string>>({});
   const addBulkRow = () => setBulkRows(r => [...r, { cover_note_number: "", policy_number: "", gross_premium: 0, net_premium: 0, remarks: "" }]);
   const removeBulkRow = (i: number) => setBulkRows(r => r.filter((_, idx) => idx !== i));
   const updateBulkRow = (i: number, k: string, v: any) => setBulkRows(r => r.map((row, idx) => idx === i ? { ...row, [k]: v } : row));
+  const norm = (v: string) => (v || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const checkDuplicate = async (i: number, value: string) => {
+    const n = norm(value);
+    setDupErrors(prev => { const c = { ...prev }; delete c[i]; return c; });
+    if (!n) return;
+    const localIdx = bulkRows.findIndex((r, idx) => idx !== i && norm(r.policy_number) === n);
+    if (localIdx >= 0) {
+      setDupErrors(prev => ({ ...prev, [i]: `Duplicate of row ${localIdx + 1} in this deal` }));
+      return;
+    }
+    const { data } = await supabase.rpc("deal_policy_conflict" as any, { _policy_number: value, _exclude_row: null });
+    const c: any = data;
+    if (c) {
+      const where = c.source === "deal" ? "deal" : "bulk policy on deal";
+      setDupErrors(prev => ({ ...prev, [i]: `Already used on ${where} ${c.deal_number ?? "—"}${c.client_name ? ` (${c.client_name})` : ""}` }));
+    }
+  };
+
   const bulkTotals = useMemo(() => bulkRows.reduce((a, r) => ({
     gross: a.gross + Number(r.gross_premium || 0),
     net: a.net + Number(r.net_premium || 0),
