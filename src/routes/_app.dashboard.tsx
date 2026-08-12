@@ -95,13 +95,8 @@ function DashboardPage() {
 
   const chartColors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))", "oklch(0.6 0.15 30)"];
 
-  // Business Overview: Total / Fresh / Renewal / Lost
-  const overview = [
-    { label: "Total Business", icon: Briefcase, value: fmtPKR(totalGross), sub: `${activeDeals.length} deals (Fresh + Renewal)`, tone: "primary" },
-    { label: "Fresh", icon: Sparkles, value: fmtPKR(sumGross(freshDeals)), sub: `${freshDeals.length} deals`, tone: "success" },
-    { label: "Renewal", icon: RefreshCw, value: fmtPKR(sumGross(renewalDeals)), sub: `${renewalDeals.length} deals`, tone: "accent" },
-    { label: "Lost", icon: XCircle, value: fmtPKR(sumGross(lostDeals)), sub: `${lostDeals.length} deals`, tone: "destructive" },
-  ];
+  // Business Overview is rendered by the Pipeline Funnel (Fresh / Renewal / Pipeline)
+
 
   // Targets (for DO/TL and admin viewing self)
   const monthKey = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
@@ -153,25 +148,9 @@ function DashboardPage() {
       {/* Business Overview */}
       <div className="mb-6">
         <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Business Overview</div>
-        {canSeeFinancials && (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
-            {overview.map((o) => {
-              const Icon = o.icon;
-              return (
-                <div key={o.label} className="rounded-lg border bg-card p-4">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{o.label}</span>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="text-xl font-semibold tabular-nums mt-1">{o.value}</div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">{o.sub}</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
         <PipelineFunnel />
       </div>
+
 
 
 
