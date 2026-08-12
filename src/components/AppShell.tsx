@@ -6,7 +6,7 @@ import {
   Wallet2, Landmark, TrendingUp, Award, HandCoins, ReceiptText,
 } from "lucide-react";
 
-import { useAuth, type AppRole } from "@/lib/auth";
+import { useAuth, type AppRole, type AppModule } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
@@ -17,6 +17,7 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles?: AppRole[];
+  module?: AppModule;
   search?: Record<string, string>;
 };
 
@@ -25,46 +26,48 @@ type NavGroup = {
   icon: React.ComponentType<{ className?: string }>;
   items: NavItem[];
   roles?: AppRole[];
+  module?: AppModule;
   expandable?: boolean; // "+" style
 };
 
 const groups: NavGroup[] = [
   {
-    label: "Dashboard", icon: LayoutDashboard,
+    label: "Dashboard", icon: LayoutDashboard, module: "dashboard",
     items: [{ to: "/dashboard", label: "Overview", icon: LayoutDashboard }],
   },
   {
-    label: "Analytics", icon: BarChart3,
+    label: "Analytics", icon: BarChart3, module: "reports",
     items: [{ to: "/analytics", label: "Analytics", icon: BarChart3 }],
   },
   {
-    label: "Sales", icon: Briefcase,
+    label: "Sales", icon: Briefcase, module: "deals",
     items: [
       { to: "/deals", label: "Deals", icon: Briefcase },
       { to: "/deals/new", label: "New Deal", icon: Plus },
       { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
-      { to: "/clients", label: "Clients", icon: Building2 },
-      { to: "/leads/unassigned", label: "Unassigned Leads", icon: Inbox, roles: ["admin"] },
+      { to: "/clients", label: "Clients", icon: Building2, module: "clients" },
+      { to: "/leads/unassigned", label: "Unassigned Leads", icon: Inbox, module: "leads", roles: ["admin"] },
     ],
   },
   {
-    label: "Operations", icon: RefreshCw,
+    label: "Operations", icon: RefreshCw, module: "renewals",
     items: [
       { to: "/renewals", label: "Renewals", icon: RefreshCw },
       { to: "/income", label: "Income", icon: DollarSign, roles: ["admin", "management", "team_lead"] },
     ],
   },
   {
-    label: "Admin", icon: UserCog, roles: ["admin", "management"],
+    label: "Admin", icon: UserCog, roles: ["admin", "management"], module: "admin",
     items: [
       { to: "/teams", label: "Teams", icon: UsersRound, roles: ["admin", "management"] },
       { to: "/users", label: "User Management", icon: Users, roles: ["admin"] },
+      { to: "/permissions", label: "Access & Permissions", icon: Shield, roles: ["admin", "management"] },
       { to: "/review", label: "Review User", icon: UserSearch, roles: ["admin", "management"] },
       { to: "/targets", label: "Monthly Targets", icon: Target, roles: ["admin", "management"] },
     ],
   },
   {
-    label: "Accounts", icon: Wallet, roles: ["admin", "management", "team_lead", "do"],
+    label: "Accounts", icon: Wallet, module: "accounts", roles: ["admin", "management", "team_lead", "do"],
     items: [
       { to: "/accounts", label: "Dashboard", icon: LayoutDashboard },
       { to: "/accounts/receivables", label: "Receivables", icon: Receipt },
@@ -76,7 +79,7 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    label: "Operations", icon: Landmark, roles: ["admin", "management", "team_lead", "do"],
+    label: "Operations", icon: Landmark, module: "operations", roles: ["admin", "management", "team_lead", "do"],
     items: [
       { to: "/operations", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "management"] },
       { to: "/operations/payroll", label: "Payroll", icon: Wallet2, roles: ["admin", "management"] },
@@ -88,7 +91,7 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    label: "Master Data", icon: Database, roles: ["admin"], expandable: true,
+    label: "Master Data", icon: Database, module: "admin", roles: ["admin"], expandable: true,
     items: [
       { to: "/master", label: "Insurance Companies", icon: Building2, roles: ["admin"], search: { tab: "companies" } },
       { to: "/master", label: "Commission Settings", icon: DollarSign, roles: ["admin"], search: { tab: "commissions" } },
@@ -96,13 +99,13 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    label: "Settings", icon: Settings2,
+    label: "Settings", icon: Settings2, module: "settings",
     items: [{ to: "/settings", label: "Settings", icon: Settings2 }],
   },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { profile, roles, signOut, hasRole } = useAuth();
+  const { profile, roles, signOut, hasRole, can } = useAuth();
   const { theme, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const primaryRole = roles[0] ?? "do";
@@ -122,7 +125,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav className="flex-1 px-2 py-3 space-y-1 overflow-y-auto">
           {groups.map((g) => {
             if (g.roles && !hasRole(g.roles)) return null;
-            const visibleItems = g.items.filter(i => !i.roles || hasRole(i.roles));
+            if (g.module && !can(g.module)) return null;
+            const visibleItems = g.items.filter(i => (!i.roles || hasRole(i.roles)) && (!i.module || can(i.module)));
             if (visibleItems.length === 0) return null;
             // Single-item groups render flat (no collapsible header)
             if (visibleItems.length === 1 && !g.expandable) {

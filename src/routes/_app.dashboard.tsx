@@ -43,19 +43,19 @@ function DashboardPage() {
   const isLost = (d: any) => d.stage_id && lostStageIds.has(d.stage_id);
   const isWon = (d: any) => d.stage_id && wonStageIds.has(d.stage_id);
 
-  // Business segregation
+  // MANDATORY RULE: Total Business = Fresh Business + Renewal Business (Lost excluded)
   const freshDeals = data.deals.filter(d => d.deal_type === "fresh" && !isLost(d));
   const renewalDeals = data.deals.filter(d => d.deal_type === "renewal" && !isLost(d));
   const lostDeals = data.deals.filter(isLost);
-  const activeDeals = data.deals.filter(d => !isLost(d)); // Total = Fresh + Renewal + Pipeline (all non-lost)
+  const activeDeals = [...freshDeals, ...renewalDeals];
 
   const sumGross = (arr: any[]) => arr.reduce((a, d) => a + Number(d.gross_premium || 0), 0);
   const sumIncome = (arr: any[]) => arr.reduce((a, d) => a + Number(d.total_income || 0), 0);
   const sumNet = (arr: any[]) => arr.reduce((a, d) => a + Number(d.net_premium || 0), 0);
 
-  const totalGross = sumGross(activeDeals);
-  const totalNet = sumNet(activeDeals);
-  const totalIncome = sumIncome(activeDeals);
+  const totalGross = sumGross(freshDeals) + sumGross(renewalDeals);
+  const totalNet = sumNet(freshDeals) + sumNet(renewalDeals);
+  const totalIncome = sumIncome(freshDeals) + sumIncome(renewalDeals);
   const tagged = activeDeals.reduce((a, d) => a + computeDeal({
     gross_premium: Number(d.gross_premium), commission_percentage: Number(d.commission_percentage),
     marketing_budget_percentage: Number(d.marketing_budget_percentage),
@@ -97,7 +97,7 @@ function DashboardPage() {
 
   // Business Overview: Total / Fresh / Renewal / Lost
   const overview = [
-    { label: "Total Business", icon: Briefcase, value: fmtPKR(totalGross), sub: `${activeDeals.length} deals (Fresh + Renewal + Pipeline)`, tone: "primary" },
+    { label: "Total Business", icon: Briefcase, value: fmtPKR(totalGross), sub: `${activeDeals.length} deals (Fresh + Renewal)`, tone: "primary" },
     { label: "Fresh", icon: Sparkles, value: fmtPKR(sumGross(freshDeals)), sub: `${freshDeals.length} deals`, tone: "success" },
     { label: "Renewal", icon: RefreshCw, value: fmtPKR(sumGross(renewalDeals)), sub: `${renewalDeals.length} deals`, tone: "accent" },
     { label: "Lost", icon: XCircle, value: fmtPKR(sumGross(lostDeals)), sub: `${lostDeals.length} deals`, tone: "destructive" },
@@ -153,8 +153,26 @@ function DashboardPage() {
       {/* Business Overview */}
       <div className="mb-6">
         <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Business Overview</div>
+        {canSeeFinancials && (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+            {overview.map((o) => {
+              const Icon = o.icon;
+              return (
+                <div key={o.label} className="rounded-lg border bg-card p-4">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{o.label}</span>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="text-xl font-semibold tabular-nums mt-1">{o.value}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{o.sub}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
         <PipelineFunnel />
       </div>
+
 
 
       {/* Target Achievement widget (DO/TL only, but Admin also sees if they have targets set) */}
