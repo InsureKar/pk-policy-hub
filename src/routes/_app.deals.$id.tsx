@@ -366,10 +366,25 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
   };
 
   const updateRow = async (id: string, patch: any) => {
+    // Travel policy numbers must be unique across every record in the system
+    if (typeof patch.policy_number === "string" && patch.policy_number.trim()) {
+      const { data: conflict } = await supabase.rpc("travel_policy_conflict" as any, {
+        _policy_number: patch.policy_number, _exclude_row_id: id,
+      } as any);
+      const hit = Array.isArray(conflict) ? conflict[0] : conflict;
+      if (hit) {
+        toast.error(
+          `Policy number already exists — ${hit.source ?? "record"}${hit.reference ? ` (${hit.reference})` : ""}. Enter a unique policy number.`,
+        );
+        qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
+        return;
+      }
+    }
     const { error } = await supabase.from("travel_posting_rows").update(patch).eq("id", id);
     if (error) toast.error(error.message);
     else qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
   };
+
   const deleteRow = async (id: string) => {
     const { error } = await supabase.from("travel_posting_rows").delete().eq("id", id);
     if (error) toast.error(error.message);
