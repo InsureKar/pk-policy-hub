@@ -43,19 +43,19 @@ function DashboardPage() {
   const isLost = (d: any) => d.stage_id && lostStageIds.has(d.stage_id);
   const isWon = (d: any) => d.stage_id && wonStageIds.has(d.stage_id);
 
-  // Business segregation
+  // MANDATORY RULE: Total Business = Fresh Business + Renewal Business (Lost excluded)
   const freshDeals = data.deals.filter(d => d.deal_type === "fresh" && !isLost(d));
   const renewalDeals = data.deals.filter(d => d.deal_type === "renewal" && !isLost(d));
   const lostDeals = data.deals.filter(isLost);
-  const activeDeals = data.deals.filter(d => !isLost(d)); // Total = Fresh + Renewal + Pipeline (all non-lost)
+  const activeDeals = [...freshDeals, ...renewalDeals];
 
   const sumGross = (arr: any[]) => arr.reduce((a, d) => a + Number(d.gross_premium || 0), 0);
   const sumIncome = (arr: any[]) => arr.reduce((a, d) => a + Number(d.total_income || 0), 0);
   const sumNet = (arr: any[]) => arr.reduce((a, d) => a + Number(d.net_premium || 0), 0);
 
-  const totalGross = sumGross(activeDeals);
-  const totalNet = sumNet(activeDeals);
-  const totalIncome = sumIncome(activeDeals);
+  const totalGross = sumGross(freshDeals) + sumGross(renewalDeals);
+  const totalNet = sumNet(freshDeals) + sumNet(renewalDeals);
+  const totalIncome = sumIncome(freshDeals) + sumIncome(renewalDeals);
   const tagged = activeDeals.reduce((a, d) => a + computeDeal({
     gross_premium: Number(d.gross_premium), commission_percentage: Number(d.commission_percentage),
     marketing_budget_percentage: Number(d.marketing_budget_percentage),
