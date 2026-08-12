@@ -1364,6 +1364,39 @@ export type Database = {
           },
         ]
       }
+      permission_audit_log: {
+        Row: {
+          change_type: string
+          changed_by: string | null
+          created_at: string
+          id: string
+          module: string | null
+          new_value: string | null
+          previous_value: string | null
+          user_affected: string
+        }
+        Insert: {
+          change_type: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          module?: string | null
+          new_value?: string | null
+          previous_value?: string | null
+          user_affected: string
+        }
+        Update: {
+          change_type?: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          module?: string | null
+          new_value?: string | null
+          previous_value?: string | null
+          user_affected?: string
+        }
+        Relationships: []
+      }
       policies: {
         Row: {
           client_id: string
@@ -1803,6 +1836,7 @@ export type Database = {
           id: string
           payable_company: string | null
           policy_number: string | null
+          policy_number_norm: string | null
           posting_id: string
           premium: number
           remarks: string | null
@@ -1818,6 +1852,7 @@ export type Database = {
           id?: string
           payable_company?: string | null
           policy_number?: string | null
+          policy_number_norm?: string | null
           posting_id: string
           premium?: number
           remarks?: string | null
@@ -1833,6 +1868,7 @@ export type Database = {
           id?: string
           payable_company?: string | null
           policy_number?: string | null
+          policy_number_norm?: string | null
           posting_id?: string
           premium?: number
           remarks?: string | null
@@ -1899,6 +1935,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_module_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          level: Database["public"]["Enums"]["permission_level"]
+          module: Database["public"]["Enums"]["app_module"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level?: Database["public"]["Enums"]["permission_level"]
+          module: Database["public"]["Enums"]["app_module"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: Database["public"]["Enums"]["permission_level"]
+          module?: Database["public"]["Enums"]["app_module"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -2067,8 +2130,42 @@ export type Database = {
         }
         Returns: boolean
       }
+      module_allows: {
+        Args: {
+          _min: Database["public"]["Enums"]["permission_level"]
+          _module: Database["public"]["Enums"]["app_module"]
+        }
+        Returns: boolean
+      }
+      module_level: {
+        Args: {
+          _module: Database["public"]["Enums"]["app_module"]
+          _user: string
+        }
+        Returns: Database["public"]["Enums"]["permission_level"]
+      }
+      normalize_policy_number: { Args: { _v: string }; Returns: string }
+      perm_rank: {
+        Args: { _l: Database["public"]["Enums"]["permission_level"] }
+        Returns: number
+      }
+      travel_policy_conflict: {
+        Args: { _exclude_row?: string; _policy_number: string }
+        Returns: Json
+      }
     }
     Enums: {
+      app_module:
+        | "dashboard"
+        | "leads"
+        | "clients"
+        | "deals"
+        | "renewals"
+        | "accounts"
+        | "operations"
+        | "reports"
+        | "admin"
+        | "settings"
       app_role: "admin" | "management" | "team_lead" | "do"
       deal_type: "fresh" | "renewal"
       installment_status: "pending" | "partial" | "paid" | "overdue"
@@ -2094,6 +2191,7 @@ export type Database = {
         | "online"
         | "other"
       payment_schedule_type: "annual" | "half_yearly" | "quarterly" | "monthly"
+      permission_level: "none" | "view" | "edit" | "add"
       policy_type_kind: "single" | "bulk"
       receivable_status: "open" | "partial" | "paid" | "overdue" | "cancelled"
     }
@@ -2223,6 +2321,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_module: [
+        "dashboard",
+        "leads",
+        "clients",
+        "deals",
+        "renewals",
+        "accounts",
+        "operations",
+        "reports",
+        "admin",
+        "settings",
+      ],
       app_role: ["admin", "management", "team_lead", "do"],
       deal_type: ["fresh", "renewal"],
       installment_status: ["pending", "partial", "paid", "overdue"],
@@ -2251,6 +2361,7 @@ export const Constants = {
         "other",
       ],
       payment_schedule_type: ["annual", "half_yearly", "quarterly", "monthly"],
+      permission_level: ["none", "view", "edit", "add"],
       policy_type_kind: ["single", "bulk"],
       receivable_status: ["open", "partial", "paid", "overdue", "cancelled"],
     },
