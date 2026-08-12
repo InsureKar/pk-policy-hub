@@ -248,7 +248,16 @@ function NewDealPage() {
                         <tr key={i} className="border-t">
                           <td className="p-2">{i+1}</td>
                           <td className="p-2"><Input value={r.cover_note_number} onChange={e=>updateBulkRow(i,"cover_note_number",e.target.value)}/></td>
-                          <td className="p-2"><Input value={r.policy_number} onChange={e=>updateBulkRow(i,"policy_number",e.target.value)}/></td>
+                          <td className="p-2">
+                            <Input
+                              value={r.policy_number}
+                              aria-invalid={!!dupErrors[i]}
+                              className={dupErrors[i] ? "border-destructive" : ""}
+                              onChange={e=>updateBulkRow(i,"policy_number",e.target.value)}
+                              onBlur={e=>checkDuplicate(i, e.target.value)}
+                            />
+                            {dupErrors[i] && <p className="text-xs text-destructive mt-1">{dupErrors[i]}</p>}
+                          </td>
                           <td className="p-2"><Input type="number" step="0.01" className="text-right" value={r.gross_premium} onChange={e=>updateBulkRow(i,"gross_premium",Number(e.target.value)||0)}/></td>
                           <td className="p-2"><Input type="number" step="0.01" className="text-right" value={r.net_premium} onChange={e=>updateBulkRow(i,"net_premium",Number(e.target.value)||0)}/></td>
                           <td className="p-2"><Input value={r.remarks} onChange={e=>updateBulkRow(i,"remarks",e.target.value)}/></td>
