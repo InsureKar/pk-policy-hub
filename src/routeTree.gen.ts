@@ -20,6 +20,7 @@ import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppReviewRouteImport } from './routes/_app.review'
 import { Route as AppRenewalsRouteImport } from './routes/_app.renewals'
 import { Route as AppPipelineRouteImport } from './routes/_app.pipeline'
+import { Route as AppPermissionsRouteImport } from './routes/_app.permissions'
 import { Route as AppOperationsRouteImport } from './routes/_app.operations'
 import { Route as AppMasterRouteImport } from './routes/_app.master'
 import { Route as AppIncomeRouteImport } from './routes/_app.income'
@@ -99,6 +100,11 @@ const AppRenewalsRoute = AppRenewalsRouteImport.update({
 const AppPipelineRoute = AppPipelineRouteImport.update({
   id: '/pipeline',
   path: '/pipeline',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPermissionsRoute = AppPermissionsRouteImport.update({
+  id: '/permissions',
+  path: '/permissions',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOperationsRoute = AppOperationsRouteImport.update({
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/income': typeof AppIncomeRoute
   '/master': typeof AppMasterRoute
   '/operations': typeof AppOperationsRouteWithChildren
+  '/permissions': typeof AppPermissionsRoute
   '/pipeline': typeof AppPipelineRoute
   '/renewals': typeof AppRenewalsRoute
   '/review': typeof AppReviewRoute
@@ -282,6 +289,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/income': typeof AppIncomeRoute
   '/master': typeof AppMasterRoute
+  '/permissions': typeof AppPermissionsRoute
   '/pipeline': typeof AppPipelineRoute
   '/renewals': typeof AppRenewalsRoute
   '/review': typeof AppReviewRoute
@@ -322,6 +330,7 @@ export interface FileRoutesById {
   '/_app/income': typeof AppIncomeRoute
   '/_app/master': typeof AppMasterRoute
   '/_app/operations': typeof AppOperationsRouteWithChildren
+  '/_app/permissions': typeof AppPermissionsRoute
   '/_app/pipeline': typeof AppPipelineRoute
   '/_app/renewals': typeof AppRenewalsRoute
   '/_app/review': typeof AppReviewRoute
@@ -362,6 +371,7 @@ export interface FileRouteTypes {
     | '/income'
     | '/master'
     | '/operations'
+    | '/permissions'
     | '/pipeline'
     | '/renewals'
     | '/review'
@@ -398,6 +408,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/income'
     | '/master'
+    | '/permissions'
     | '/pipeline'
     | '/renewals'
     | '/review'
@@ -437,6 +448,7 @@ export interface FileRouteTypes {
     | '/_app/income'
     | '/_app/master'
     | '/_app/operations'
+    | '/_app/permissions'
     | '/_app/pipeline'
     | '/_app/renewals'
     | '/_app/review'
@@ -549,6 +561,13 @@ declare module '@tanstack/react-router' {
       path: '/pipeline'
       fullPath: '/pipeline'
       preLoaderRoute: typeof AppPipelineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/permissions': {
+      id: '/_app/permissions'
+      path: '/permissions'
+      fullPath: '/permissions'
+      preLoaderRoute: typeof AppPermissionsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/operations': {
@@ -794,6 +813,7 @@ interface AppRouteChildren {
   AppIncomeRoute: typeof AppIncomeRoute
   AppMasterRoute: typeof AppMasterRoute
   AppOperationsRoute: typeof AppOperationsRouteWithChildren
+  AppPermissionsRoute: typeof AppPermissionsRoute
   AppPipelineRoute: typeof AppPipelineRoute
   AppRenewalsRoute: typeof AppRenewalsRoute
   AppReviewRoute: typeof AppReviewRoute
@@ -815,6 +835,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIncomeRoute: AppIncomeRoute,
   AppMasterRoute: AppMasterRoute,
   AppOperationsRoute: AppOperationsRouteWithChildren,
+  AppPermissionsRoute: AppPermissionsRoute,
   AppPipelineRoute: AppPipelineRoute,
   AppRenewalsRoute: AppRenewalsRoute,
   AppReviewRoute: AppReviewRoute,
