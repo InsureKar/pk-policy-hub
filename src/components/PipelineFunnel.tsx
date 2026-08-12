@@ -99,9 +99,9 @@ export function PipelineFunnel({ defaultFrom, defaultTo, lockUserId, title }: Pr
       deals: filteredDeals.filter((d: any) => d.deal_type === "renewal"),
     },
     {
-      key: "pipeline",
-      label: "Pipeline",
-      deals: filteredDeals.filter((d: any) => d.stage_id && !wonIds.has(d.stage_id) && !lostIds.has(d.stage_id)),
+      key: "total",
+      label: "Total",
+      deals: filteredDeals,
     },
   ];
 
