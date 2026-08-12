@@ -111,6 +111,21 @@ function NewDealPage() {
     const effectiveNet = form.policy_type === "bulk" ? bulkTotals.net : netPremium;
     if (!(effectiveGross > 0)) return toast.error("Gross premium is required");
     if (form.policy_type === "bulk" && bulkRows.length === 0) return toast.error("Add at least one bulk policy row");
+    if (form.policy_type === "bulk") {
+      await Promise.all(bulkRows.map((r, i) => checkDuplicate(i, r.policy_number)));
+      const seen = new Map<string, number>();
+      for (let i = 0; i < bulkRows.length; i++) {
+        const n = norm(bulkRows[i].policy_number);
+        if (!n) continue;
+        if (seen.has(n)) return toast.error(`Duplicate policy number in rows ${seen.get(n)! + 1} and ${i + 1}`);
+        seen.set(n, i);
+        const { data: conflict } = await supabase.rpc("deal_policy_conflict" as any, { _policy_number: bulkRows[i].policy_number, _exclude_row: null });
+        if (conflict) {
+          const c: any = conflict;
+          return toast.error(`Policy ${bulkRows[i].policy_number} already exists on deal ${c.deal_number ?? "—"}${c.client_name ? ` (${c.client_name})` : ""}`);
+        }
+      }
+    }
     const payload: any = {
       ...form,
       created_by: user.id,
