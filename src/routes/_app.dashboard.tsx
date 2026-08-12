@@ -153,8 +153,26 @@ function DashboardPage() {
       {/* Business Overview */}
       <div className="mb-6">
         <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Business Overview</div>
+        {canSeeFinancials && (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+            {overview.map((o) => {
+              const Icon = o.icon;
+              return (
+                <div key={o.label} className="rounded-lg border bg-card p-4">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{o.label}</span>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="text-xl font-semibold tabular-nums mt-1">{o.value}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{o.sub}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
         <PipelineFunnel />
       </div>
+
 
 
       {/* Target Achievement widget (DO/TL only, but Admin also sees if they have targets set) */}
