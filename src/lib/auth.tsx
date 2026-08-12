@@ -76,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setRoles([]);
         setProfile(null);
+        setPermissions(defaultPermissions());
       }
     });
     supabase.auth.getSession().then(async ({ data }) => {
@@ -100,8 +101,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return arr.some((x) => roles.includes(x));
   };
 
+  const can = (m: AppModule, min: PermissionLevel = "view") =>
+    PERMISSION_RANK[permissions[m] ?? "add"] >= PERMISSION_RANK[min];
+
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, session, roles, profile, loading, refresh, signOut, hasRole }}>
+    <Ctx.Provider value={{ user: session?.user ?? null, session, roles, profile, permissions, can, loading, refresh, signOut, hasRole }}>
+
       {children}
     </Ctx.Provider>
   );
