@@ -63,9 +63,28 @@ function NewDealPage() {
   const [bulkRows, setBulkRows] = useState<Array<{cover_note_number:string;policy_number:string;gross_premium:number;net_premium:number;remarks:string}>>([
     { cover_note_number: "", policy_number: "", gross_premium: 0, net_premium: 0, remarks: "" },
   ]);
+  const [dupErrors, setDupErrors] = useState<Record<number, string>>({});
   const addBulkRow = () => setBulkRows(r => [...r, { cover_note_number: "", policy_number: "", gross_premium: 0, net_premium: 0, remarks: "" }]);
   const removeBulkRow = (i: number) => setBulkRows(r => r.filter((_, idx) => idx !== i));
   const updateBulkRow = (i: number, k: string, v: any) => setBulkRows(r => r.map((row, idx) => idx === i ? { ...row, [k]: v } : row));
+  const norm = (v: string) => (v || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const checkDuplicate = async (i: number, value: string) => {
+    const n = norm(value);
+    setDupErrors(prev => { const c = { ...prev }; delete c[i]; return c; });
+    if (!n) return;
+    const localIdx = bulkRows.findIndex((r, idx) => idx !== i && norm(r.policy_number) === n);
+    if (localIdx >= 0) {
+      setDupErrors(prev => ({ ...prev, [i]: `Duplicate of row ${localIdx + 1} in this deal` }));
+      return;
+    }
+    const { data } = await supabase.rpc("deal_policy_conflict" as any, { _policy_number: value, _exclude_row: null });
+    const c: any = data;
+    if (c) {
+      const where = c.source === "deal" ? "deal" : "bulk policy on deal";
+      setDupErrors(prev => ({ ...prev, [i]: `Already used on ${where} ${c.deal_number ?? "—"}${c.client_name ? ` (${c.client_name})` : ""}` }));
+    }
+  };
+
   const bulkTotals = useMemo(() => bulkRows.reduce((a, r) => ({
     gross: a.gross + Number(r.gross_premium || 0),
     net: a.net + Number(r.net_premium || 0),
@@ -92,6 +111,21 @@ function NewDealPage() {
     const effectiveNet = form.policy_type === "bulk" ? bulkTotals.net : netPremium;
     if (!(effectiveGross > 0)) return toast.error("Gross premium is required");
     if (form.policy_type === "bulk" && bulkRows.length === 0) return toast.error("Add at least one bulk policy row");
+    if (form.policy_type === "bulk") {
+      await Promise.all(bulkRows.map((r, i) => checkDuplicate(i, r.policy_number)));
+      const seen = new Map<string, number>();
+      for (let i = 0; i < bulkRows.length; i++) {
+        const n = norm(bulkRows[i].policy_number);
+        if (!n) continue;
+        if (seen.has(n)) return toast.error(`Duplicate policy number in rows ${seen.get(n)! + 1} and ${i + 1}`);
+        seen.set(n, i);
+        const { data: conflict } = await supabase.rpc("deal_policy_conflict" as any, { _policy_number: bulkRows[i].policy_number, _exclude_row: null });
+        if (conflict) {
+          const c: any = conflict;
+          return toast.error(`Policy ${bulkRows[i].policy_number} already exists on deal ${c.deal_number ?? "—"}${c.client_name ? ` (${c.client_name})` : ""}`);
+        }
+      }
+    }
     const payload: any = {
       ...form,
       created_by: user.id,
@@ -214,7 +248,16 @@ function NewDealPage() {
                         <tr key={i} className="border-t">
                           <td className="p-2">{i+1}</td>
                           <td className="p-2"><Input value={r.cover_note_number} onChange={e=>updateBulkRow(i,"cover_note_number",e.target.value)}/></td>
-                          <td className="p-2"><Input value={r.policy_number} onChange={e=>updateBulkRow(i,"policy_number",e.target.value)}/></td>
+                          <td className="p-2">
+                            <Input
+                              value={r.policy_number}
+                              aria-invalid={!!dupErrors[i]}
+                              className={dupErrors[i] ? "border-destructive" : ""}
+                              onChange={e=>updateBulkRow(i,"policy_number",e.target.value)}
+                              onBlur={e=>checkDuplicate(i, e.target.value)}
+                            />
+                            {dupErrors[i] && <p className="text-xs text-destructive mt-1">{dupErrors[i]}</p>}
+                          </td>
                           <td className="p-2"><Input type="number" step="0.01" className="text-right" value={r.gross_premium} onChange={e=>updateBulkRow(i,"gross_premium",Number(e.target.value)||0)}/></td>
                           <td className="p-2"><Input type="number" step="0.01" className="text-right" value={r.net_premium} onChange={e=>updateBulkRow(i,"net_premium",Number(e.target.value)||0)}/></td>
                           <td className="p-2"><Input value={r.remarks} onChange={e=>updateBulkRow(i,"remarks",e.target.value)}/></td>
