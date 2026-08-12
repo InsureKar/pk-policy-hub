@@ -95,13 +95,8 @@ function DashboardPage() {
 
   const chartColors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))", "oklch(0.6 0.15 30)"];
 
-  // Business Overview: Total / Fresh / Renewal / Lost
-  const overview = [
-    { label: "Total Business", icon: Briefcase, value: fmtPKR(totalGross), sub: `${activeDeals.length} deals (Fresh + Renewal)`, tone: "primary" },
-    { label: "Fresh", icon: Sparkles, value: fmtPKR(sumGross(freshDeals)), sub: `${freshDeals.length} deals`, tone: "success" },
-    { label: "Renewal", icon: RefreshCw, value: fmtPKR(sumGross(renewalDeals)), sub: `${renewalDeals.length} deals`, tone: "accent" },
-    { label: "Lost", icon: XCircle, value: fmtPKR(sumGross(lostDeals)), sub: `${lostDeals.length} deals`, tone: "destructive" },
-  ];
+  // Business Overview is rendered by the Pipeline Funnel (Fresh / Renewal / Pipeline)
+
 
   // Targets (for DO/TL and admin viewing self)
   const monthKey = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
