@@ -389,6 +389,7 @@ export type Database = {
           id: string
           net_premium: number
           policy_number: string | null
+          policy_number_norm: string | null
           remarks: string | null
           row_number: number
           updated_at: string
@@ -401,6 +402,7 @@ export type Database = {
           id?: string
           net_premium?: number
           policy_number?: string | null
+          policy_number_norm?: string | null
           remarks?: string | null
           row_number: number
           updated_at?: string
@@ -413,6 +415,7 @@ export type Database = {
           id?: string
           net_premium?: number
           policy_number?: string | null
+          policy_number_norm?: string | null
           remarks?: string | null
           row_number?: number
           updated_at?: string
@@ -2123,6 +2126,10 @@ export type Database = {
     }
     Functions: {
       current_user_team: { Args: never; Returns: string }
+      deal_policy_conflict: {
+        Args: { _exclude_row?: string; _policy_number: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
