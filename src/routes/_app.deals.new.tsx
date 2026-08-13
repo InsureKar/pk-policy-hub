@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { computeDeal } from "@/lib/calc";
+import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct } from "@/lib/format";
 import { toast } from "sonner";
 

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtPKR } from "@/lib/format";
-import { computeDeal } from "@/lib/calc";
+import { aggregateDealFinancials } from "@/lib/calc";
 import { Briefcase, TrendingUp, CheckCircle2, XCircle, Activity, Wallet, BadgePercent, Coins, Target as TargetIcon, RefreshCw, Sparkles } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
 import { useAuth } from "@/lib/auth";

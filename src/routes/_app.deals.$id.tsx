@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { computeDeal } from "@/lib/calc";
+import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
