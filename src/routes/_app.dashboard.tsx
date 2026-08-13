@@ -49,18 +49,14 @@ function DashboardPage() {
   const lostDeals = data.deals.filter(isLost);
   const activeDeals = [...freshDeals, ...renewalDeals];
 
-  const sumGross = (arr: any[]) => arr.reduce((a, d) => a + Number(d.gross_premium || 0), 0);
-  const sumIncome = (arr: any[]) => arr.reduce((a, d) => a + Number(d.total_income || 0), 0);
-  const sumNet = (arr: any[]) => arr.reduce((a, d) => a + Number(d.net_premium || 0), 0);
+  // All money figures come from the centralized engine (single source of truth).
+  const freshAgg = aggregateDealFinancials(freshDeals as any, data.basePct);
+  const renewalAgg = aggregateDealFinancials(renewalDeals as any, data.basePct);
 
-  const totalGross = sumGross(freshDeals) + sumGross(renewalDeals);
-  const totalNet = sumNet(freshDeals) + sumNet(renewalDeals);
-  const totalIncome = sumIncome(freshDeals) + sumIncome(renewalDeals);
-  const tagged = activeDeals.reduce((a, d) => a + computeDeal({
-    gross_premium: Number(d.gross_premium), commission_percentage: Number(d.commission_percentage),
-    marketing_budget_percentage: Number(d.marketing_budget_percentage),
-    loading: Number(d.loading), b2b_commission: Number(d.b2b_commission),
-  }, data.basePct).tagged_premium, 0);
+  const totalGross = freshAgg.gross_premium + renewalAgg.gross_premium;
+  const totalNet = freshAgg.net_premium + renewalAgg.net_premium;
+  const totalIncome = freshAgg.total_income + renewalAgg.total_income;
+  const tagged = freshAgg.tagged_premium + renewalAgg.tagged_premium;
 
   const total = data.deals.length;
   const won = data.deals.filter(isWon).length;
