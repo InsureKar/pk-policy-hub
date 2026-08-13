@@ -143,6 +143,7 @@ function NewDealPage() {
       marketing_budget_percentage: canSeeMarketing ? form.marketing_budget_percentage : 0,
       gross_premium: effectiveGross,
       net_premium: effectiveNet,
+      base_percentage: lists?.basePct ?? 13,
       policy_start_date: form.policy_start_date || null,
       policy_end_date: form.policy_end_date || null,
       deal_type: form.deal_type,
