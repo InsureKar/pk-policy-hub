@@ -334,11 +334,14 @@ function NewDealPage() {
             <Card>
               <CardHeader><CardTitle className="text-base">Live Calculations</CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <Row k="Net Premium (Gross − Commission)" v={fmtPKR(netPremium)} />
+                <Row k="Gross Premium" v={fmtPKR(calc.gross_premium)} />
+                <Row k="Net Premium (Gross − Commission)" v={fmtPKR(calc.net_premium)} />
                 <Row k="Commission Before Tax" v={fmtPKR(calc.commission_before_tax)} />
-                <Row k="Commission After Tax (-17%)" v={fmtPKR(calc.commission_after_tax)} />
+                <Row k="Commission Tax (17%)" v={fmtPKR(calc.commission_tax)} />
+                <Row k="Commission After Tax" v={fmtPKR(calc.commission_after_tax)} />
                 <Row k="Marketing Before Tax" v={fmtPKR(calc.marketing_before_tax)} />
-                <Row k="Marketing After Tax (-9%)" v={fmtPKR(calc.marketing_after_tax)} />
+                <Row k="Marketing Tax (9%)" v={fmtPKR(calc.marketing_tax)} />
+                <Row k="Marketing After Tax" v={fmtPKR(calc.marketing_after_tax)} />
                 <hr className="my-2"/>
                 <Row k="Total Income" v={fmtPKR(calc.total_income)} strong />
                 <Row k="Income %" v={fmtPct(calc.income_percentage)} />
