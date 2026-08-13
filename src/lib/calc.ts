@@ -116,7 +116,13 @@ export function aggregateDealFinancials(
   basePercentage: number = DEFAULT_BASE_PERCENTAGE,
 ) {
   const base = num(basePercentage) > 0 ? num(basePercentage) : DEFAULT_BASE_PERCENTAGE;
-  const acc = deals.reduce(
+  type Acc = Record<
+    | "gross_premium" | "net_premium" | "commission_before_tax" | "commission_tax"
+    | "commission_after_tax" | "marketing_before_tax" | "marketing_tax"
+    | "marketing_after_tax" | "total_income" | "tagged_premium",
+    number
+  >;
+  const acc = deals.reduce<Acc>(
     (a, d) => {
       const f = calculateDealFinancials({ ...d, base_percentage: d.base_percentage ?? base });
       a.gross_premium += f.gross_premium;
