@@ -98,11 +98,16 @@ function NewDealPage() {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setNum = (k: keyof typeof form, v: string) => set(k, (Number(v) || 0) as never);
 
-  const netPremium = useMemo(
-    () => Math.max(0, form.gross_premium - (form.commission_percentage * form.gross_premium) / 100),
-    [form.gross_premium, form.commission_percentage],
+  // Single source of truth — real-time recalculation on every input change.
+  const calc = useMemo(
+    () => calculateDealFinancials({
+      ...form,
+      gross_premium: form.policy_type === "bulk" ? bulkTotals.gross : form.gross_premium,
+      base_percentage: lists?.basePct,
+    }),
+    [form, bulkTotals.gross, lists?.basePct],
   );
-  const calc = useMemo(() => computeDeal(form, lists?.basePct ?? 13), [form, lists?.basePct]);
+  const netPremium = calc.net_premium;
 
   const submit = async () => {
     if (!user) return;
