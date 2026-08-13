@@ -55,12 +55,14 @@ function DealDetail() {
   const [stageId, setStageId] = useState<string>("");
   useEffect(() => { if (data?.deal?.stage_id) setStageId(data.deal.stage_id); }, [data?.deal?.stage_id]);
 
-  const calc = useMemo(() => data?.deal ? computeDeal({
-    gross_premium: Number(data.deal.gross_premium),
-    commission_percentage: Number(data.deal.commission_percentage),
-    marketing_budget_percentage: Number(data.deal.marketing_budget_percentage),
-    loading: Number(data.deal.loading), b2b_commission: Number(data.deal.b2b_commission),
-  }, data.basePct) : null, [data]);
+  const calc = useMemo(() => data?.deal ? calculateDealFinancials({
+    gross_premium: data.deal.gross_premium,
+    commission_percentage: data.deal.commission_percentage,
+    marketing_budget_percentage: data.deal.marketing_budget_percentage,
+    loading: data.deal.loading,
+    b2b_commission: data.deal.b2b_commission,
+    base_percentage: (data.deal as any).base_percentage ?? data.basePct,
+  }) : null, [data]);
 
   // Payment form state
   const [pay, setPay] = useState({
