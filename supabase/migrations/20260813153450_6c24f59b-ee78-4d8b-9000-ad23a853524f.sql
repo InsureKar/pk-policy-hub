@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.tg_deals_base_percentage() FROM PUBLIC, anon, authenticated;

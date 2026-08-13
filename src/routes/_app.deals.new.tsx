@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { computeDeal } from "@/lib/calc";
+import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -98,11 +98,16 @@ function NewDealPage() {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setNum = (k: keyof typeof form, v: string) => set(k, (Number(v) || 0) as never);
 
-  const netPremium = useMemo(
-    () => Math.max(0, form.gross_premium - (form.commission_percentage * form.gross_premium) / 100),
-    [form.gross_premium, form.commission_percentage],
+  // Single source of truth — real-time recalculation on every input change.
+  const calc = useMemo(
+    () => calculateDealFinancials({
+      ...form,
+      gross_premium: form.policy_type === "bulk" ? bulkTotals.gross : form.gross_premium,
+      base_percentage: lists?.basePct,
+    }),
+    [form, bulkTotals.gross, lists?.basePct],
   );
-  const calc = useMemo(() => computeDeal(form, lists?.basePct ?? 13), [form, lists?.basePct]);
+  const netPremium = calc.net_premium;
 
   const submit = async () => {
     if (!user) return;
@@ -138,6 +143,7 @@ function NewDealPage() {
       marketing_budget_percentage: canSeeMarketing ? form.marketing_budget_percentage : 0,
       gross_premium: effectiveGross,
       net_premium: effectiveNet,
+      base_percentage: lists?.basePct ?? 13,
       policy_start_date: form.policy_start_date || null,
       policy_end_date: form.policy_end_date || null,
       deal_type: form.deal_type,
@@ -328,11 +334,14 @@ function NewDealPage() {
             <Card>
               <CardHeader><CardTitle className="text-base">Live Calculations</CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <Row k="Net Premium (Gross − Commission)" v={fmtPKR(netPremium)} />
+                <Row k="Gross Premium" v={fmtPKR(calc.gross_premium)} />
+                <Row k="Net Premium (Gross − Commission)" v={fmtPKR(calc.net_premium)} />
                 <Row k="Commission Before Tax" v={fmtPKR(calc.commission_before_tax)} />
-                <Row k="Commission After Tax (-17%)" v={fmtPKR(calc.commission_after_tax)} />
+                <Row k="Commission Tax (17%)" v={fmtPKR(calc.commission_tax)} />
+                <Row k="Commission After Tax" v={fmtPKR(calc.commission_after_tax)} />
                 <Row k="Marketing Before Tax" v={fmtPKR(calc.marketing_before_tax)} />
-                <Row k="Marketing After Tax (-9%)" v={fmtPKR(calc.marketing_after_tax)} />
+                <Row k="Marketing Tax (9%)" v={fmtPKR(calc.marketing_tax)} />
+                <Row k="Marketing After Tax" v={fmtPKR(calc.marketing_after_tax)} />
                 <hr className="my-2"/>
                 <Row k="Total Income" v={fmtPKR(calc.total_income)} strong />
                 <Row k="Income %" v={fmtPct(calc.income_percentage)} />

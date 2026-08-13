@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { computeDeal } from "@/lib/calc";
+import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
@@ -55,12 +55,14 @@ function DealDetail() {
   const [stageId, setStageId] = useState<string>("");
   useEffect(() => { if (data?.deal?.stage_id) setStageId(data.deal.stage_id); }, [data?.deal?.stage_id]);
 
-  const calc = useMemo(() => data?.deal ? computeDeal({
-    gross_premium: Number(data.deal.gross_premium),
-    commission_percentage: Number(data.deal.commission_percentage),
-    marketing_budget_percentage: Number(data.deal.marketing_budget_percentage),
-    loading: Number(data.deal.loading), b2b_commission: Number(data.deal.b2b_commission),
-  }, data.basePct) : null, [data]);
+  const calc = useMemo(() => data?.deal ? calculateDealFinancials({
+    gross_premium: data.deal.gross_premium,
+    commission_percentage: data.deal.commission_percentage,
+    marketing_budget_percentage: data.deal.marketing_budget_percentage,
+    loading: data.deal.loading,
+    b2b_commission: data.deal.b2b_commission,
+    base_percentage: (data.deal as any).base_percentage ?? data.basePct,
+  }) : null, [data]);
 
   // Payment form state
   const [pay, setPay] = useState({
@@ -165,20 +167,23 @@ function DealDetail() {
             <CardHeader><CardTitle className="text-base">Premium & Income</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
               {isAdmin && d.base_premium != null && <KV k="Base Premium" v={fmtPKR(Number(d.base_premium))} />}
-              <KV k="Gross Premium" v={fmtPKR(Number(d.gross_premium))} />
-              <KV k="Net Premium" v={fmtPKR(Number(d.net_premium))} />
-              <KV k="Commission %" v={fmtPct(Number(d.commission_percentage))} />
-              <KV k="Marketing %" v={fmtPct(Number(d.marketing_budget_percentage))} />
-              <KV k="Loading" v={fmtPKR(Number(d.loading))} />
-              <KV k="B2B Commission" v={fmtPKR(Number(d.b2b_commission))} />
-              <hr/>
-              <KV k="Commission Before Tax" v={fmtPKR(Number(d.commission_before_tax))} />
-              <KV k="Commission After Tax" v={fmtPKR(Number(d.commission_after_tax))} />
-              <KV k="Marketing After Tax" v={fmtPKR(Number(d.marketing_after_tax))} />
-              <KV k="Total Income" v={<span className="font-semibold">{fmtPKR(Number(d.total_income))}</span>} />
-              <KV k="Income %" v={fmtPct(Number(d.income_percentage))} />
               {calc && <>
-                <KV k="Tagged Premium %" v={fmtPct(calc.tagged_premium_percentage)} />
+                <KV k="Gross Premium" v={fmtPKR(calc.gross_premium)} />
+                <KV k="Net Premium" v={fmtPKR(calc.net_premium)} />
+                <KV k="Commission %" v={fmtPct(calc.commission_percentage)} />
+                <KV k="Marketing %" v={fmtPct(calc.marketing_budget_percentage)} />
+                <KV k="Loading" v={fmtPKR(calc.loading)} />
+                <KV k="B2B Commission" v={fmtPKR(calc.b2b_commission)} />
+                <hr/>
+                <KV k="Commission Before Tax" v={fmtPKR(calc.commission_before_tax)} />
+                <KV k="Commission Tax (17%)" v={fmtPKR(calc.commission_tax)} />
+                <KV k="Commission After Tax" v={fmtPKR(calc.commission_after_tax)} />
+                <KV k="Marketing Before Tax" v={fmtPKR(calc.marketing_before_tax)} />
+                <KV k="Marketing Tax (9%)" v={fmtPKR(calc.marketing_tax)} />
+                <KV k="Marketing After Tax" v={fmtPKR(calc.marketing_after_tax)} />
+                <KV k="Total Income" v={<span className="font-semibold">{fmtPKR(calc.total_income)}</span>} />
+                <KV k="Income %" v={fmtPct(calc.income_percentage)} />
+                <KV k={`Tagged Premium % (base ${calc.base_percentage}%)`} v={fmtPct(calc.tagged_premium_percentage)} />
                 <KV k="Tagged Premium" v={<span className="font-semibold">{fmtPKR(calc.tagged_premium)}</span>} />
               </>}
             </CardContent>
