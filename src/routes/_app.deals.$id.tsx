@@ -167,20 +167,23 @@ function DealDetail() {
             <CardHeader><CardTitle className="text-base">Premium & Income</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
               {isAdmin && d.base_premium != null && <KV k="Base Premium" v={fmtPKR(Number(d.base_premium))} />}
-              <KV k="Gross Premium" v={fmtPKR(Number(d.gross_premium))} />
-              <KV k="Net Premium" v={fmtPKR(Number(d.net_premium))} />
-              <KV k="Commission %" v={fmtPct(Number(d.commission_percentage))} />
-              <KV k="Marketing %" v={fmtPct(Number(d.marketing_budget_percentage))} />
-              <KV k="Loading" v={fmtPKR(Number(d.loading))} />
-              <KV k="B2B Commission" v={fmtPKR(Number(d.b2b_commission))} />
-              <hr/>
-              <KV k="Commission Before Tax" v={fmtPKR(Number(d.commission_before_tax))} />
-              <KV k="Commission After Tax" v={fmtPKR(Number(d.commission_after_tax))} />
-              <KV k="Marketing After Tax" v={fmtPKR(Number(d.marketing_after_tax))} />
-              <KV k="Total Income" v={<span className="font-semibold">{fmtPKR(Number(d.total_income))}</span>} />
-              <KV k="Income %" v={fmtPct(Number(d.income_percentage))} />
               {calc && <>
-                <KV k="Tagged Premium %" v={fmtPct(calc.tagged_premium_percentage)} />
+                <KV k="Gross Premium" v={fmtPKR(calc.gross_premium)} />
+                <KV k="Net Premium" v={fmtPKR(calc.net_premium)} />
+                <KV k="Commission %" v={fmtPct(calc.commission_percentage)} />
+                <KV k="Marketing %" v={fmtPct(calc.marketing_budget_percentage)} />
+                <KV k="Loading" v={fmtPKR(calc.loading)} />
+                <KV k="B2B Commission" v={fmtPKR(calc.b2b_commission)} />
+                <hr/>
+                <KV k="Commission Before Tax" v={fmtPKR(calc.commission_before_tax)} />
+                <KV k="Commission Tax (17%)" v={fmtPKR(calc.commission_tax)} />
+                <KV k="Commission After Tax" v={fmtPKR(calc.commission_after_tax)} />
+                <KV k="Marketing Before Tax" v={fmtPKR(calc.marketing_before_tax)} />
+                <KV k="Marketing Tax (9%)" v={fmtPKR(calc.marketing_tax)} />
+                <KV k="Marketing After Tax" v={fmtPKR(calc.marketing_after_tax)} />
+                <KV k="Total Income" v={<span className="font-semibold">{fmtPKR(calc.total_income)}</span>} />
+                <KV k="Income %" v={fmtPct(calc.income_percentage)} />
+                <KV k={`Tagged Premium % (base ${calc.base_percentage}%)`} v={fmtPct(calc.tagged_premium_percentage)} />
                 <KV k="Tagged Premium" v={<span className="font-semibold">{fmtPKR(calc.tagged_premium)}</span>} />
               </>}
             </CardContent>
