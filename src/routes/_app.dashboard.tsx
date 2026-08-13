@@ -23,7 +23,7 @@ function DashboardPage() {
     queryKey: ["dashboard", user?.id],
     queryFn: async () => {
       const [{ data: deals }, { data: stages }, { data: companies }, { data: settings }, { data: targets }] = await Promise.all([
-        supabase.from("deals").select("id, gross_premium, net_premium, commission_percentage, marketing_budget_percentage, loading, b2b_commission, total_income, stage_id, insurance_company_id, created_at, policy_end_date, deal_type, assigned_do_id, team_lead_id" as any),
+        supabase.from("deals").select("id, gross_premium, net_premium, commission_percentage, marketing_budget_percentage, loading, b2b_commission, base_percentage, total_income, stage_id, insurance_company_id, created_at, policy_end_date, deal_type, assigned_do_id, team_lead_id" as any),
         supabase.from("deal_stages").select("id, name, is_won, is_lost"),
         supabase.from("insurance_companies").select("id, name"),
         supabase.from("app_settings").select("key, value").eq("key", "tagged_premium_base_percentage").maybeSingle(),
