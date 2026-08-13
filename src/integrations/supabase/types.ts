@@ -461,11 +461,13 @@ export type Database = {
         Row: {
           assigned_do_id: string | null
           b2b_commission: number
+          base_percentage: number | null
           base_premium: number | null
           client_id: string | null
           commission_after_tax: number | null
           commission_before_tax: number | null
           commission_percentage: number
+          commission_tax: number | null
           cover_note_number: string | null
           created_at: string
           created_by: string
@@ -481,6 +483,7 @@ export type Database = {
           marketing_after_tax: number | null
           marketing_before_tax: number | null
           marketing_budget_percentage: number
+          marketing_tax: number | null
           net_premium: number
           notes: string | null
           payment_mode: string | null
@@ -495,6 +498,8 @@ export type Database = {
           received_by: string | null
           source_id: string | null
           stage_id: string | null
+          tagged_premium: number | null
+          tagged_premium_percentage: number | null
           team_id: string | null
           team_lead_id: string | null
           total_income: number | null
@@ -504,11 +509,13 @@ export type Database = {
         Insert: {
           assigned_do_id?: string | null
           b2b_commission?: number
+          base_percentage?: number | null
           base_premium?: number | null
           client_id?: string | null
           commission_after_tax?: number | null
           commission_before_tax?: number | null
           commission_percentage?: number
+          commission_tax?: number | null
           cover_note_number?: string | null
           created_at?: string
           created_by: string
@@ -524,6 +531,7 @@ export type Database = {
           marketing_after_tax?: number | null
           marketing_before_tax?: number | null
           marketing_budget_percentage?: number
+          marketing_tax?: number | null
           net_premium?: number
           notes?: string | null
           payment_mode?: string | null
@@ -538,6 +546,8 @@ export type Database = {
           received_by?: string | null
           source_id?: string | null
           stage_id?: string | null
+          tagged_premium?: number | null
+          tagged_premium_percentage?: number | null
           team_id?: string | null
           team_lead_id?: string | null
           total_income?: number | null
@@ -547,11 +557,13 @@ export type Database = {
         Update: {
           assigned_do_id?: string | null
           b2b_commission?: number
+          base_percentage?: number | null
           base_premium?: number | null
           client_id?: string | null
           commission_after_tax?: number | null
           commission_before_tax?: number | null
           commission_percentage?: number
+          commission_tax?: number | null
           cover_note_number?: string | null
           created_at?: string
           created_by?: string
@@ -567,6 +579,7 @@ export type Database = {
           marketing_after_tax?: number | null
           marketing_before_tax?: number | null
           marketing_budget_percentage?: number
+          marketing_tax?: number | null
           net_premium?: number
           notes?: string | null
           payment_mode?: string | null
@@ -581,6 +594,8 @@ export type Database = {
           received_by?: string | null
           source_id?: string | null
           stage_id?: string | null
+          tagged_premium?: number | null
+          tagged_premium_percentage?: number | null
           team_id?: string | null
           team_lead_id?: string | null
           total_income?: number | null
