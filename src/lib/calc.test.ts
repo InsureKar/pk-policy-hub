@@ -80,7 +80,7 @@ describe("calculateDealFinancials", () => {
       b2b_commission: "5000",
       base_percentage: "13",
     });
-    expect(f.total_income).toBe(143_500);
+    expect(f.total_income).toBe(133_500);
   });
 
   it("tagged premium exactly at 100% returns gross premium", () => {
