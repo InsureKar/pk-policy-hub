@@ -200,7 +200,40 @@ function NewDealPage() {
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
-    if (form.policy_type === "bulk" && data) {
+    if (form.policy_type === "bulk" && data && isTravel) {
+      const payable = travelRows.reduce((a, r) => a + payableOf(r), 0);
+      const transferred = travelTransfers.reduce((a, t) => a + Number(t.amount || 0), 0);
+      const { data: posting, error: pErr } = await supabase.from("travel_postings").insert({
+        deal_id: data.id,
+        total_policy_amount: effectiveGross,
+        total_posting_amount: transferred || payable,
+      }).select("id").maybeSingle();
+      if (pErr || !posting) toast.error("Deal created, but travel posting failed: " + (pErr?.message ?? ""));
+      else {
+        const { error: rErr } = await supabase.from("travel_posting_rows").insert(
+          travelRows.map((r, idx) => ({
+            posting_id: posting.id, sr_no: idx + 1,
+            travel_agent: r.travel_agent || null,
+            date_issued: r.date_issued || null,
+            policy_number: r.policy_number || null,
+            premium: r.premium, commission_percentage: r.commission_percentage,
+            agent_name: r.agent_name || null, remarks: r.remarks || null,
+          })),
+        );
+        if (rErr) toast.error("Deal created, but travel rows failed: " + rErr.message);
+        const filled = travelTransfers.filter(t => Number(t.amount || 0) > 0 || t.bank_name || t.tid);
+        if (filled.length) {
+          const { error: tErr } = await supabase.from("travel_posting_transfers" as any).insert(
+            filled.map((t, idx) => ({
+              posting_id: posting.id, sr_no: idx + 1,
+              transfer_date: t.transfer_date || null, bank_name: t.bank_name || null,
+              amount: t.amount, tid: t.tid || null, agent: t.agent || null,
+            })) as any,
+          );
+          if (tErr) toast.error("Deal created, but transfer details failed: " + tErr.message);
+        }
+      }
+    } else if (form.policy_type === "bulk" && data) {
       const rows = bulkRows.map((r, idx) => ({ ...r, deal_id: data.id, row_number: idx + 1 }));
       const { error: bErr } = await supabase.from("deal_policies").insert(rows);
       if (bErr) toast.error("Deal created, but bulk rows failed: " + bErr.message);
