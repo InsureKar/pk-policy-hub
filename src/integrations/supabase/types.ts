@@ -1910,6 +1910,53 @@ export type Database = {
           },
         ]
       }
+      travel_posting_transfers: {
+        Row: {
+          agent: string | null
+          amount: number
+          bank_name: string | null
+          created_at: string
+          id: string
+          posting_id: string
+          remarks: string | null
+          sr_no: number
+          tid: string | null
+          transfer_date: string | null
+        }
+        Insert: {
+          agent?: string | null
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          posting_id: string
+          remarks?: string | null
+          sr_no?: number
+          tid?: string | null
+          transfer_date?: string | null
+        }
+        Update: {
+          agent?: string | null
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          posting_id?: string
+          remarks?: string | null
+          sr_no?: number
+          tid?: string | null
+          transfer_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_posting_transfers_posting_id_fkey"
+            columns: ["posting_id"]
+            isOneToOne: false
+            referencedRelation: "travel_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       travel_postings: {
         Row: {
           created_at: string

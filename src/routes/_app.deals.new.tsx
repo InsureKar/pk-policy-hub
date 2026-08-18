@@ -11,6 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { calculateDealFinancials } from "@/lib/calc";
+import {
+  TravelBulkPolicies, emptyTravelRow, emptyTransferRow, payableOf,
+  type TravelPolicyRow, type TravelTransferRow,
+} from "@/components/TravelBulkPolicies";
 import { fmtPKR, fmtPct } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -84,15 +88,43 @@ function NewDealPage() {
     }
   };
 
-  const bulkTotals = useMemo(() => bulkRows.reduce((a, r) => ({
-    gross: a.gross + Number(r.gross_premium || 0),
-    net: a.net + Number(r.net_premium || 0),
-    count: a.count + 1,
-  }), { gross: 0, net: 0, count: 0 }), [bulkRows]);
   const isTravel = useMemo(() => {
     const t = lists?.types.find(x => x.id === form.insurance_type_id);
     return (t?.name ?? "").toLowerCase() === "travel";
   }, [form.insurance_type_id, lists?.types]);
+
+  // Travel uses its own bulk format (Sr / Travel Agent / Date / Policy / Premium / Commission / Payable)
+  const [travelRows, setTravelRows] = useState<TravelPolicyRow[]>([emptyTravelRow()]);
+  const [travelTransfers, setTravelTransfers] = useState<TravelTransferRow[]>([emptyTransferRow()]);
+  const [travelDupErrors, setTravelDupErrors] = useState<Record<number, string>>({});
+  const checkTravelDuplicate = async (i: number, value: string) => {
+    const n = norm(value);
+    setTravelDupErrors(prev => { const c = { ...prev }; delete c[i]; return c; });
+    if (!n) return;
+    const localIdx = travelRows.findIndex((r, idx) => idx !== i && norm(r.policy_number) === n);
+    if (localIdx >= 0) {
+      setTravelDupErrors(prev => ({ ...prev, [i]: `Duplicate of row ${localIdx + 1} in this deal` }));
+      return;
+    }
+    const { data } = await supabase.rpc("travel_policy_conflict" as any, { _policy_number: value, _exclude_row: null });
+    const hit: any = Array.isArray(data) ? data[0] : data;
+    if (hit) setTravelDupErrors(prev => ({ ...prev, [i]: `Policy number already used${hit.reference ? ` on ${hit.reference}` : ""}` }));
+  };
+
+  const bulkTotals = useMemo(() => {
+    if (isTravel) {
+      return travelRows.reduce((a, r) => ({
+        gross: a.gross + Number(r.premium || 0),
+        net: a.net + payableOf(r),
+        count: a.count + 1,
+      }), { gross: 0, net: 0, count: 0 });
+    }
+    return bulkRows.reduce((a, r) => ({
+      gross: a.gross + Number(r.gross_premium || 0),
+      net: a.net + Number(r.net_premium || 0),
+      count: a.count + 1,
+    }), { gross: 0, net: 0, count: 0 });
+  }, [bulkRows, travelRows, isTravel]);
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setNum = (k: keyof typeof form, v: string) => set(k, (Number(v) || 0) as never);
@@ -114,8 +146,27 @@ function NewDealPage() {
     const effectiveNet = form.policy_type === "bulk" ? bulkTotals.net : form.net_premium;
     if (!(effectiveGross > 0)) return toast.error("Gross premium is required");
     if (!Number.isFinite(form.net_premium) || form.net_premium < 0) return toast.error("Net premium must be a positive number");
-    if (form.policy_type === "bulk" && bulkRows.length === 0) return toast.error("Add at least one bulk policy row");
-    if (form.policy_type === "bulk") {
+    const isTravelBulk = form.policy_type === "bulk" && isTravel;
+    if (form.policy_type === "bulk" && (isTravelBulk ? travelRows.length === 0 : bulkRows.length === 0)) return toast.error("Add at least one bulk policy row");
+    if (isTravelBulk) {
+      const seen = new Map<string, number>();
+      for (let i = 0; i < travelRows.length; i++) {
+        const r = travelRows[i];
+        if (r.commission_percentage < 0 || r.commission_percentage > 45) return toast.error(`Row ${i + 1}: commission must be between 0% and 45%`);
+        const n = norm(r.policy_number);
+        if (!n) return toast.error(`Row ${i + 1}: policy number is required`);
+        if (seen.has(n)) return toast.error(`Duplicate policy number in rows ${seen.get(n)! + 1} and ${i + 1}`);
+        seen.set(n, i);
+        const { data: conflict } = await supabase.rpc("travel_policy_conflict" as any, { _policy_number: r.policy_number, _exclude_row: null });
+        const hit: any = Array.isArray(conflict) ? conflict[0] : conflict;
+        if (hit) return toast.error(`Policy ${r.policy_number} already exists${hit.reference ? ` on ${hit.reference}` : ""}`);
+      }
+      const payable = travelRows.reduce((a, r) => a + payableOf(r), 0);
+      const transferred = travelTransfers.reduce((a, t) => a + Number(t.amount || 0), 0);
+      if (transferred > 0 && Math.abs(transferred - payable) > 0.01) {
+        return toast.error("Amount transfer total must match Payable to Insurance Company");
+      }
+    } else if (form.policy_type === "bulk") {
       await Promise.all(bulkRows.map((r, i) => checkDuplicate(i, r.policy_number)));
       const seen = new Map<string, number>();
       for (let i = 0; i < bulkRows.length; i++) {
@@ -149,7 +200,40 @@ function NewDealPage() {
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
-    if (form.policy_type === "bulk" && data) {
+    if (form.policy_type === "bulk" && data && isTravel) {
+      const payable = travelRows.reduce((a, r) => a + payableOf(r), 0);
+      const transferred = travelTransfers.reduce((a, t) => a + Number(t.amount || 0), 0);
+      const { data: posting, error: pErr } = await supabase.from("travel_postings").insert({
+        deal_id: data.id,
+        total_policy_amount: effectiveGross,
+        total_posting_amount: transferred || payable,
+      }).select("id").maybeSingle();
+      if (pErr || !posting) toast.error("Deal created, but travel posting failed: " + (pErr?.message ?? ""));
+      else {
+        const { error: rErr } = await supabase.from("travel_posting_rows").insert(
+          travelRows.map((r, idx) => ({
+            posting_id: posting.id, sr_no: idx + 1,
+            travel_agent: r.travel_agent || null,
+            date_issued: r.date_issued || null,
+            policy_number: r.policy_number || null,
+            premium: r.premium, commission_percentage: r.commission_percentage,
+            agent_name: r.agent_name || null, remarks: r.remarks || null,
+          })),
+        );
+        if (rErr) toast.error("Deal created, but travel rows failed: " + rErr.message);
+        const filled = travelTransfers.filter(t => Number(t.amount || 0) > 0 || t.bank_name || t.tid);
+        if (filled.length) {
+          const { error: tErr } = await supabase.from("travel_posting_transfers" as any).insert(
+            filled.map((t, idx) => ({
+              posting_id: posting.id, sr_no: idx + 1,
+              transfer_date: t.transfer_date || null, bank_name: t.bank_name || null,
+              amount: t.amount, tid: t.tid || null, agent: t.agent || null,
+            })) as any,
+          );
+          if (tErr) toast.error("Deal created, but transfer details failed: " + tErr.message);
+        }
+      }
+    } else if (form.policy_type === "bulk" && data) {
       const rows = bulkRows.map((r, idx) => ({ ...r, deal_id: data.id, row_number: idx + 1 }));
       const { error: bErr } = await supabase.from("deal_policies").insert(rows);
       if (bErr) toast.error("Deal created, but bulk rows failed: " + bErr.message);
@@ -230,7 +314,15 @@ function NewDealPage() {
             </CardContent>
           </Card>
 
-          {form.policy_type === "bulk" && (
+          {form.policy_type === "bulk" && isTravel && (
+            <TravelBulkPolicies
+              rows={travelRows} setRows={setTravelRows}
+              transfers={travelTransfers} setTransfers={setTravelTransfers}
+              dupErrors={travelDupErrors} onCheckDuplicate={checkTravelDuplicate}
+            />
+          )}
+
+          {form.policy_type === "bulk" && !isTravel && (
             <Card>
               <CardHeader><CardTitle className="text-base">Bulk Policies</CardTitle></CardHeader>
               <CardContent className="space-y-3">
@@ -289,7 +381,7 @@ function NewDealPage() {
             <Card className="border-amber-500/50">
               <CardHeader><CardTitle className="text-base">Travel Product Detected</CardTitle></CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Travel Posting details (Posting From/To, per-row postings, Balanced/Excess/Deficit reconciliation) will be entered on the Deal detail page after creation. The deal cannot be moved to Won until posting is Balanced.
+                Choose Policy Type “Bulk Policies” to enter travel policies in the travel sheet format (Travel Agent, Date of Issued, Policy No., Premium, Commission 0–45%, auto Payable to Insurance Company, Agent, Remarks) plus the amount transfer details. Posting From/To and Balanced/Excess/Deficit reconciliation remain on the Deal detail page; the deal cannot be moved to Won until posting is Balanced.
               </CardContent>
             </Card>
           )}
