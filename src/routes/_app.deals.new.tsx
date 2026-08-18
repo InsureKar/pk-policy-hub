@@ -381,7 +381,7 @@ function NewDealPage() {
             <Card className="border-amber-500/50">
               <CardHeader><CardTitle className="text-base">Travel Product Detected</CardTitle></CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Travel Posting details (Posting From/To, per-row postings, Balanced/Excess/Deficit reconciliation) will be entered on the Deal detail page after creation. The deal cannot be moved to Won until posting is Balanced.
+                Choose Policy Type “Bulk Policies” to enter travel policies in the travel sheet format (Travel Agent, Date of Issued, Policy No., Premium, Commission 0–45%, auto Payable to Insurance Company, Agent, Remarks) plus the amount transfer details. Posting From/To and Balanced/Excess/Deficit reconciliation remain on the Deal detail page; the deal cannot be moved to Won until posting is Balanced.
               </CardContent>
             </Card>
           )}
