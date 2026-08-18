@@ -255,8 +255,8 @@ function NewDealPage() {
           : "Team is attached automatically. Enter policy and premium details below."}
       />
 
-      <div className="grid lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
+      <div className={canSeeLiveCalc ? "grid lg:grid-cols-3 gap-4" : "grid gap-4"}>
+        <div className={`space-y-4 ${canSeeLiveCalc ? "lg:col-span-2" : ""}`}>
           <Card>
             <CardHeader><CardTitle className="text-base">Basic Information</CardTitle></CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-4">
