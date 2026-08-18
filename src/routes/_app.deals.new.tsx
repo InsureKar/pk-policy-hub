@@ -24,12 +24,13 @@ export const Route = createFileRoute("/_app/deals/new")({
 
 function NewDealPage() {
   const nav = useNavigate();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   // Premium & Commission section is available to every user creating a deal,
   // matching the original spec — no tax or marketing-budget restrictions.
   const canSeeFinancials = true;
   const canSeeMarketing = true;
-  const canSeeLiveCalc = true;
+  // Live Calculations panel: Admin & Management only
+  const canSeeLiveCalc = hasRole(["admin", "management"]);
 
 
   const { data: lists } = useQuery({
@@ -254,8 +255,8 @@ function NewDealPage() {
           : "Team is attached automatically. Enter policy and premium details below."}
       />
 
-      <div className="grid lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
+      <div className={canSeeLiveCalc ? "grid lg:grid-cols-3 gap-4" : "grid gap-4"}>
+        <div className={`space-y-4 ${canSeeLiveCalc ? "lg:col-span-2" : ""}`}>
           <Card>
             <CardHeader><CardTitle className="text-base">Basic Information</CardTitle></CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-4">

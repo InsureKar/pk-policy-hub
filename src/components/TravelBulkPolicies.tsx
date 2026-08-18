@@ -38,12 +38,12 @@ export const payableOf = (r: TravelPolicyRow) =>
 
 const clampPct = (v: number) => Math.min(45, Math.max(0, Number(v) || 0));
 
-const pick = (obj: Record<string, any>, keys: string[]) => {
-  for (const k of Object.keys(obj)) {
-    const norm = k.toLowerCase().replace(/[^a-z]/g, "");
-    if (keys.some((c) => norm.includes(c))) return obj[k];
-  }
-  return undefined;
+const norm = (v: any) => String(v ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const num = (v: any) => {
+  if (typeof v === "number") return v;
+  const s = String(v ?? "").replace(/[(),\s]/g, "").replace(/[^0-9.\-]/g, "");
+  const n = Number(s);
+  return isNaN(n) ? 0 : n;
 };
 
 const toDate = (v: any): string => {
@@ -89,27 +89,106 @@ export function TravelBulkPolicies({
   const onUpload = async (file: File) => {
     try {
       const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "" });
-      const mapped: TravelPolicyRow[] = [];
-      for (const raw of json) {
-        const policy = String(pick(raw, ["policyno", "policynumber", "policy"]) ?? "").trim();
-        const premium = Number(String(pick(raw, ["premium"]) ?? 0).toString().replace(/[^0-9.-]/g, "")) || 0;
-        if (!policy && !premium) continue;
-        mapped.push({
-          travel_agent: String(pick(raw, ["travelagent", "agentcompany"]) ?? "").trim(),
-          date_issued: toDate(pick(raw, ["dateofissued", "dateissued", "issuedate", "date"])),
-          policy_number: policy,
-          premium,
-          commission_percentage: clampPct(Number(String(pick(raw, ["commission", "comm"]) ?? 0).toString().replace(/[^0-9.-]/g, "")) || 0),
-          agent_name: String(pick(raw, ["agentname", "agents", "agent"]) ?? "").trim(),
-          remarks: String(pick(raw, ["remarks", "notes"]) ?? "").trim(),
-        });
+      const wb = XLSX.read(buf, { type: "array", cellDates: false });
+      const policies: TravelPolicyRow[] = [];
+      const trans: TravelTransferRow[] = [];
+
+      const findCol = (hdr: string[], cands: string[], exclude: string[] = []) => {
+        for (let i = 0; i < hdr.length; i++) {
+          const h = hdr[i];
+          if (!h) continue;
+          if (exclude.some((e) => h.includes(e))) continue;
+          if (cands.some((c) => h.includes(c))) return i;
+        }
+        return -1;
+      };
+
+      for (const name of wb.SheetNames) {
+        const aoa = XLSX.utils.sheet_to_json<any[]>(wb.Sheets[name], { header: 1, defval: "", blankrows: true, raw: true });
+        let mode: "none" | "policy" | "transfer" = "none";
+        let cols: Record<string, number> = {};
+
+        for (const raw of aoa) {
+          const cells = (raw ?? []).map((c) => c);
+          const hdr = cells.map(norm);
+          const joined = hdr.join("|");
+          const hasPremium = hdr.some((h) => h.includes("premium"));
+          const hasPolicy = hdr.some((h) => h.startsWith("policy"));
+          const hasAmount = hdr.some((h) => h === "amount" || h.includes("amount"));
+          const hasTid = hdr.some((h) => h.includes("tid") || h.includes("tdid") || h.includes("transactionid") || h.includes("reference"));
+
+          // header row detection
+          if ((hasPremium && (hasPolicy || joined.includes("payable"))) || (hasPolicy && hasPremium)) {
+            mode = "policy";
+            cols = {
+              travel_agent: findCol(hdr, ["travelagent", "travelagents", "agency", "agentcompany"]),
+              date: findCol(hdr, ["dateofissued", "dateissued", "issuedate", "date"]),
+              policy: findCol(hdr, ["policyno", "policynumber", "policy"]),
+              premium: findCol(hdr, ["premium"], ["net", "payable"]),
+              commission: findCol(hdr, ["commission", "comm"], ["payable"]),
+              payable: findCol(hdr, ["payabletouic", "payabletoinsurance", "payable", "netpayable", "uic"]),
+              agent: findCol(hdr, ["agentname", "agents", "agent"], ["travel"]),
+              remarks: findCol(hdr, ["remarks", "notes", "comment"]),
+            };
+            continue;
+          }
+          if (hasAmount && (hasTid || hdr.some((h) => h.includes("bank")))) {
+            mode = "transfer";
+            cols = {
+              date: findCol(hdr, ["date"]),
+              bank: findCol(hdr, ["bankname", "bank", "reference"]),
+              amount: findCol(hdr, ["amount"]),
+              tid: findCol(hdr, ["tid", "tdid", "transactionid", "trxid"]),
+              agent: findCol(hdr, ["agent"]),
+            };
+            continue;
+          }
+
+          const isBlank = cells.every((c) => String(c ?? "").trim() === "");
+          if (isBlank) { mode = "none"; continue; }
+          const firstText = norm(cells.find((c) => String(c ?? "").trim() !== ""));
+          if (firstText.startsWith("total") || firstText.startsWith("grandtotal")) { mode = "none"; continue; }
+
+          if (mode === "policy") {
+            const policy = String(cells[cols.policy] ?? "").trim();
+            const premium = num(cells[cols.premium]);
+            if (!policy && !premium) continue;
+            const payable = cols.payable >= 0 ? num(cells[cols.payable]) : 0;
+            let pct = cols.commission >= 0 ? num(cells[cols.commission]) : 0;
+            if (pct > 0 && pct < 1) pct = pct * 100;
+            if (!pct && premium > 0 && payable > 0 && payable <= premium) pct = ((premium - payable) / premium) * 100;
+            policies.push({
+              travel_agent: String(cells[cols.travel_agent] ?? "").trim(),
+              date_issued: toDate(cells[cols.date]),
+              policy_number: policy,
+              premium,
+              commission_percentage: clampPct(Number(pct.toFixed(2))),
+              agent_name: String(cells[cols.agent] ?? "").trim(),
+              remarks: String(cells[cols.remarks] ?? "").trim(),
+            });
+          } else if (mode === "transfer") {
+            const amount = num(cells[cols.amount]);
+            if (!amount) continue;
+            trans.push({
+              transfer_date: toDate(cells[cols.date]),
+              bank_name: String(cells[cols.bank] ?? "").trim(),
+              amount,
+              tid: String(cells[cols.tid] ?? "").trim(),
+              agent: String(cells[cols.agent] ?? "").trim(),
+            });
+          }
+        }
       }
-      if (mapped.length === 0) return toast.error("No travel policy rows found in that sheet");
-      setRows(mapped);
-      toast.success(`Imported ${mapped.length} policy rows from the travel sheet`);
+
+      if (policies.length === 0) {
+        return toast.error("No travel policy rows found — the sheet needs a header row with Policy No. and Premium columns");
+      }
+      setRows(policies);
+      if (trans.length > 0) setTransfers(trans);
+      toast.success(
+        `Imported ${policies.length} policy row${policies.length === 1 ? "" : "s"}` +
+          (trans.length ? ` and ${trans.length} transfer${trans.length === 1 ? "" : "s"}` : ""),
+      );
     } catch (e: any) {
       toast.error("Could not read that file: " + (e?.message ?? "unknown error"));
     }
