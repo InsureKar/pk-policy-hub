@@ -11,6 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { calculateDealFinancials } from "@/lib/calc";
+import {
+  TravelBulkPolicies, emptyTravelRow, emptyTransferRow, payableOf,
+  type TravelPolicyRow, type TravelTransferRow,
+} from "@/components/TravelBulkPolicies";
 import { fmtPKR, fmtPct } from "@/lib/format";
 import { toast } from "sonner";
 
