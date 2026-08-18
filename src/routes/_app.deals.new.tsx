@@ -20,8 +20,7 @@ export const Route = createFileRoute("/_app/deals/new")({
 
 function NewDealPage() {
   const nav = useNavigate();
-  const { user, hasRole } = useAuth();
-  const isAdmin = hasRole("admin");
+  const { user } = useAuth();
   // Premium & Commission section is available to every user creating a deal,
   // matching the original spec — no tax or marketing-budget restrictions.
   const canSeeFinancials = true;
@@ -53,7 +52,7 @@ function NewDealPage() {
   const [form, setForm] = useState({
     client_id: "", cover_note_number: "", policy_number: "",
     source_id: "", insurance_company_id: "", insurance_type_id: "", stage_id: "",
-    base_premium: 0,
+    net_premium: 0,
     gross_premium: 0, commission_percentage: 0,
     marketing_budget_percentage: 0, loading: 0, b2b_commission: 0,
     policy_start_date: "", policy_end_date: "", notes: "",
@@ -107,14 +106,14 @@ function NewDealPage() {
     }),
     [form, bulkTotals.gross, lists?.basePct],
   );
-  const netPremium = calc.net_premium;
 
   const submit = async () => {
     if (!user) return;
     if (!form.client_id) return toast.error("Please pick a client");
     const effectiveGross = form.policy_type === "bulk" ? bulkTotals.gross : form.gross_premium;
-    const effectiveNet = form.policy_type === "bulk" ? bulkTotals.net : netPremium;
+    const effectiveNet = form.policy_type === "bulk" ? bulkTotals.net : form.net_premium;
     if (!(effectiveGross > 0)) return toast.error("Gross premium is required");
+    if (!Number.isFinite(form.net_premium) || form.net_premium < 0) return toast.error("Net premium must be a positive number");
     if (form.policy_type === "bulk" && bulkRows.length === 0) return toast.error("Add at least one bulk policy row");
     if (form.policy_type === "bulk") {
       await Promise.all(bulkRows.map((r, i) => checkDuplicate(i, r.policy_number)));
@@ -139,7 +138,6 @@ function NewDealPage() {
       insurance_company_id: form.insurance_company_id || null,
       insurance_type_id: form.insurance_type_id || null,
       stage_id: form.stage_id || null,
-      base_premium: isAdmin ? (form.base_premium || null) : null,
       marketing_budget_percentage: canSeeMarketing ? form.marketing_budget_percentage : 0,
       gross_premium: effectiveGross,
       net_premium: effectiveNet,
@@ -168,7 +166,7 @@ function NewDealPage() {
       <PageHeader
         title="New Deal"
         subtitle={canSeeFinancials
-          ? "Team, DO and Team Lead are attached automatically. Net Premium auto-calculates."
+          ? "Team, DO and Team Lead are attached automatically. Tagged Premium is calculated automatically."
           : "Team is attached automatically. Enter policy and premium details below."}
       />
 
@@ -299,14 +297,12 @@ function NewDealPage() {
           <Card>
             <CardHeader><CardTitle className="text-base">Premium{canSeeFinancials ? " & Commission" : ""}</CardTitle></CardHeader>
             <CardContent className="grid sm:grid-cols-3 gap-4">
-              {isAdmin && (
-                <Field label="Base Premium (PKR)"><Input type="number" step="0.01" value={form.base_premium} onChange={(e)=>setNum("base_premium", e.target.value)}/></Field>
-              )}
-              <Field label="Gross Premium (PKR) *"><Input type="number" step="0.01" value={form.gross_premium} onChange={(e)=>setNum("gross_premium", e.target.value)}/></Field>
+              <Field label="Gross Premium (PKR) *"><Input type="number" step="0.01" min="0" value={form.gross_premium} onChange={(e)=>setNum("gross_premium", e.target.value)}/></Field>
+              <Field label="Net Premium (PKR)"><Input type="number" step="0.01" min="0" value={form.net_premium} onChange={(e)=>setNum("net_premium", e.target.value)}/></Field>
+              <Field label="Tagged Premium (auto)"><Input readOnly tabIndex={-1} value={fmtPKR(calc.tagged_premium)} className="bg-muted/50"/></Field>
               {canSeeFinancials && (
                 <>
                   <Field label="Commission %"><Input type="number" step="0.001" value={form.commission_percentage} onChange={(e)=>setNum("commission_percentage", e.target.value)}/></Field>
-                  <Field label="Net Premium (auto)"><Input readOnly value={fmtPKR(netPremium)} className="bg-muted/50"/></Field>
                   {canSeeMarketing && (
                     <Field label="Marketing Budget %"><Input type="number" step="0.001" value={form.marketing_budget_percentage} onChange={(e)=>setNum("marketing_budget_percentage", e.target.value)}/></Field>
                   )}
@@ -335,7 +331,7 @@ function NewDealPage() {
               <CardHeader><CardTitle className="text-base">Live Calculations</CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <Row k="Gross Premium" v={fmtPKR(calc.gross_premium)} />
-                <Row k="Net Premium (Gross − Commission)" v={fmtPKR(calc.net_premium)} />
+                <Row k="Net Premium (manual)" v={fmtPKR(calc.net_premium)} />
                 <Row k="Commission Before Tax" v={fmtPKR(calc.commission_before_tax)} />
                 <Row k="Commission Tax (17%)" v={fmtPKR(calc.commission_tax)} />
                 <Row k="Commission After Tax" v={fmtPKR(calc.commission_after_tax)} />
@@ -343,7 +339,7 @@ function NewDealPage() {
                 <Row k="Marketing Tax (9%)" v={fmtPKR(calc.marketing_tax)} />
                 <Row k="Marketing After Tax" v={fmtPKR(calc.marketing_after_tax)} />
                 <hr className="my-2"/>
-                <Row k="Total Income" v={fmtPKR(calc.total_income)} strong />
+                <Row k="Total Income (Comm. + Mktg + Loading − B2B)" v={fmtPKR(calc.total_income)} strong />
                 <Row k="Income %" v={fmtPct(calc.income_percentage)} />
                 <Row k={`Tagged Premium % (base ${lists?.basePct ?? 13}%)`} v={fmtPct(calc.tagged_premium_percentage)} />
                 <Row k="Tagged Premium" v={fmtPKR(calc.tagged_premium)} strong />

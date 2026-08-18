@@ -17,6 +17,8 @@ export const DEFAULT_BASE_PERCENTAGE = 13;
 
 export interface DealFinancialInputs {
   gross_premium?: number | string | null;
+  /** Manually entered, independent value. Never derived from gross premium. */
+  net_premium?: number | string | null;
   commission_percentage?: number | string | null;
   marketing_budget_percentage?: number | string | null;
   loading?: number | string | null;
@@ -38,7 +40,7 @@ export interface DealFinancials {
   marketing_before_tax: number;
   marketing_tax: number;
   marketing_after_tax: number;
-  /** Gross Premium − Commission Before Tax (never negative). */
+  /** Manually entered net premium (independent input, never negative). */
   net_premium: number;
   total_income: number;
   income_percentage: number;
@@ -65,6 +67,7 @@ export function round(n: number, d = 2): number {
  */
 export function calculateDealFinancials(input: DealFinancialInputs): DealFinancials {
   const gross = Math.max(0, num(input.gross_premium));
+  const net = Math.max(0, num(input.net_premium));
   const commPct = num(input.commission_percentage);
   const mktPct = num(input.marketing_budget_percentage);
   const loading = num(input.loading);
@@ -80,7 +83,7 @@ export function calculateDealFinancials(input: DealFinancialInputs): DealFinanci
   const mktTax = mktBefore * MARKETING_TAX_RATE;
   const mktAfter = mktBefore - mktTax;
 
-  const totalIncome = commAfter + mktAfter + loading + b2b;
+  const totalIncome = commAfter + mktAfter + loading - b2b;
 
   const incomePct = gross > 0 ? (totalIncome / gross) * 100 : 0;
   const taggedPct = gross > 0 ? (incomePct / base) * 100 : 0;
@@ -99,7 +102,7 @@ export function calculateDealFinancials(input: DealFinancialInputs): DealFinanci
     marketing_before_tax: round(mktBefore),
     marketing_tax: round(mktTax),
     marketing_after_tax: round(mktAfter),
-    net_premium: round(Math.max(0, gross - commBefore)),
+    net_premium: round(net),
     total_income: round(totalIncome),
     income_percentage: round(incomePct, 6),
     tagged_premium_percentage: round(taggedPct, 6),

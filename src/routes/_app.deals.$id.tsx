@@ -14,7 +14,6 @@ import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/deals/$id")({
   component: DealDetail,
@@ -26,8 +25,6 @@ const PAYMENT_MODES = ["IBFT", "Cheque", "Cash", "Pay Order", "Online Payment"] 
 function DealDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
-  const { hasRole } = useAuth();
-  const isAdmin = hasRole("admin");
   // Premium & Commission section matches the original spec — visible to all roles.
   const canSeeFinancials = true;
 
@@ -57,6 +54,7 @@ function DealDetail() {
 
   const calc = useMemo(() => data?.deal ? calculateDealFinancials({
     gross_premium: data.deal.gross_premium,
+    net_premium: data.deal.net_premium,
     commission_percentage: data.deal.commission_percentage,
     marketing_budget_percentage: data.deal.marketing_budget_percentage,
     loading: data.deal.loading,
@@ -166,10 +164,10 @@ function DealDetail() {
           <Card>
             <CardHeader><CardTitle className="text-base">Premium & Income</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
-              {isAdmin && d.base_premium != null && <KV k="Base Premium" v={fmtPKR(Number(d.base_premium))} />}
               {calc && <>
                 <KV k="Gross Premium" v={fmtPKR(calc.gross_premium)} />
                 <KV k="Net Premium" v={fmtPKR(calc.net_premium)} />
+                <KV k="Tagged Premium (auto)" v={<span className="font-semibold">{fmtPKR(calc.tagged_premium)}</span>} />
                 <KV k="Commission %" v={fmtPct(calc.commission_percentage)} />
                 <KV k="Marketing %" v={fmtPct(calc.marketing_budget_percentage)} />
                 <KV k="Loading" v={fmtPKR(calc.loading)} />

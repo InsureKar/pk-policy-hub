@@ -9,6 +9,7 @@ describe("calculateDealFinancials", () => {
       marketing_budget_percentage: 5,
       loading: 10_000,
       b2b_commission: 5_000,
+      net_premium: 1_150_000,
       base_percentage: 13,
     });
     expect(f.commission_before_tax).toBe(100_000);
@@ -17,11 +18,11 @@ describe("calculateDealFinancials", () => {
     expect(f.marketing_before_tax).toBe(50_000);
     expect(f.marketing_tax).toBe(4_500);
     expect(f.marketing_after_tax).toBe(45_500);
-    expect(f.total_income).toBe(143_500);
-    expect(f.income_percentage).toBe(14.35);
-    expect(f.tagged_premium_percentage).toBeCloseTo(110.384615, 5);
+    expect(f.total_income).toBe(133_500); // loading added, B2B subtracted
+    expect(f.income_percentage).toBe(13.35);
+    expect(f.tagged_premium_percentage).toBeCloseTo(102.692308, 5);
     expect(f.tagged_premium).toBe(1_000_000); // >= 100% → gross premium
-    expect(f.net_premium).toBe(900_000);
+    expect(f.net_premium).toBe(1_150_000); // manual, independent input
   });
 
   it("Test Case 2 — tagged premium below 100%", () => {
@@ -37,6 +38,15 @@ describe("calculateDealFinancials", () => {
     expect(f.income_percentage).toBeCloseTo(10, 6);
     expect(f.tagged_premium_percentage).toBeCloseTo(76.923077, 5);
     expect(f.tagged_premium).toBeCloseTo(769_230.77, 2);
+  });
+
+  it("net premium is manual and never derived from gross premium", () => {
+    const f = calculateDealFinancials({ gross_premium: 1_000_000, commission_percentage: 10, net_premium: 1_150_000 });
+    expect(f.net_premium).toBe(1_150_000);
+    const none = calculateDealFinancials({ gross_premium: 1_000_000, commission_percentage: 10 });
+    expect(none.net_premium).toBe(0);
+    const negative = calculateDealFinancials({ gross_premium: 1_000_000, net_premium: -5 });
+    expect(negative.net_premium).toBe(0);
   });
 
   it("Test Case 3 — zero premium, no division by zero", () => {
@@ -70,7 +80,7 @@ describe("calculateDealFinancials", () => {
       b2b_commission: "5000",
       base_percentage: "13",
     });
-    expect(f.total_income).toBe(143_500);
+    expect(f.total_income).toBe(133_500);
   });
 
   it("tagged premium exactly at 100% returns gross premium", () => {
@@ -86,11 +96,11 @@ describe("calculateDealFinancials", () => {
     expect(f.tagged_premium).toBe(1_000_000);
   });
 
-  it("adds (never subtracts) loading and B2B commission", () => {
+  it("adds loading and subtracts B2B commission", () => {
     const base = { gross_premium: 500_000, commission_percentage: 10, marketing_budget_percentage: 5 };
     const without = calculateDealFinancials(base);
     const with_ = calculateDealFinancials({ ...base, loading: 1_000, b2b_commission: 2_000 });
-    expect(with_.total_income).toBe(without.total_income + 3_000);
+    expect(with_.total_income).toBe(without.total_income - 1_000);
   });
 
   it("supports decimal percentages, small and very large premiums", () => {
@@ -112,15 +122,16 @@ describe("calculateDealFinancials", () => {
 describe("aggregateDealFinancials (bulk & travel policies, dashboards, exports)", () => {
   it("sums bulk policy rows through the same engine", () => {
     const rows = [
-      { gross_premium: 400_000, commission_percentage: 10, marketing_budget_percentage: 5, loading: 4_000, b2b_commission: 2_000 },
-      { gross_premium: 600_000, commission_percentage: 10, marketing_budget_percentage: 5, loading: 6_000, b2b_commission: 3_000 },
+      { gross_premium: 400_000, commission_percentage: 10, marketing_budget_percentage: 5, loading: 4_000, b2b_commission: 2_000, net_premium: 380_000 },
+      { gross_premium: 600_000, commission_percentage: 10, marketing_budget_percentage: 5, loading: 6_000, b2b_commission: 3_000, net_premium: 570_000 },
     ];
     const agg = aggregateDealFinancials(rows, 13);
     const single = calculateDealFinancials({
       gross_premium: 1_000_000, commission_percentage: 10, marketing_budget_percentage: 5,
-      loading: 10_000, b2b_commission: 5_000, base_percentage: 13,
+      loading: 10_000, b2b_commission: 5_000, net_premium: 950_000, base_percentage: 13,
     });
     expect(agg.gross_premium).toBe(single.gross_premium);
+    expect(agg.net_premium).toBe(single.net_premium);
     expect(agg.total_income).toBe(single.total_income);
     expect(agg.income_percentage).toBeCloseTo(single.income_percentage, 6);
     expect(agg.tagged_premium_percentage).toBeCloseTo(single.tagged_premium_percentage, 6);
