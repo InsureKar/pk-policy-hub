@@ -14,7 +14,6 @@ import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/deals/$id")({
   component: DealDetail,
