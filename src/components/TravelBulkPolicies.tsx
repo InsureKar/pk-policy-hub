@@ -38,12 +38,12 @@ export const payableOf = (r: TravelPolicyRow) =>
 
 const clampPct = (v: number) => Math.min(45, Math.max(0, Number(v) || 0));
 
-const pick = (obj: Record<string, any>, keys: string[]) => {
-  for (const k of Object.keys(obj)) {
-    const norm = k.toLowerCase().replace(/[^a-z]/g, "");
-    if (keys.some((c) => norm.includes(c))) return obj[k];
-  }
-  return undefined;
+const norm = (v: any) => String(v ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const num = (v: any) => {
+  if (typeof v === "number") return v;
+  const s = String(v ?? "").replace(/[(),\s]/g, "").replace(/[^0-9.\-]/g, "");
+  const n = Number(s);
+  return isNaN(n) ? 0 : n;
 };
 
 const toDate = (v: any): string => {
