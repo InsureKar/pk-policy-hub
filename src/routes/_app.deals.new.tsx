@@ -314,7 +314,15 @@ function NewDealPage() {
             </CardContent>
           </Card>
 
-          {form.policy_type === "bulk" && (
+          {form.policy_type === "bulk" && isTravel && (
+            <TravelBulkPolicies
+              rows={travelRows} setRows={setTravelRows}
+              transfers={travelTransfers} setTransfers={setTravelTransfers}
+              dupErrors={travelDupErrors} onCheckDuplicate={checkTravelDuplicate}
+            />
+          )}
+
+          {form.policy_type === "bulk" && !isTravel && (
             <Card>
               <CardHeader><CardTitle className="text-base">Bulk Policies</CardTitle></CardHeader>
               <CardContent className="space-y-3">
