@@ -57,6 +57,7 @@ function DealDetail() {
 
   const calc = useMemo(() => data?.deal ? calculateDealFinancials({
     gross_premium: data.deal.gross_premium,
+    net_premium: data.deal.net_premium,
     commission_percentage: data.deal.commission_percentage,
     marketing_budget_percentage: data.deal.marketing_budget_percentage,
     loading: data.deal.loading,
@@ -166,10 +167,10 @@ function DealDetail() {
           <Card>
             <CardHeader><CardTitle className="text-base">Premium & Income</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
-              {isAdmin && d.base_premium != null && <KV k="Base Premium" v={fmtPKR(Number(d.base_premium))} />}
               {calc && <>
                 <KV k="Gross Premium" v={fmtPKR(calc.gross_premium)} />
                 <KV k="Net Premium" v={fmtPKR(calc.net_premium)} />
+                <KV k="Tagged Premium (auto)" v={<span className="font-semibold">{fmtPKR(calc.tagged_premium)}</span>} />
                 <KV k="Commission %" v={fmtPct(calc.commission_percentage)} />
                 <KV k="Marketing %" v={fmtPct(calc.marketing_budget_percentage)} />
                 <KV k="Loading" v={fmtPKR(calc.loading)} />

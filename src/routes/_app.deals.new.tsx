@@ -21,7 +21,6 @@ export const Route = createFileRoute("/_app/deals/new")({
 function NewDealPage() {
   const nav = useNavigate();
   const { user, hasRole } = useAuth();
-  const isAdmin = hasRole("admin");
   // Premium & Commission section is available to every user creating a deal,
   // matching the original spec — no tax or marketing-budget restrictions.
   const canSeeFinancials = true;
@@ -107,7 +106,6 @@ function NewDealPage() {
     }),
     [form, bulkTotals.gross, lists?.basePct],
   );
-  const netPremium = calc.net_premium; // manual, independent input
 
   const submit = async () => {
     if (!user) return;
