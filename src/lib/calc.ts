@@ -17,6 +17,8 @@ export const DEFAULT_BASE_PERCENTAGE = 13;
 
 export interface DealFinancialInputs {
   gross_premium?: number | string | null;
+  /** Manually entered, independent value. Never derived from gross premium. */
+  net_premium?: number | string | null;
   commission_percentage?: number | string | null;
   marketing_budget_percentage?: number | string | null;
   loading?: number | string | null;
