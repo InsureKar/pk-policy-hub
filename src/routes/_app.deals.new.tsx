@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_app/deals/new")({
 
 function NewDealPage() {
   const nav = useNavigate();
-  const { user, hasRole } = useAuth();
+  const { user } = useAuth();
   // Premium & Commission section is available to every user creating a deal,
   // matching the original spec — no tax or marketing-budget restrictions.
   const canSeeFinancials = true;

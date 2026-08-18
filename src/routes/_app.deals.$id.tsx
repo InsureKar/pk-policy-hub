@@ -26,8 +26,7 @@ const PAYMENT_MODES = ["IBFT", "Cheque", "Cash", "Pay Order", "Online Payment"] 
 function DealDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
-  const { hasRole } = useAuth();
-  const isAdmin = hasRole("admin");
+  const { } = useAuth();
   // Premium & Commission section matches the original spec — visible to all roles.
   const canSeeFinancials = true;
 
