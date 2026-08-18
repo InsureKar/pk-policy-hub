@@ -88,15 +88,43 @@ function NewDealPage() {
     }
   };
 
-  const bulkTotals = useMemo(() => bulkRows.reduce((a, r) => ({
-    gross: a.gross + Number(r.gross_premium || 0),
-    net: a.net + Number(r.net_premium || 0),
-    count: a.count + 1,
-  }), { gross: 0, net: 0, count: 0 }), [bulkRows]);
   const isTravel = useMemo(() => {
     const t = lists?.types.find(x => x.id === form.insurance_type_id);
     return (t?.name ?? "").toLowerCase() === "travel";
   }, [form.insurance_type_id, lists?.types]);
+
+  // Travel uses its own bulk format (Sr / Travel Agent / Date / Policy / Premium / Commission / Payable)
+  const [travelRows, setTravelRows] = useState<TravelPolicyRow[]>([emptyTravelRow()]);
+  const [travelTransfers, setTravelTransfers] = useState<TravelTransferRow[]>([emptyTransferRow()]);
+  const [travelDupErrors, setTravelDupErrors] = useState<Record<number, string>>({});
+  const checkTravelDuplicate = async (i: number, value: string) => {
+    const n = norm(value);
+    setTravelDupErrors(prev => { const c = { ...prev }; delete c[i]; return c; });
+    if (!n) return;
+    const localIdx = travelRows.findIndex((r, idx) => idx !== i && norm(r.policy_number) === n);
+    if (localIdx >= 0) {
+      setTravelDupErrors(prev => ({ ...prev, [i]: `Duplicate of row ${localIdx + 1} in this deal` }));
+      return;
+    }
+    const { data } = await supabase.rpc("travel_policy_conflict" as any, { _policy_number: value, _exclude_row: null });
+    const hit: any = Array.isArray(data) ? data[0] : data;
+    if (hit) setTravelDupErrors(prev => ({ ...prev, [i]: `Policy number already used${hit.reference ? ` on ${hit.reference}` : ""}` }));
+  };
+
+  const bulkTotals = useMemo(() => {
+    if (isTravel) {
+      return travelRows.reduce((a, r) => ({
+        gross: a.gross + Number(r.premium || 0),
+        net: a.net + payableOf(r),
+        count: a.count + 1,
+      }), { gross: 0, net: 0, count: 0 });
+    }
+    return bulkRows.reduce((a, r) => ({
+      gross: a.gross + Number(r.gross_premium || 0),
+      net: a.net + Number(r.net_premium || 0),
+      count: a.count + 1,
+    }), { gross: 0, net: 0, count: 0 });
+  }, [bulkRows, travelRows, isTravel]);
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setNum = (k: keyof typeof form, v: string) => set(k, (Number(v) || 0) as never);
