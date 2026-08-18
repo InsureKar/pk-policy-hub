@@ -146,8 +146,27 @@ function NewDealPage() {
     const effectiveNet = form.policy_type === "bulk" ? bulkTotals.net : form.net_premium;
     if (!(effectiveGross > 0)) return toast.error("Gross premium is required");
     if (!Number.isFinite(form.net_premium) || form.net_premium < 0) return toast.error("Net premium must be a positive number");
-    if (form.policy_type === "bulk" && bulkRows.length === 0) return toast.error("Add at least one bulk policy row");
-    if (form.policy_type === "bulk") {
+    const isTravelBulk = form.policy_type === "bulk" && isTravel;
+    if (form.policy_type === "bulk" && (isTravelBulk ? travelRows.length === 0 : bulkRows.length === 0)) return toast.error("Add at least one bulk policy row");
+    if (isTravelBulk) {
+      const seen = new Map<string, number>();
+      for (let i = 0; i < travelRows.length; i++) {
+        const r = travelRows[i];
+        if (r.commission_percentage < 0 || r.commission_percentage > 45) return toast.error(`Row ${i + 1}: commission must be between 0% and 45%`);
+        const n = norm(r.policy_number);
+        if (!n) return toast.error(`Row ${i + 1}: policy number is required`);
+        if (seen.has(n)) return toast.error(`Duplicate policy number in rows ${seen.get(n)! + 1} and ${i + 1}`);
+        seen.set(n, i);
+        const { data: conflict } = await supabase.rpc("travel_policy_conflict" as any, { _policy_number: r.policy_number, _exclude_row: null });
+        const hit: any = Array.isArray(conflict) ? conflict[0] : conflict;
+        if (hit) return toast.error(`Policy ${r.policy_number} already exists${hit.reference ? ` on ${hit.reference}` : ""}`);
+      }
+      const payable = travelRows.reduce((a, r) => a + payableOf(r), 0);
+      const transferred = travelTransfers.reduce((a, t) => a + Number(t.amount || 0), 0);
+      if (transferred > 0 && Math.abs(transferred - payable) > 0.01) {
+        return toast.error("Amount transfer total must match Payable to Insurance Company");
+      }
+    } else if (form.policy_type === "bulk") {
       await Promise.all(bulkRows.map((r, i) => checkDuplicate(i, r.policy_number)));
       const seen = new Map<string, number>();
       for (let i = 0; i < bulkRows.length; i++) {
