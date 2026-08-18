@@ -155,7 +155,7 @@ export function TravelBulkPolicies({
             if (!policy && !premium) continue;
             const payable = cols.payable >= 0 ? num(cells[cols.payable]) : 0;
             let pct = cols.commission >= 0 ? num(cells[cols.commission]) : 0;
-            if (pct > 0 && pct <= 1 && String(cells[cols.commission] ?? "").includes("%") === false && pct < 1) pct = pct * 100;
+            if (pct > 0 && pct < 1) pct = pct * 100;
             if (!pct && premium > 0 && payable > 0 && payable <= premium) pct = ((premium - payable) / premium) * 100;
             policies.push({
               travel_agent: String(cells[cols.travel_agent] ?? "").trim(),
