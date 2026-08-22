@@ -114,7 +114,7 @@ function ProcessDialog({ deal }: { deal: any }) {
   const [date, setDate] = useState(deal.b2b_transfer_date ?? new Date().toISOString().slice(0, 10));
 
   const gross = Number(deal.b2b_commission || 0);
-  const tax = deduct ? Math.round(gross * (Number(rate) || 0)) / 100 / 1 : 0;
+  const tax = deduct ? Math.round((gross * (Number(rate) || 0)) / 100 * 100) / 100 : 0;
   const net = Math.max(0, gross - tax);
 
   const mut = useMutation({
