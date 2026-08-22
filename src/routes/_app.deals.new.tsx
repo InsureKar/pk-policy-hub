@@ -213,6 +213,11 @@ function NewDealPage() {
       policy_end_date: form.policy_end_date || null,
       deal_type: form.deal_type,
       policy_type: form.policy_type,
+      b2b_commission: b2bAmount,
+      b2b_taker_id: form.b2b_taker_id || null,
+      b2b_commission_type: form.b2b_commission_type,
+      b2b_commission_percentage: Number(form.b2b_commission_percentage) || 0,
+      payment_destination: form.payment_destination,
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
