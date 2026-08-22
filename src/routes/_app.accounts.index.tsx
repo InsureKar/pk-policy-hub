@@ -112,6 +112,16 @@ function AccountsDashboard() {
         <KPI label="Monthly Comm. Paid" value={fmtPKR(monthlyCommissionPaid)}/>
         <KPI label="Total Gross Premium" value={fmtPKR(totalGross)}/>
         <KPI label="Total Net Premium" value={fmtPKR(totalNet)}/>
+        <KPI label="Excluded Direct Insurance Payments" value={fmtPKR(excludedDirect)}/>
+        <KPI label="B2B Commission Payable" value={fmtPKR(sumCat("b2b_commission"))}/>
+        <KPI label="Expense Payables" value={fmtPKR(sumCat("expense"))}/>
+        <KPI label="Other Payables" value={fmtPKR(sumCat("other"))}/>
+        <KPI label="Total Outstanding Payables" value={fmtPKR(payablesOutstanding)} tone="danger"/>
+        <KPI label="Total Income Tax" value={fmtPKR(sumTax("income_tax"))}/>
+        <KPI label="Total Sales Tax" value={fmtPKR(sumTax("sales_tax"))}/>
+        <KPI label="Total Marketing Budget Tax" value={fmtPKR(sumTax("marketing_budget_tax"))}/>
+        <KPI label="Total Commission Taker Tax" value={fmtPKR(sumTax("commission_taker_tax") + sumTax("b2b_commission_tax"))}/>
+        <KPI label="Total Tax Payable" value={fmtPKR(taxOutstanding)} tone="danger"/>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
