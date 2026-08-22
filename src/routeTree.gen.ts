@@ -47,6 +47,7 @@ import { Route as AppAccountsPaymentsRouteImport } from './routes/_app.accounts.
 import { Route as AppAccountsPayablesRouteImport } from './routes/_app.accounts.payables'
 import { Route as AppAccountsInvoicesRouteImport } from './routes/_app.accounts.invoices'
 import { Route as AppAccountsInstallmentsRouteImport } from './routes/_app.accounts.installments'
+import { Route as AppAccountsB2bRouteImport } from './routes/_app.accounts.b2b'
 import { Route as AppAccountsApprovalsRouteImport } from './routes/_app.accounts.approvals'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -241,6 +242,11 @@ const AppAccountsInstallmentsRoute = AppAccountsInstallmentsRouteImport.update({
   path: '/installments',
   getParentRoute: () => AppAccountsRoute,
 } as any)
+const AppAccountsB2bRoute = AppAccountsB2bRouteImport.update({
+  id: '/b2b',
+  path: '/b2b',
+  getParentRoute: () => AppAccountsRoute,
+} as any)
 const AppAccountsApprovalsRoute = AppAccountsApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
+  '/accounts/b2b': typeof AppAccountsB2bRoute
   '/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/accounts/payables': typeof AppAccountsPayablesRoute
@@ -305,6 +312,7 @@ export interface FileRoutesByTo {
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
+  '/accounts/b2b': typeof AppAccountsB2bRoute
   '/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/accounts/payables': typeof AppAccountsPayablesRoute
@@ -347,6 +355,7 @@ export interface FileRoutesById {
   '/_app/teams': typeof AppTeamsRoute
   '/_app/users': typeof AppUsersRoute
   '/_app/accounts/approvals': typeof AppAccountsApprovalsRoute
+  '/_app/accounts/b2b': typeof AppAccountsB2bRoute
   '/_app/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/_app/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/_app/accounts/payables': typeof AppAccountsPayablesRoute
@@ -389,6 +398,7 @@ export interface FileRouteTypes {
     | '/teams'
     | '/users'
     | '/accounts/approvals'
+    | '/accounts/b2b'
     | '/accounts/installments'
     | '/accounts/invoices'
     | '/accounts/payables'
@@ -427,6 +437,7 @@ export interface FileRouteTypes {
     | '/teams'
     | '/users'
     | '/accounts/approvals'
+    | '/accounts/b2b'
     | '/accounts/installments'
     | '/accounts/invoices'
     | '/accounts/payables'
@@ -468,6 +479,7 @@ export interface FileRouteTypes {
     | '/_app/teams'
     | '/_app/users'
     | '/_app/accounts/approvals'
+    | '/_app/accounts/b2b'
     | '/_app/accounts/installments'
     | '/_app/accounts/invoices'
     | '/_app/accounts/payables'
@@ -764,6 +776,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsInstallmentsRouteImport
       parentRoute: typeof AppAccountsRoute
     }
+    '/_app/accounts/b2b': {
+      id: '/_app/accounts/b2b'
+      path: '/b2b'
+      fullPath: '/accounts/b2b'
+      preLoaderRoute: typeof AppAccountsB2bRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
     '/_app/accounts/approvals': {
       id: '/_app/accounts/approvals'
       path: '/approvals'
@@ -776,6 +795,7 @@ declare module '@tanstack/react-router' {
 
 interface AppAccountsRouteChildren {
   AppAccountsApprovalsRoute: typeof AppAccountsApprovalsRoute
+  AppAccountsB2bRoute: typeof AppAccountsB2bRoute
   AppAccountsInstallmentsRoute: typeof AppAccountsInstallmentsRoute
   AppAccountsInvoicesRoute: typeof AppAccountsInvoicesRoute
   AppAccountsPayablesRoute: typeof AppAccountsPayablesRoute
@@ -788,6 +808,7 @@ interface AppAccountsRouteChildren {
 
 const AppAccountsRouteChildren: AppAccountsRouteChildren = {
   AppAccountsApprovalsRoute: AppAccountsApprovalsRoute,
+  AppAccountsB2bRoute: AppAccountsB2bRoute,
   AppAccountsInstallmentsRoute: AppAccountsInstallmentsRoute,
   AppAccountsInvoicesRoute: AppAccountsInvoicesRoute,
   AppAccountsPayablesRoute: AppAccountsPayablesRoute,
