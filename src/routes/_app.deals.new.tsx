@@ -135,14 +135,24 @@ function NewDealPage() {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setNum = (k: keyof typeof form, v: string) => set(k, (Number(v) || 0) as never);
 
+  const effGross = form.policy_type === "bulk" ? bulkTotals.gross : form.gross_premium;
+  // B2B commission: percentage is auto-calculated from gross premium, fixed is used as entered.
+  const b2bAmount = useMemo(
+    () => form.b2b_commission_type === "percentage"
+      ? Math.round(effGross * (Number(form.b2b_commission_percentage) || 0)) / 100
+      : Number(form.b2b_commission) || 0,
+    [form.b2b_commission_type, form.b2b_commission_percentage, form.b2b_commission, effGross],
+  );
+
   // Single source of truth — real-time recalculation on every input change.
   const calc = useMemo(
     () => calculateDealFinancials({
       ...form,
-      gross_premium: form.policy_type === "bulk" ? bulkTotals.gross : form.gross_premium,
+      gross_premium: effGross,
+      b2b_commission: b2bAmount,
       base_percentage: lists?.basePct,
     }),
-    [form, bulkTotals.gross, lists?.basePct],
+    [form, effGross, b2bAmount, lists?.basePct],
   );
 
   const submit = async () => {
