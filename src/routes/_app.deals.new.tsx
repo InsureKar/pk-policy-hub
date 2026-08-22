@@ -421,11 +421,53 @@ function NewDealPage() {
                   )}
 
                   <Field label="Loading (PKR)"><Input type="number" step="0.01" value={form.loading} onChange={(e)=>setNum("loading", e.target.value)}/></Field>
-                  <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={form.b2b_commission} onChange={(e)=>setNum("b2b_commission", e.target.value)}/></Field>
+                  <Field label="Payment Destination">
+                    <Select value={form.payment_destination} onValueChange={(v)=>set("payment_destination", v as "company" | "insurance_company")}>
+                      <SelectTrigger><SelectValue/></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="company">Paid to Company (receivable)</SelectItem>
+                        <SelectItem value="insurance_company">Paid directly to Insurance Company</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </>
               )}
             </CardContent>
           </Card>
+
+          {canSeeFinancials && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">B2B Commission</CardTitle></CardHeader>
+              <CardContent className="grid sm:grid-cols-3 gap-4">
+                <Field label="B2B Commission Taker">
+                  <Select value={form.b2b_taker_id} onValueChange={(v)=>set("b2b_taker_id", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select person"/></SelectTrigger>
+                    <SelectContent>{lists?.people.map(p=><SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </Field>
+                <Field label="B2B Commission Type">
+                  <Select value={form.b2b_commission_type} onValueChange={(v)=>set("b2b_commission_type", v as "fixed" | "percentage")}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentage (%)</SelectItem>
+                      <SelectItem value="fixed">Fixed Amount</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                {form.b2b_commission_type === "percentage" ? (
+                  <>
+                    <Field label="B2B Commission %"><Input type="number" step="0.001" value={form.b2b_commission_percentage} onChange={(e)=>setNum("b2b_commission_percentage", e.target.value)}/></Field>
+                    <Field label="B2B Commission Amount (auto)"><Input readOnly tabIndex={-1} value={fmtPKR(b2bAmount)} className="bg-muted/50"/></Field>
+                  </>
+                ) : (
+                  <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={form.b2b_commission} onChange={(e)=>setNum("b2b_commission", e.target.value)}/></Field>
+                )}
+                <p className="sm:col-span-3 text-xs text-muted-foreground">
+                  Tax deduction on this B2B commission is handled by the Accountant in Accounts → B2B Commission.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>
