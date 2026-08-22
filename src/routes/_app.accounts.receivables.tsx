@@ -50,6 +50,8 @@ function ReceivablesPage() {
   const filtered = useMemo(() => {
     const rows = data?.rows ?? [];
     return rows.filter(r => {
+      // Premium paid directly to the insurance company is never a company receivable
+      if ((r as any).excluded_from_receivable) return false;
       if (status !== "all" && r.status !== status) return false;
       if (from && new Date(r.created_at) < new Date(from)) return false;
       if (to && new Date(r.created_at) > new Date(to + "T23:59:59")) return false;
