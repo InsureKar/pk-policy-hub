@@ -37,18 +37,20 @@ function NewDealPage() {
     queryKey: ["deal-form-lists"],
     queryFn: async () => {
       // clients are automatically scoped by RLS to what the current user can see
-      const [clients, stages, companies, types, sources, settings] = await Promise.all([
+      const [clients, stages, companies, types, sources, settings, people] = await Promise.all([
         supabase.from("clients").select("id, company_name, full_name, client_type").order("company_name"),
         supabase.from("deal_stages").select("*").order("sort_order"),
         supabase.from("insurance_companies").select("id, name").eq("active", true).order("name"),
         supabase.from("insurance_types").select("id, name").eq("active", true).order("name"),
         supabase.from("lead_sources").select("id, name").eq("active", true).order("name"),
         supabase.from("app_settings").select("key, value").eq("key", "tagged_premium_base_percentage").maybeSingle(),
+        supabase.from("profiles").select("id, full_name").order("full_name"),
       ]);
       return {
         clients: clients.data ?? [], stages: stages.data ?? [],
         companies: companies.data ?? [], types: types.data ?? [],
         sources: sources.data ?? [],
+        people: people.data ?? [],
         basePct: Number(settings.data?.value ?? 13),
       };
     },
@@ -60,6 +62,9 @@ function NewDealPage() {
     net_premium: 0,
     gross_premium: 0, commission_percentage: 0,
     marketing_budget_percentage: 0, loading: 0, b2b_commission: 0,
+    b2b_taker_id: "", b2b_commission_type: "fixed" as "fixed" | "percentage",
+    b2b_commission_percentage: 0,
+    payment_destination: "company" as "company" | "insurance_company",
     policy_start_date: "", policy_end_date: "", notes: "",
     deal_type: "fresh" as "fresh" | "renewal",
     policy_type: "single" as "single" | "bulk",
