@@ -40,6 +40,7 @@ import { Route as AppOperationsCommissionsRouteImport } from './routes/_app.oper
 import { Route as AppLeadsUnassignedRouteImport } from './routes/_app.leads.unassigned'
 import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
 import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
+import { Route as AppAccountsTaxRouteImport } from './routes/_app.accounts.tax'
 import { Route as AppAccountsReportsRouteImport } from './routes/_app.accounts.reports'
 import { Route as AppAccountsReceivablesRouteImport } from './routes/_app.accounts.receivables'
 import { Route as AppAccountsPaymentsRouteImport } from './routes/_app.accounts.payments'
@@ -205,6 +206,11 @@ const AppDealsIdRoute = AppDealsIdRouteImport.update({
   path: '/deals/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountsTaxRoute = AppAccountsTaxRouteImport.update({
+  id: '/tax',
+  path: '/tax',
+  getParentRoute: () => AppAccountsRoute,
+} as any)
 const AppAccountsReportsRoute = AppAccountsReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/accounts/payments': typeof AppAccountsPaymentsRoute
   '/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/accounts/reports': typeof AppAccountsReportsRoute
+  '/accounts/tax': typeof AppAccountsTaxRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
   '/leads/unassigned': typeof AppLeadsUnassignedRoute
@@ -304,6 +311,7 @@ export interface FileRoutesByTo {
   '/accounts/payments': typeof AppAccountsPaymentsRoute
   '/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/accounts/reports': typeof AppAccountsReportsRoute
+  '/accounts/tax': typeof AppAccountsTaxRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
   '/leads/unassigned': typeof AppLeadsUnassignedRoute
@@ -345,6 +353,7 @@ export interface FileRoutesById {
   '/_app/accounts/payments': typeof AppAccountsPaymentsRoute
   '/_app/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/_app/accounts/reports': typeof AppAccountsReportsRoute
+  '/_app/accounts/tax': typeof AppAccountsTaxRoute
   '/_app/deals/$id': typeof AppDealsIdRoute
   '/_app/deals/new': typeof AppDealsNewRoute
   '/_app/leads/unassigned': typeof AppLeadsUnassignedRoute
@@ -386,6 +395,7 @@ export interface FileRouteTypes {
     | '/accounts/payments'
     | '/accounts/receivables'
     | '/accounts/reports'
+    | '/accounts/tax'
     | '/deals/$id'
     | '/deals/new'
     | '/leads/unassigned'
@@ -423,6 +433,7 @@ export interface FileRouteTypes {
     | '/accounts/payments'
     | '/accounts/receivables'
     | '/accounts/reports'
+    | '/accounts/tax'
     | '/deals/$id'
     | '/deals/new'
     | '/leads/unassigned'
@@ -463,6 +474,7 @@ export interface FileRouteTypes {
     | '/_app/accounts/payments'
     | '/_app/accounts/receivables'
     | '/_app/accounts/reports'
+    | '/_app/accounts/tax'
     | '/_app/deals/$id'
     | '/_app/deals/new'
     | '/_app/leads/unassigned'
@@ -703,6 +715,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDealsIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/accounts/tax': {
+      id: '/_app/accounts/tax'
+      path: '/tax'
+      fullPath: '/accounts/tax'
+      preLoaderRoute: typeof AppAccountsTaxRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
     '/_app/accounts/reports': {
       id: '/_app/accounts/reports'
       path: '/reports'
@@ -763,6 +782,7 @@ interface AppAccountsRouteChildren {
   AppAccountsPaymentsRoute: typeof AppAccountsPaymentsRoute
   AppAccountsReceivablesRoute: typeof AppAccountsReceivablesRoute
   AppAccountsReportsRoute: typeof AppAccountsReportsRoute
+  AppAccountsTaxRoute: typeof AppAccountsTaxRoute
   AppAccountsIndexRoute: typeof AppAccountsIndexRoute
 }
 
@@ -774,6 +794,7 @@ const AppAccountsRouteChildren: AppAccountsRouteChildren = {
   AppAccountsPaymentsRoute: AppAccountsPaymentsRoute,
   AppAccountsReceivablesRoute: AppAccountsReceivablesRoute,
   AppAccountsReportsRoute: AppAccountsReportsRoute,
+  AppAccountsTaxRoute: AppAccountsTaxRoute,
   AppAccountsIndexRoute: AppAccountsIndexRoute,
 }
 
