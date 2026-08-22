@@ -461,6 +461,15 @@ export type Database = {
         Row: {
           assigned_do_id: string | null
           b2b_commission: number
+          b2b_commission_percentage: number
+          b2b_commission_type: string
+          b2b_net_amount: number
+          b2b_taker_id: string | null
+          b2b_tax_amount: number
+          b2b_tax_deduct: boolean
+          b2b_tax_rate: number
+          b2b_transfer_date: string | null
+          b2b_transfer_status: string
           base_percentage: number | null
           base_premium: number | null
           client_id: string | null
@@ -486,6 +495,7 @@ export type Database = {
           marketing_tax: number | null
           net_premium: number
           notes: string | null
+          payment_destination: string
           payment_mode: string | null
           payment_receive_date: string | null
           payment_remarks: string | null
@@ -509,6 +519,15 @@ export type Database = {
         Insert: {
           assigned_do_id?: string | null
           b2b_commission?: number
+          b2b_commission_percentage?: number
+          b2b_commission_type?: string
+          b2b_net_amount?: number
+          b2b_taker_id?: string | null
+          b2b_tax_amount?: number
+          b2b_tax_deduct?: boolean
+          b2b_tax_rate?: number
+          b2b_transfer_date?: string | null
+          b2b_transfer_status?: string
           base_percentage?: number | null
           base_premium?: number | null
           client_id?: string | null
@@ -534,6 +553,7 @@ export type Database = {
           marketing_tax?: number | null
           net_premium?: number
           notes?: string | null
+          payment_destination?: string
           payment_mode?: string | null
           payment_receive_date?: string | null
           payment_remarks?: string | null
@@ -557,6 +577,15 @@ export type Database = {
         Update: {
           assigned_do_id?: string | null
           b2b_commission?: number
+          b2b_commission_percentage?: number
+          b2b_commission_type?: string
+          b2b_net_amount?: number
+          b2b_taker_id?: string | null
+          b2b_tax_amount?: number
+          b2b_tax_deduct?: boolean
+          b2b_tax_rate?: number
+          b2b_transfer_date?: string | null
+          b2b_transfer_status?: string
           base_percentage?: number | null
           base_premium?: number | null
           client_id?: string | null
@@ -582,6 +611,7 @@ export type Database = {
           marketing_tax?: number | null
           net_premium?: number
           notes?: string | null
+          payment_destination?: string
           payment_mode?: string | null
           payment_receive_date?: string | null
           payment_remarks?: string | null
@@ -603,6 +633,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "deals_b2b_taker_id_fkey"
+            columns: ["b2b_taker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "deals_client_id_fkey"
             columns: ["client_id"]
@@ -1229,6 +1266,102 @@ export type Database = {
         }
         Relationships: []
       }
+      payables: {
+        Row: {
+          category: Database["public"]["Enums"]["payable_category"]
+          commission_payable_id: string | null
+          created_at: string
+          deal_id: string | null
+          description: string | null
+          due_date: string | null
+          expense_id: string | null
+          id: string
+          original_amount: number
+          outstanding_amount: number | null
+          paid_amount: number
+          payee_name: string | null
+          payee_profile_id: string | null
+          payment_date: string | null
+          status: string
+          tax_record_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["payable_category"]
+          commission_payable_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          expense_id?: string | null
+          id?: string
+          original_amount?: number
+          outstanding_amount?: number | null
+          paid_amount?: number
+          payee_name?: string | null
+          payee_profile_id?: string | null
+          payment_date?: string | null
+          status?: string
+          tax_record_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["payable_category"]
+          commission_payable_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          expense_id?: string | null
+          id?: string
+          original_amount?: number
+          outstanding_amount?: number | null
+          paid_amount?: number
+          payee_name?: string | null
+          payee_profile_id?: string | null
+          payment_date?: string | null
+          status?: string
+          tax_record_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payables_commission_payable_id_fkey"
+            columns: ["commission_payable_id"]
+            isOneToOne: false
+            referencedRelation: "commission_payables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_payee_profile_id_fkey"
+            columns: ["payee_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_tax_record_id_fkey"
+            columns: ["tax_record_id"]
+            isOneToOne: false
+            referencedRelation: "tax_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1588,6 +1721,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           deal_id: string
+          excluded_from_receivable: boolean
           expected_collection_date: string | null
           first_due_date: string | null
           fully_paid_at: string | null
@@ -1614,6 +1748,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deal_id: string
+          excluded_from_receivable?: boolean
           expected_collection_date?: string | null
           first_due_date?: string | null
           fully_paid_at?: string | null
@@ -1640,6 +1775,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deal_id?: string
+          excluded_from_receivable?: boolean
           expected_collection_date?: string | null
           first_due_date?: string | null
           fully_paid_at?: string | null
@@ -1813,6 +1949,105 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_records: {
+        Row: {
+          amount: number
+          base_amount: number
+          client_id: string | null
+          created_at: string
+          deal_id: string | null
+          deducted_from: string | null
+          id: string
+          insurance_type_id: string | null
+          notes: string | null
+          paid_amount: number
+          period_date: string
+          rate: number
+          source_id: string | null
+          source_type: string
+          status: string
+          tax_type: Database["public"]["Enums"]["tax_kind"]
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          base_amount?: number
+          client_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          deducted_from?: string | null
+          id?: string
+          insurance_type_id?: string | null
+          notes?: string | null
+          paid_amount?: number
+          period_date?: string
+          rate?: number
+          source_id?: string | null
+          source_type?: string
+          status?: string
+          tax_type: Database["public"]["Enums"]["tax_kind"]
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          base_amount?: number
+          client_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          deducted_from?: string | null
+          id?: string
+          insurance_type_id?: string | null
+          notes?: string | null
+          paid_amount?: number
+          period_date?: string
+          rate?: number
+          source_id?: string | null
+          source_type?: string
+          status?: string
+          tax_type?: Database["public"]["Enums"]["tax_kind"]
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_records_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_records_deducted_from_fkey"
+            columns: ["deducted_from"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_records_insurance_type_id_fkey"
+            columns: ["insurance_type_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_records_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -2251,6 +2486,12 @@ export type Database = {
         | "travel"
         | "fire"
         | "misc"
+      payable_category:
+        | "commission"
+        | "b2b_commission"
+        | "tax"
+        | "expense"
+        | "other"
       payable_status: "pending" | "paid" | "cancelled"
       payment_method_type:
         | "cash"
@@ -2263,6 +2504,12 @@ export type Database = {
       permission_level: "none" | "view" | "edit" | "add"
       policy_type_kind: "single" | "bulk"
       receivable_status: "open" | "partial" | "paid" | "overdue" | "cancelled"
+      tax_kind:
+        | "income_tax"
+        | "sales_tax"
+        | "marketing_budget_tax"
+        | "commission_taker_tax"
+        | "b2b_commission_tax"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2420,6 +2667,13 @@ export const Constants = {
         "fire",
         "misc",
       ],
+      payable_category: [
+        "commission",
+        "b2b_commission",
+        "tax",
+        "expense",
+        "other",
+      ],
       payable_status: ["pending", "paid", "cancelled"],
       payment_method_type: [
         "cash",
@@ -2433,6 +2687,13 @@ export const Constants = {
       permission_level: ["none", "view", "edit", "add"],
       policy_type_kind: ["single", "bulk"],
       receivable_status: ["open", "partial", "paid", "overdue", "cancelled"],
+      tax_kind: [
+        "income_tax",
+        "sales_tax",
+        "marketing_budget_tax",
+        "commission_taker_tax",
+        "b2b_commission_tax",
+      ],
     },
   },
 } as const
