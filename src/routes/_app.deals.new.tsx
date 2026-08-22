@@ -37,18 +37,20 @@ function NewDealPage() {
     queryKey: ["deal-form-lists"],
     queryFn: async () => {
       // clients are automatically scoped by RLS to what the current user can see
-      const [clients, stages, companies, types, sources, settings] = await Promise.all([
+      const [clients, stages, companies, types, sources, settings, people] = await Promise.all([
         supabase.from("clients").select("id, company_name, full_name, client_type").order("company_name"),
         supabase.from("deal_stages").select("*").order("sort_order"),
         supabase.from("insurance_companies").select("id, name").eq("active", true).order("name"),
         supabase.from("insurance_types").select("id, name").eq("active", true).order("name"),
         supabase.from("lead_sources").select("id, name").eq("active", true).order("name"),
         supabase.from("app_settings").select("key, value").eq("key", "tagged_premium_base_percentage").maybeSingle(),
+        supabase.from("profiles").select("id, full_name").order("full_name"),
       ]);
       return {
         clients: clients.data ?? [], stages: stages.data ?? [],
         companies: companies.data ?? [], types: types.data ?? [],
         sources: sources.data ?? [],
+        people: people.data ?? [],
         basePct: Number(settings.data?.value ?? 13),
       };
     },
@@ -60,6 +62,9 @@ function NewDealPage() {
     net_premium: 0,
     gross_premium: 0, commission_percentage: 0,
     marketing_budget_percentage: 0, loading: 0, b2b_commission: 0,
+    b2b_taker_id: "", b2b_commission_type: "fixed" as "fixed" | "percentage",
+    b2b_commission_percentage: 0,
+    payment_destination: "company" as "company" | "insurance_company",
     policy_start_date: "", policy_end_date: "", notes: "",
     deal_type: "fresh" as "fresh" | "renewal",
     policy_type: "single" as "single" | "bulk",
@@ -130,14 +135,24 @@ function NewDealPage() {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setNum = (k: keyof typeof form, v: string) => set(k, (Number(v) || 0) as never);
 
+  const effGross = form.policy_type === "bulk" ? bulkTotals.gross : form.gross_premium;
+  // B2B commission: percentage is auto-calculated from gross premium, fixed is used as entered.
+  const b2bAmount = useMemo(
+    () => form.b2b_commission_type === "percentage"
+      ? Math.round(effGross * (Number(form.b2b_commission_percentage) || 0)) / 100
+      : Number(form.b2b_commission) || 0,
+    [form.b2b_commission_type, form.b2b_commission_percentage, form.b2b_commission, effGross],
+  );
+
   // Single source of truth — real-time recalculation on every input change.
   const calc = useMemo(
     () => calculateDealFinancials({
       ...form,
-      gross_premium: form.policy_type === "bulk" ? bulkTotals.gross : form.gross_premium,
+      gross_premium: effGross,
+      b2b_commission: b2bAmount,
       base_percentage: lists?.basePct,
     }),
-    [form, bulkTotals.gross, lists?.basePct],
+    [form, effGross, b2bAmount, lists?.basePct],
   );
 
   const submit = async () => {
@@ -198,6 +213,11 @@ function NewDealPage() {
       policy_end_date: form.policy_end_date || null,
       deal_type: form.deal_type,
       policy_type: form.policy_type,
+      b2b_commission: b2bAmount,
+      b2b_taker_id: form.b2b_taker_id || null,
+      b2b_commission_type: form.b2b_commission_type,
+      b2b_commission_percentage: Number(form.b2b_commission_percentage) || 0,
+      payment_destination: form.payment_destination,
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
@@ -401,11 +421,53 @@ function NewDealPage() {
                   )}
 
                   <Field label="Loading (PKR)"><Input type="number" step="0.01" value={form.loading} onChange={(e)=>setNum("loading", e.target.value)}/></Field>
-                  <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={form.b2b_commission} onChange={(e)=>setNum("b2b_commission", e.target.value)}/></Field>
+                  <Field label="Payment Destination">
+                    <Select value={form.payment_destination} onValueChange={(v)=>set("payment_destination", v as "company" | "insurance_company")}>
+                      <SelectTrigger><SelectValue/></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="company">Paid to Company (receivable)</SelectItem>
+                        <SelectItem value="insurance_company">Paid directly to Insurance Company</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </>
               )}
             </CardContent>
           </Card>
+
+          {canSeeFinancials && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">B2B Commission</CardTitle></CardHeader>
+              <CardContent className="grid sm:grid-cols-3 gap-4">
+                <Field label="B2B Commission Taker">
+                  <Select value={form.b2b_taker_id} onValueChange={(v)=>set("b2b_taker_id", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select person"/></SelectTrigger>
+                    <SelectContent>{lists?.people.map(p=><SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </Field>
+                <Field label="B2B Commission Type">
+                  <Select value={form.b2b_commission_type} onValueChange={(v)=>set("b2b_commission_type", v as "fixed" | "percentage")}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentage (%)</SelectItem>
+                      <SelectItem value="fixed">Fixed Amount</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                {form.b2b_commission_type === "percentage" ? (
+                  <>
+                    <Field label="B2B Commission %"><Input type="number" step="0.001" value={form.b2b_commission_percentage} onChange={(e)=>setNum("b2b_commission_percentage", e.target.value)}/></Field>
+                    <Field label="B2B Commission Amount (auto)"><Input readOnly tabIndex={-1} value={fmtPKR(b2bAmount)} className="bg-muted/50"/></Field>
+                  </>
+                ) : (
+                  <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={form.b2b_commission} onChange={(e)=>setNum("b2b_commission", e.target.value)}/></Field>
+                )}
+                <p className="sm:col-span-3 text-xs text-muted-foreground">
+                  Tax deduction on this B2B commission is handled by the Accountant in Accounts → B2B Commission.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>

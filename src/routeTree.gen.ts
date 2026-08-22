@@ -40,12 +40,14 @@ import { Route as AppOperationsCommissionsRouteImport } from './routes/_app.oper
 import { Route as AppLeadsUnassignedRouteImport } from './routes/_app.leads.unassigned'
 import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
 import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
+import { Route as AppAccountsTaxRouteImport } from './routes/_app.accounts.tax'
 import { Route as AppAccountsReportsRouteImport } from './routes/_app.accounts.reports'
 import { Route as AppAccountsReceivablesRouteImport } from './routes/_app.accounts.receivables'
 import { Route as AppAccountsPaymentsRouteImport } from './routes/_app.accounts.payments'
 import { Route as AppAccountsPayablesRouteImport } from './routes/_app.accounts.payables'
 import { Route as AppAccountsInvoicesRouteImport } from './routes/_app.accounts.invoices'
 import { Route as AppAccountsInstallmentsRouteImport } from './routes/_app.accounts.installments'
+import { Route as AppAccountsB2bRouteImport } from './routes/_app.accounts.b2b'
 import { Route as AppAccountsApprovalsRouteImport } from './routes/_app.accounts.approvals'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -205,6 +207,11 @@ const AppDealsIdRoute = AppDealsIdRouteImport.update({
   path: '/deals/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountsTaxRoute = AppAccountsTaxRouteImport.update({
+  id: '/tax',
+  path: '/tax',
+  getParentRoute: () => AppAccountsRoute,
+} as any)
 const AppAccountsReportsRoute = AppAccountsReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -235,6 +242,11 @@ const AppAccountsInstallmentsRoute = AppAccountsInstallmentsRouteImport.update({
   path: '/installments',
   getParentRoute: () => AppAccountsRoute,
 } as any)
+const AppAccountsB2bRoute = AppAccountsB2bRouteImport.update({
+  id: '/b2b',
+  path: '/b2b',
+  getParentRoute: () => AppAccountsRoute,
+} as any)
 const AppAccountsApprovalsRoute = AppAccountsApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
@@ -261,12 +273,14 @@ export interface FileRoutesByFullPath {
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
+  '/accounts/b2b': typeof AppAccountsB2bRoute
   '/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/accounts/payables': typeof AppAccountsPayablesRoute
   '/accounts/payments': typeof AppAccountsPaymentsRoute
   '/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/accounts/reports': typeof AppAccountsReportsRoute
+  '/accounts/tax': typeof AppAccountsTaxRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
   '/leads/unassigned': typeof AppLeadsUnassignedRoute
@@ -298,12 +312,14 @@ export interface FileRoutesByTo {
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
+  '/accounts/b2b': typeof AppAccountsB2bRoute
   '/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/accounts/payables': typeof AppAccountsPayablesRoute
   '/accounts/payments': typeof AppAccountsPaymentsRoute
   '/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/accounts/reports': typeof AppAccountsReportsRoute
+  '/accounts/tax': typeof AppAccountsTaxRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
   '/leads/unassigned': typeof AppLeadsUnassignedRoute
@@ -339,12 +355,14 @@ export interface FileRoutesById {
   '/_app/teams': typeof AppTeamsRoute
   '/_app/users': typeof AppUsersRoute
   '/_app/accounts/approvals': typeof AppAccountsApprovalsRoute
+  '/_app/accounts/b2b': typeof AppAccountsB2bRoute
   '/_app/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/_app/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/_app/accounts/payables': typeof AppAccountsPayablesRoute
   '/_app/accounts/payments': typeof AppAccountsPaymentsRoute
   '/_app/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/_app/accounts/reports': typeof AppAccountsReportsRoute
+  '/_app/accounts/tax': typeof AppAccountsTaxRoute
   '/_app/deals/$id': typeof AppDealsIdRoute
   '/_app/deals/new': typeof AppDealsNewRoute
   '/_app/leads/unassigned': typeof AppLeadsUnassignedRoute
@@ -380,12 +398,14 @@ export interface FileRouteTypes {
     | '/teams'
     | '/users'
     | '/accounts/approvals'
+    | '/accounts/b2b'
     | '/accounts/installments'
     | '/accounts/invoices'
     | '/accounts/payables'
     | '/accounts/payments'
     | '/accounts/receivables'
     | '/accounts/reports'
+    | '/accounts/tax'
     | '/deals/$id'
     | '/deals/new'
     | '/leads/unassigned'
@@ -417,12 +437,14 @@ export interface FileRouteTypes {
     | '/teams'
     | '/users'
     | '/accounts/approvals'
+    | '/accounts/b2b'
     | '/accounts/installments'
     | '/accounts/invoices'
     | '/accounts/payables'
     | '/accounts/payments'
     | '/accounts/receivables'
     | '/accounts/reports'
+    | '/accounts/tax'
     | '/deals/$id'
     | '/deals/new'
     | '/leads/unassigned'
@@ -457,12 +479,14 @@ export interface FileRouteTypes {
     | '/_app/teams'
     | '/_app/users'
     | '/_app/accounts/approvals'
+    | '/_app/accounts/b2b'
     | '/_app/accounts/installments'
     | '/_app/accounts/invoices'
     | '/_app/accounts/payables'
     | '/_app/accounts/payments'
     | '/_app/accounts/receivables'
     | '/_app/accounts/reports'
+    | '/_app/accounts/tax'
     | '/_app/deals/$id'
     | '/_app/deals/new'
     | '/_app/leads/unassigned'
@@ -703,6 +727,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDealsIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/accounts/tax': {
+      id: '/_app/accounts/tax'
+      path: '/tax'
+      fullPath: '/accounts/tax'
+      preLoaderRoute: typeof AppAccountsTaxRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
     '/_app/accounts/reports': {
       id: '/_app/accounts/reports'
       path: '/reports'
@@ -745,6 +776,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsInstallmentsRouteImport
       parentRoute: typeof AppAccountsRoute
     }
+    '/_app/accounts/b2b': {
+      id: '/_app/accounts/b2b'
+      path: '/b2b'
+      fullPath: '/accounts/b2b'
+      preLoaderRoute: typeof AppAccountsB2bRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
     '/_app/accounts/approvals': {
       id: '/_app/accounts/approvals'
       path: '/approvals'
@@ -757,23 +795,27 @@ declare module '@tanstack/react-router' {
 
 interface AppAccountsRouteChildren {
   AppAccountsApprovalsRoute: typeof AppAccountsApprovalsRoute
+  AppAccountsB2bRoute: typeof AppAccountsB2bRoute
   AppAccountsInstallmentsRoute: typeof AppAccountsInstallmentsRoute
   AppAccountsInvoicesRoute: typeof AppAccountsInvoicesRoute
   AppAccountsPayablesRoute: typeof AppAccountsPayablesRoute
   AppAccountsPaymentsRoute: typeof AppAccountsPaymentsRoute
   AppAccountsReceivablesRoute: typeof AppAccountsReceivablesRoute
   AppAccountsReportsRoute: typeof AppAccountsReportsRoute
+  AppAccountsTaxRoute: typeof AppAccountsTaxRoute
   AppAccountsIndexRoute: typeof AppAccountsIndexRoute
 }
 
 const AppAccountsRouteChildren: AppAccountsRouteChildren = {
   AppAccountsApprovalsRoute: AppAccountsApprovalsRoute,
+  AppAccountsB2bRoute: AppAccountsB2bRoute,
   AppAccountsInstallmentsRoute: AppAccountsInstallmentsRoute,
   AppAccountsInvoicesRoute: AppAccountsInvoicesRoute,
   AppAccountsPayablesRoute: AppAccountsPayablesRoute,
   AppAccountsPaymentsRoute: AppAccountsPaymentsRoute,
   AppAccountsReceivablesRoute: AppAccountsReceivablesRoute,
   AppAccountsReportsRoute: AppAccountsReportsRoute,
+  AppAccountsTaxRoute: AppAccountsTaxRoute,
   AppAccountsIndexRoute: AppAccountsIndexRoute,
 }
 
