@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
@@ -90,10 +90,15 @@ function AnalyticsPage() {
   );
 }
 
-function agg<T>(arr: T[], key: (x: T) => string, val: (x: T) => number) {
-  const m: Record<string, number> = {};
-  for (const x of arr) { const k = key(x); m[k] = (m[k] ?? 0) + val(x); }
-  return Object.entries(m).map(([label, value]) => ({ label, value }));
+type Slice = { label: string; value: number; id?: string };
+
+function agg<T>(arr: T[], key: (x: T) => string, val: (x: T) => number, id?: (x: T) => string | undefined): Slice[] {
+  const m: Record<string, { value: number; id?: string }> = {};
+  for (const x of arr) {
+    const k = key(x);
+    m[k] = { value: (m[k]?.value ?? 0) + val(x), id: m[k]?.id ?? id?.(x) };
+  }
+  return Object.entries(m).map(([label, v]) => ({ label, value: v.value, id: v.id }));
 }
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
