@@ -70,21 +70,21 @@ function AnalyticsPage() {
         </TabsList>
 
         <TabsContent value="sales">
-          <ChartCard title="Sales by DO (Gross Premium)"><BarChartH data={bySales}/></ChartCard>
+          <ChartCard title="Sales by DO (Gross Premium)"><BarChartH data={bySales} onSelect={()=>openDeals({})}/></ChartCard>
           <div className="h-4"/>
-          <ChartCard title="Deals per stage"><PieChartS data={byStage}/></ChartCard>
+          <ChartCard title="Deals per stage"><PieChartS data={byStage} onSelect={(s)=>openDeals(s?.id ? { stage: s.id } : {})}/></ChartCard>
         </TabsContent>
         <TabsContent value="revenue">
-          <ChartCard title="Revenue by insurance company"><BarChartH data={byRev}/></ChartCard>
+          <ChartCard title="Revenue by insurance company"><BarChartH data={byRev} onSelect={()=>openDeals({})}/></ChartCard>
         </TabsContent>
         <TabsContent value="team">
-          <ChartCard title="Team commission earned"><BarChartH data={byTeam}/></ChartCard>
+          <ChartCard title="Team commission earned"><BarChartH data={byTeam} onSelect={()=>openDeals({})}/></ChartCard>
         </TabsContent>
         <TabsContent value="company">
-          <ChartCard title="Company income share"><PieChartS data={byRev}/></ChartCard>
+          <ChartCard title="Company income share"><PieChartS data={byRev} onSelect={()=>openDeals({})}/></ChartCard>
         </TabsContent>
         <TabsContent value="renewals">
-          <ChartCard title="Renewal status"><PieChartS data={Object.entries(renewalBuckets).map(([label,value])=>({label, value}))}/></ChartCard>
+          <ChartCard title="Renewal status"><PieChartS data={Object.entries(renewalBuckets).map(([label,value])=>({label, value}))} onSelect={()=>navigate({ to: "/renewals" })}/></ChartCard>
         </TabsContent>
       </Tabs>
     </div>
