@@ -100,6 +100,23 @@ function DealsList() {
               <SelectItem value="renewal">Renewal</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Category"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {(data?.types ?? []).map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={month} onValueChange={setMonth}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Month"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Months</SelectItem>
+              {monthOptions.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {(stage !== "all" || dealType !== "all" || category !== "all" || month !== "all" || q) && (
+            <Button variant="ghost" size="sm" onClick={() => { setStage("all"); setDealType("all"); setCategory("all"); setMonth("all"); setQ(""); }}>Clear</Button>
+          )}
         </CardContent>
       </Card>
 
