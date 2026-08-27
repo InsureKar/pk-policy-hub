@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Upload } from "lucide-react";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/operations/expenses")({
   component: ExpensesPage,
@@ -121,8 +122,8 @@ function ExpensesPage() {
               <F label="Vendor"><Input value={form.vendor ?? ""} onChange={e => setForm({ ...form, vendor: e.target.value })}/></F>
               <F label="Invoice #"><Input value={form.invoice_number ?? ""} onChange={e => setForm({ ...form, invoice_number: e.target.value })}/></F>
               <F label="Payment Method"><Input value={form.payment_method ?? ""} onChange={e => setForm({ ...form, payment_method: e.target.value })}/></F>
-              <F label="Expense Date *"><Input type="date" value={form.expense_date} onChange={e => setForm({ ...form, expense_date: e.target.value })}/></F>
-              <F label="Payment Date"><Input type="date" value={form.payment_date ?? ""} onChange={e => setForm({ ...form, payment_date: e.target.value })}/></F>
+              <F label="Expense Date *"><DateField value={form.expense_date} onChange={(v) => setForm({ ...form, expense_date: v })}/></F>
+              <F label="Payment Date"><DateField value={form.payment_date ?? ""} onChange={(v) => setForm({ ...form, payment_date: v })}/></F>
               <F label="Attachment"><Input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)}/></F>
               <div className="col-span-2"><F label="Remarks"><Textarea rows={2} value={form.remarks ?? ""} onChange={e => setForm({ ...form, remarks: e.target.value })}/></F></div>
             </div>

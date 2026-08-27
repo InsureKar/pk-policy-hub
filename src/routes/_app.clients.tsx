@@ -15,6 +15,7 @@ import { Plus, Search } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fmtDate } from "@/lib/format";
 import { toast } from "sonner";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/clients")({
   component: ClientsPage,
@@ -148,7 +149,7 @@ function ClientsPage() {
                 ) : (
                   <>
                     <F label="Full Name *"><Input value={form.full_name} onChange={(e)=>set("full_name", e.target.value)}/></F>
-                    <F label="Date of Birth *"><Input type="date" value={form.date_of_birth} onChange={(e)=>set("date_of_birth", e.target.value)}/></F>
+                    <F label="Date of Birth *"><DateField value={form.date_of_birth} onChange={(v) => set("date_of_birth", v)}/></F>
                     <F label="Phone *"><Input value={form.phone} onChange={(e)=>set("phone", e.target.value)} placeholder="+92 3XX XXXXXXX"/></F>
                     <F label="Email"><Input type="email" value={form.email} onChange={(e)=>set("email", e.target.value)}/></F>
                     <F label="CNIC (Optional)"><Input value={form.cnic} onChange={(e)=>set("cnic", e.target.value)} placeholder="12345-1234567-1"/></F>

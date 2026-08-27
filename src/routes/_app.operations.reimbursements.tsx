@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/operations/reimbursements")({
   component: ReimbursementsPage,
@@ -98,7 +99,7 @@ function ReimbursementsPage() {
                 </Select>
               </F>
               <F label="Amount *"><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}/></F>
-              <F label="Expense Date *"><Input type="date" value={form.expense_date} onChange={e => setForm({ ...form, expense_date: e.target.value })}/></F>
+              <F label="Expense Date *"><DateField value={form.expense_date} onChange={(v) => setForm({ ...form, expense_date: v })}/></F>
               <F label="Attachment"><Input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)}/></F>
               <div className="col-span-2"><F label="Description *"><Textarea rows={2} value={form.description ?? ""} onChange={e => setForm({ ...form, description: e.target.value })}/></F></div>
               <div className="col-span-2"><F label="Remarks"><Textarea rows={2} value={form.remarks ?? ""} onChange={e => setForm({ ...form, remarks: e.target.value })}/></F></div>

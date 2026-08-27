@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { Download, Plus } from "lucide-react";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/accounts/payables")({
   component: PayablesPage,
@@ -196,7 +197,7 @@ function NewPayableDialog() {
           </Field>
           <Field label="Payee" className="col-span-2"><Input value={form.payee_name} onChange={e => setForm({ ...form, payee_name: e.target.value })} /></Field>
           <Field label="Amount"><Input type="number" step="0.01" value={form.original_amount} onChange={e => setForm({ ...form, original_amount: e.target.value })} /></Field>
-          <Field label="Due date"><Input type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} /></Field>
+          <Field label="Due date"><DateField value={form.due_date} onChange={(v) => setForm({ ...form, due_date: v })}/></Field>
           <Field label="Description" className="col-span-2"><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></Field>
         </div>
         <DialogFooter>
@@ -257,7 +258,7 @@ function PayDialog({ payable }: { payable: any }) {
         <DialogHeader><DialogTitle>Record payable payment</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Amount"><Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} /></Field>
-          <Field label="Payment date"><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></Field>
+          <Field label="Payment date"><DateField value={date} onChange={(v) => setDate(v)}/></Field>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
