@@ -41,7 +41,10 @@ function AnalyticsPage() {
   const bySales = agg(data?.activeDeals ?? [], d => d.assigned_do_id ? (data?.profMap.get(d.assigned_do_id) ?? "—") : "Unassigned", d => Number(d.gross_premium));
   const byRev = agg(data?.activeDeals ?? [], d => d.insurance_company_id ? (data?.coMap.get(d.insurance_company_id) ?? "—") : "—", d => Number(d.total_income ?? 0));
   const byTeam = agg(data?.activeDeals ?? [], d => d.team_id ? (data?.teamMap.get(d.team_id) ?? "—") : "Unassigned", d => Number(d.total_income ?? 0));
-  const byStage = agg(data?.deals ?? [], d => d.stage_id ? (data?.stageMap.get(d.stage_id) ?? "—") : "—", d => 1);
+  const byStage = agg(data?.deals ?? [], d => d.stage_id ? (data?.stageMap.get(d.stage_id) ?? "—") : "—", d => 1, d => d.stage_id ?? undefined);
+
+  // Charts are clickable: drill into the Deals list filtered by the clicked slice.
+  const openDeals = (search: { stage?: string }) => navigate({ to: "/deals", search });
 
   const renewalBuckets = { upcoming: 0, due: 0, expired: 0, completed: 0 };
   const today = new Date();
