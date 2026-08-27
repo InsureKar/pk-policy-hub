@@ -12,7 +12,14 @@ import { fmtPKR, fmtDate } from "@/lib/format";
 import { Plus, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
+export type DealsSearch = { stage?: string; dealType?: string; category?: string };
+
 export const Route = createFileRoute("/_app/deals/")({
+  validateSearch: (s: Record<string, unknown>): DealsSearch => ({
+    stage: typeof s.stage === "string" ? s.stage : undefined,
+    dealType: typeof s.dealType === "string" ? s.dealType : undefined,
+    category: typeof s.category === "string" ? s.category : undefined,
+  }),
   component: DealsList,
 });
 
