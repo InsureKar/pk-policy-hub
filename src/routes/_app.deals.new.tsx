@@ -471,6 +471,41 @@ function NewDealPage() {
             </CardContent>
           </Card>
 
+          {canSeeFinancials && form.payment_destination === "company" && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Payment to Company — Collection Details</CardTitle></CardHeader>
+              <CardContent className="grid sm:grid-cols-3 gap-4">
+                <Field label="Payment Method">
+                  <Select value={form.payment_mode} onValueChange={(v)=>set("payment_mode", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select method"/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Bank via Cheque Deposit">Bank via Cheque Deposit</SelectItem>
+                      <SelectItem value="Online Transfer">Online Transfer</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Card">Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Payment Receive Date">
+                  <DateField value={form.payment_receive_date} onChange={(v)=>set("payment_receive_date", v)} placeholder="Receive date"/>
+                </Field>
+                <Field label="Transaction / Cheque Reference">
+                  <Input value={form.transaction_reference} onChange={(e)=>set("transaction_reference", e.target.value)} placeholder="TID / Cheque no."/>
+                </Field>
+                <div className="sm:col-span-3">
+                  <Field label="Payment Remarks">
+                    <Input value={form.payment_remarks} onChange={(e)=>set("payment_remarks", e.target.value)}/>
+                  </Field>
+                </div>
+                <p className="sm:col-span-3 text-xs text-muted-foreground">
+                  Payments collected by the company post to Accounts as a premium receivable, and the amount payable onward to the insurance company appears under the Payables / expense head.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+
+
           {canSeeFinancials && (
             <Card>
               <CardHeader><CardTitle className="text-base">B2B Commission</CardTitle></CardHeader>
