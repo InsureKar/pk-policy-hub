@@ -207,7 +207,7 @@ function DealDetail() {
               </Select>
             </Field>
             <Field label="Payment Receive Date *">
-              <Input type="date" value={pay.payment_receive_date} onChange={(e)=>setPay(p=>({...p, payment_receive_date: e.target.value}))}/>
+              <DateField value={pay.payment_receive_date} onChange={(v)=>setPay(p=>({...p, payment_receive_date: v}))} placeholder="Receive date"/>
             </Field>
             <Field label="Payment Schedule *">
               <Select value={pay.payment_schedule} onValueChange={(v)=>setPay(p=>({...p, payment_schedule: v}))}>
@@ -258,8 +258,42 @@ function DealDetail() {
 
       <DealInvoicesAndTravel dealId={id} stage={stage} isTravel={(type ?? "").toLowerCase() === "travel"} />
 
+      <StageHistory dealId={id} stages={data.stages} profiles={data.profiles} />
+
       {d.notes && <Card className="mt-4"><CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader><CardContent className="text-sm whitespace-pre-wrap">{d.notes}</CardContent></Card>}
     </div>
+  );
+}
+
+/** Deal stage change log — visible to Admin & Management only. */
+function StageHistory({ dealId, stages, profiles }: { dealId: string; stages: any[]; profiles: any[] }) {
+  const { hasRole } = useAuth();
+  const allowed = hasRole(["admin", "management"]);
+  const { data: history } = useQuery({
+    enabled: allowed,
+    queryKey: ["deal-stage-history", dealId],
+    queryFn: async () =>
+      (await (supabase as any).from("deal_stage_history").select("*").eq("deal_id", dealId).order("created_at", { ascending: false })).data ?? [],
+  });
+  if (!allowed) return null;
+  const stageName = (sid: string | null) => stages.find((s) => s.id === sid)?.name ?? "—";
+  const personName = (pid: string | null) => profiles.find((p) => p.id === pid)?.full_name ?? "System";
+  return (
+    <Card className="mt-4">
+      <CardHeader><CardTitle className="text-base">Stage History <Badge variant="secondary">Admin & Management</Badge></CardTitle></CardHeader>
+      <CardContent className="text-sm">
+        {(history ?? []).length === 0 && <div className="text-muted-foreground">No stage changes recorded yet.</div>}
+        <ul className="space-y-2">
+          {(history ?? []).map((h: any) => (
+            <li key={h.id} className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2 last:border-0">
+              <span className="text-muted-foreground">{new Date(h.created_at).toLocaleString()}</span>
+              <span className="font-medium">{h.from_stage_id ? `${stageName(h.from_stage_id)} → ` : ""}{stageName(h.to_stage_id)}</span>
+              <span className="text-muted-foreground">by {personName(h.changed_by)}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 
