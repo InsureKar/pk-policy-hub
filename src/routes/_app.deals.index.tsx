@@ -55,9 +55,20 @@ function DealsList() {
   const typeMap = useMemo(() => new Map((data?.types ?? []).map(t => [t.id, t.name])), [data]);
   const profileMap = useMemo(() => new Map((data?.profiles ?? []).map(p => [p.id, p.full_name])), [data]);
 
+  // Last 24 months, newest first — used for the month filter.
+  const monthOptions = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 24 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleString("en-US", { month: "long", year: "numeric" }) };
+    });
+  }, []);
+
   const filtered = (data?.deals ?? []).filter((d: any) => {
     if (stage !== "all" && d.stage_id !== stage) return false;
     if (dealType !== "all" && d.deal_type !== dealType) return false;
+    if (category !== "all" && d.insurance_type_id !== category) return false;
+    if (month !== "all" && String(d.created_at).slice(0, 7) !== month) return false;
     if (!q) return true;
     const needle = q.toLowerCase();
     return [d.deal_number, d.cover_note_number, d.policy_number].some((x) => x && x.toLowerCase().includes(needle));
