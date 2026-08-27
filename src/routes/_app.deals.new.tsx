@@ -239,6 +239,11 @@ function NewDealPage() {
       b2b_commission_type: form.b2b_commission_type,
       b2b_commission_percentage: Number(form.b2b_commission_percentage) || 0,
       payment_destination: form.payment_destination,
+      payment_schedule: form.payment_schedule || null,
+      payment_mode: form.payment_destination === "company" ? (form.payment_mode || null) : null,
+      payment_receive_date: form.payment_destination === "company" ? (form.payment_receive_date || null) : null,
+      transaction_reference: form.payment_destination === "company" ? (form.transaction_reference.trim() || null) : null,
+      payment_remarks: form.payment_destination === "company" ? (form.payment_remarks.trim() || null) : null,
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
