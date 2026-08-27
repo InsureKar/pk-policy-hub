@@ -116,14 +116,37 @@ function ReviewPage() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
-      <PageHeader title="Review User" subtitle="Drill into any Team Lead or DO's pipeline, business, product mix and month-wise trend." />
+      <PageHeader title="Review User" subtitle={isPrivileged
+        ? "Drill into any Team Lead or DO's pipeline, business, product mix and month-wise trend."
+        : "Review your own and your team members' pipeline, business, product mix and month-wise trend."} />
       <Card className="mb-4">
-        <CardContent className="p-4 flex items-center gap-3">
+        <CardContent className="p-4 flex flex-wrap items-center gap-3">
           <span className="text-sm text-muted-foreground">User:</span>
           <Select value={userId} onValueChange={setUserId}>
-            <SelectTrigger className="w-[300px]"><SelectValue placeholder="Select user"/></SelectTrigger>
+            <SelectTrigger className="w-[260px]"><SelectValue placeholder="Select user"/></SelectTrigger>
             <SelectContent>
               {users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={monthFilter} onValueChange={setMonthFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Month"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Months</SelectItem>
+              {monthOptions.map(m => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={stageFilter} onValueChange={setStageFilter}>
+            <SelectTrigger className="w-[170px]"><SelectValue placeholder="Stage"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stages</SelectItem>
+              {(userData?.stages ?? []).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Category"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {(userData?.types ?? []).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </CardContent>
