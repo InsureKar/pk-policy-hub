@@ -19,9 +19,12 @@ export const Route = createFileRoute("/_app/deals/")({
 function DealsList() {
   const { hasRole } = useAuth();
   const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
+  const search = Route.useSearch();
   const [q, setQ] = useState("");
-  const [stage, setStage] = useState<string>("all");
-  const [dealType, setDealType] = useState<string>("all");
+  const [stage, setStage] = useState<string>(search.stage ?? "all");
+  const [dealType, setDealType] = useState<string>(search.dealType ?? "all");
+  const [month, setMonth] = useState<string>("all");
+  const [category, setCategory] = useState<string>(search.category ?? "all");
 
   const { data } = useQuery({
     queryKey: ["deals-list"],
