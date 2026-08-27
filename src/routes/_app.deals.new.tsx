@@ -16,6 +16,7 @@ import {
   type TravelPolicyRow, type TravelTransferRow,
 } from "@/components/TravelBulkPolicies";
 import { fmtPKR, fmtPct } from "@/lib/format";
+import { DateField } from "@/components/DateField";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/deals/new")({
@@ -65,6 +66,11 @@ function NewDealPage() {
     b2b_taker_id: "", b2b_commission_type: "fixed" as "fixed" | "percentage",
     b2b_commission_percentage: 0,
     payment_destination: "company" as "company" | "insurance_company",
+    payment_schedule: "" as string,
+    payment_mode: "" as string,
+    payment_receive_date: "",
+    transaction_reference: "",
+    payment_remarks: "",
     policy_start_date: "", policy_end_date: "", notes: "",
     deal_type: "fresh" as "fresh" | "renewal",
     policy_type: "single" as "single" | "bulk",
