@@ -16,6 +16,7 @@ import {
   type TravelPolicyRow, type TravelTransferRow,
 } from "@/components/TravelBulkPolicies";
 import { fmtPKR, fmtPct } from "@/lib/format";
+import { DateField } from "@/components/DateField";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/deals/new")({
@@ -65,6 +66,11 @@ function NewDealPage() {
     b2b_taker_id: "", b2b_commission_type: "fixed" as "fixed" | "percentage",
     b2b_commission_percentage: 0,
     payment_destination: "company" as "company" | "insurance_company",
+    payment_schedule: "" as string,
+    payment_mode: "" as string,
+    payment_receive_date: "",
+    transaction_reference: "",
+    payment_remarks: "",
     policy_start_date: "", policy_end_date: "", notes: "",
     deal_type: "fresh" as "fresh" | "renewal",
     policy_type: "single" as "single" | "bulk",
@@ -98,6 +104,21 @@ function NewDealPage() {
     const t = lists?.types.find(x => x.id === form.insurance_type_id);
     return (t?.name ?? "").toLowerCase() === "travel";
   }, [form.insurance_type_id, lists?.types]);
+
+  // Policy end date is auto-calculated as start + 1 year (minus a day) for every
+  // product except Travel, where cover length varies per policy.
+  const setStartDate = (v: string) => {
+    setForm((f) => {
+      const next = { ...f, policy_start_date: v };
+      if (v && !isTravel) {
+        const d = new Date(`${v}T00:00:00`);
+        d.setFullYear(d.getFullYear() + 1);
+        d.setDate(d.getDate() - 1);
+        next.policy_end_date = d.toISOString().slice(0, 10);
+      }
+      return next;
+    });
+  };
 
   // Travel uses its own bulk format (Sr / Travel Agent / Date / Policy / Premium / Commission / Payable)
   const [travelRows, setTravelRows] = useState<TravelPolicyRow[]>([emptyTravelRow()]);
@@ -218,6 +239,11 @@ function NewDealPage() {
       b2b_commission_type: form.b2b_commission_type,
       b2b_commission_percentage: Number(form.b2b_commission_percentage) || 0,
       payment_destination: form.payment_destination,
+      payment_schedule: form.payment_schedule || null,
+      payment_mode: form.payment_destination === "company" ? (form.payment_mode || null) : null,
+      payment_receive_date: form.payment_destination === "company" ? (form.payment_receive_date || null) : null,
+      transaction_reference: form.payment_destination === "company" ? (form.transaction_reference.trim() || null) : null,
+      payment_remarks: form.payment_destination === "company" ? (form.payment_remarks.trim() || null) : null,
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
@@ -330,8 +356,23 @@ function NewDealPage() {
                   <SelectContent>{lists?.types.map(t=><SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
-              <Field label="Policy Start"><Input type="date" value={form.policy_start_date} onChange={(e)=>set("policy_start_date", e.target.value)}/></Field>
-              <Field label="Policy End"><Input type="date" value={form.policy_end_date} onChange={(e)=>set("policy_end_date", e.target.value)}/></Field>
+              <Field label="Policy Start">
+                <DateField value={form.policy_start_date} onChange={setStartDate} placeholder="Start date"/>
+              </Field>
+              <Field label={isTravel ? "Policy End" : "Policy End (auto +1 year)"}>
+                <DateField value={form.policy_end_date} onChange={(v)=>set("policy_end_date", v)} placeholder="End date"/>
+              </Field>
+              <Field label="Payment Mode / Schedule">
+                <Select value={form.payment_schedule} onValueChange={(v)=>set("payment_schedule", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select payment mode"/></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Monthly">Monthly</SelectItem>
+                    <SelectItem value="Quarterly">Quarterly</SelectItem>
+                    <SelectItem value="Bi-Annually">Bi-Annually</SelectItem>
+                    <SelectItem value="Annually">Annually</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
             </CardContent>
           </Card>
 
@@ -434,6 +475,41 @@ function NewDealPage() {
               )}
             </CardContent>
           </Card>
+
+          {canSeeFinancials && form.payment_destination === "company" && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Payment to Company — Collection Details</CardTitle></CardHeader>
+              <CardContent className="grid sm:grid-cols-3 gap-4">
+                <Field label="Payment Method">
+                  <Select value={form.payment_mode} onValueChange={(v)=>set("payment_mode", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select method"/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Bank via Cheque Deposit">Bank via Cheque Deposit</SelectItem>
+                      <SelectItem value="Online Transfer">Online Transfer</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Card">Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Payment Receive Date">
+                  <DateField value={form.payment_receive_date} onChange={(v)=>set("payment_receive_date", v)} placeholder="Receive date"/>
+                </Field>
+                <Field label="Transaction / Cheque Reference">
+                  <Input value={form.transaction_reference} onChange={(e)=>set("transaction_reference", e.target.value)} placeholder="TID / Cheque no."/>
+                </Field>
+                <div className="sm:col-span-3">
+                  <Field label="Payment Remarks">
+                    <Input value={form.payment_remarks} onChange={(e)=>set("payment_remarks", e.target.value)}/>
+                  </Field>
+                </div>
+                <p className="sm:col-span-3 text-xs text-muted-foreground">
+                  Payments collected by the company post to Accounts as a premium receivable, and the amount payable onward to the insurance company appears under the Payables / expense head.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+
 
           {canSeeFinancials && (
             <Card>

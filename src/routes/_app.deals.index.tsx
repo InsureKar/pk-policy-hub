@@ -12,16 +12,26 @@ import { fmtPKR, fmtDate } from "@/lib/format";
 import { Plus, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
+export type DealsSearch = { stage?: string; dealType?: string; category?: string };
+
 export const Route = createFileRoute("/_app/deals/")({
+  validateSearch: (s: Record<string, unknown>): DealsSearch => ({
+    stage: typeof s.stage === "string" ? s.stage : undefined,
+    dealType: typeof s.dealType === "string" ? s.dealType : undefined,
+    category: typeof s.category === "string" ? s.category : undefined,
+  }),
   component: DealsList,
 });
 
 function DealsList() {
   const { hasRole } = useAuth();
   const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
+  const search = Route.useSearch();
   const [q, setQ] = useState("");
-  const [stage, setStage] = useState<string>("all");
-  const [dealType, setDealType] = useState<string>("all");
+  const [stage, setStage] = useState<string>(search.stage ?? "all");
+  const [dealType, setDealType] = useState<string>(search.dealType ?? "all");
+  const [month, setMonth] = useState<string>("all");
+  const [category, setCategory] = useState<string>(search.category ?? "all");
 
   const { data } = useQuery({
     queryKey: ["deals-list"],
@@ -45,9 +55,20 @@ function DealsList() {
   const typeMap = useMemo(() => new Map((data?.types ?? []).map(t => [t.id, t.name])), [data]);
   const profileMap = useMemo(() => new Map((data?.profiles ?? []).map(p => [p.id, p.full_name])), [data]);
 
+  // Last 24 months, newest first — used for the month filter.
+  const monthOptions = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 24 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleString("en-US", { month: "long", year: "numeric" }) };
+    });
+  }, []);
+
   const filtered = (data?.deals ?? []).filter((d: any) => {
     if (stage !== "all" && d.stage_id !== stage) return false;
     if (dealType !== "all" && d.deal_type !== dealType) return false;
+    if (category !== "all" && d.insurance_type_id !== category) return false;
+    if (month !== "all" && String(d.created_at).slice(0, 7) !== month) return false;
     if (!q) return true;
     const needle = q.toLowerCase();
     return [d.deal_number, d.cover_note_number, d.policy_number].some((x) => x && x.toLowerCase().includes(needle));
@@ -79,6 +100,23 @@ function DealsList() {
               <SelectItem value="renewal">Renewal</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Category"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {(data?.types ?? []).map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={month} onValueChange={setMonth}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Month"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Months</SelectItem>
+              {monthOptions.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {(stage !== "all" || dealType !== "all" || category !== "all" || month !== "all" || q) && (
+            <Button variant="ghost" size="sm" onClick={() => { setStage("all"); setDealType("all"); setCategory("all"); setMonth("all"); setQ(""); }}>Clear</Button>
+          )}
         </CardContent>
       </Card>
 

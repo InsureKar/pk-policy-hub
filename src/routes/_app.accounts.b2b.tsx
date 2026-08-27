@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/accounts/b2b")({
   component: B2BPage,
@@ -162,7 +163,7 @@ function ProcessDialog({ deal }: { deal: any }) {
           {transferred && (
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Transfer date</Label>
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+              <DateField value={date} onChange={(v) => setDate(v)}/>
             </div>
           )}
         </div>

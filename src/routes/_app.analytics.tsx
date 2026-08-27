@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
@@ -14,6 +14,7 @@ export const Route = createFileRoute("/_app/analytics")({
 const COLORS = ["var(--chart-1)","var(--chart-2)","var(--chart-3)","var(--chart-4)","var(--chart-5)"];
 
 function AnalyticsPage() {
+  const navigate = useNavigate();
   const { data } = useQuery({
     queryKey: ["analytics"],
     queryFn: async () => {
@@ -41,7 +42,10 @@ function AnalyticsPage() {
   const bySales = agg(data?.activeDeals ?? [], d => d.assigned_do_id ? (data?.profMap.get(d.assigned_do_id) ?? "—") : "Unassigned", d => Number(d.gross_premium));
   const byRev = agg(data?.activeDeals ?? [], d => d.insurance_company_id ? (data?.coMap.get(d.insurance_company_id) ?? "—") : "—", d => Number(d.total_income ?? 0));
   const byTeam = agg(data?.activeDeals ?? [], d => d.team_id ? (data?.teamMap.get(d.team_id) ?? "—") : "Unassigned", d => Number(d.total_income ?? 0));
-  const byStage = agg(data?.deals ?? [], d => d.stage_id ? (data?.stageMap.get(d.stage_id) ?? "—") : "—", d => 1);
+  const byStage = agg(data?.deals ?? [], d => d.stage_id ? (data?.stageMap.get(d.stage_id) ?? "—") : "—", d => 1, d => d.stage_id ?? undefined);
+
+  // Charts are clickable: drill into the Deals list filtered by the clicked slice.
+  const openDeals = (search: { stage?: string }) => navigate({ to: "/deals", search });
 
   const renewalBuckets = { upcoming: 0, due: 0, expired: 0, completed: 0 };
   const today = new Date();
@@ -66,38 +70,43 @@ function AnalyticsPage() {
         </TabsList>
 
         <TabsContent value="sales">
-          <ChartCard title="Sales by DO (Gross Premium)"><BarChartH data={bySales}/></ChartCard>
+          <ChartCard title="Sales by DO (Gross Premium)"><BarChartH data={bySales} onSelect={()=>openDeals({})}/></ChartCard>
           <div className="h-4"/>
-          <ChartCard title="Deals per stage"><PieChartS data={byStage}/></ChartCard>
+          <ChartCard title="Deals per stage"><PieChartS data={byStage} onSelect={(s)=>openDeals(s?.id ? { stage: s.id } : {})}/></ChartCard>
         </TabsContent>
         <TabsContent value="revenue">
-          <ChartCard title="Revenue by insurance company"><BarChartH data={byRev}/></ChartCard>
+          <ChartCard title="Revenue by insurance company"><BarChartH data={byRev} onSelect={()=>openDeals({})}/></ChartCard>
         </TabsContent>
         <TabsContent value="team">
-          <ChartCard title="Team commission earned"><BarChartH data={byTeam}/></ChartCard>
+          <ChartCard title="Team commission earned"><BarChartH data={byTeam} onSelect={()=>openDeals({})}/></ChartCard>
         </TabsContent>
         <TabsContent value="company">
-          <ChartCard title="Company income share"><PieChartS data={byRev}/></ChartCard>
+          <ChartCard title="Company income share"><PieChartS data={byRev} onSelect={()=>openDeals({})}/></ChartCard>
         </TabsContent>
         <TabsContent value="renewals">
-          <ChartCard title="Renewal status"><PieChartS data={Object.entries(renewalBuckets).map(([label,value])=>({label, value}))}/></ChartCard>
+          <ChartCard title="Renewal status"><PieChartS data={Object.entries(renewalBuckets).map(([label,value])=>({label, value}))} onSelect={()=>navigate({ to: "/renewals" })}/></ChartCard>
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function agg<T>(arr: T[], key: (x: T) => string, val: (x: T) => number) {
-  const m: Record<string, number> = {};
-  for (const x of arr) { const k = key(x); m[k] = (m[k] ?? 0) + val(x); }
-  return Object.entries(m).map(([label, value]) => ({ label, value }));
+type Slice = { label: string; value: number; id?: string };
+
+function agg<T>(arr: T[], key: (x: T) => string, val: (x: T) => number, id?: (x: T) => string | undefined): Slice[] {
+  const m: Record<string, { value: number; id?: string }> = {};
+  for (const x of arr) {
+    const k = key(x);
+    m[k] = { value: (m[k]?.value ?? 0) + val(x), id: m[k]?.id ?? id?.(x) };
+  }
+  return Object.entries(m).map(([label, v]) => ({ label, value: v.value, id: v.id }));
 }
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return <Card><CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader><CardContent className="h-80">{children}</CardContent></Card>;
 }
 
-function BarChartH({ data }: { data: { label: string; value: number }[] }) {
+function BarChartH({ data, onSelect }: { data: Slice[]; onSelect?: (s: Slice) => void }) {
   return (
     <ResponsiveContainer>
       <BarChart data={data} layout="vertical">
@@ -105,17 +114,27 @@ function BarChartH({ data }: { data: { label: string; value: number }[] }) {
         <XAxis type="number" tick={{ fontSize: 11 }}/>
         <YAxis dataKey="label" type="category" width={140} tick={{ fontSize: 11 }}/>
         <Tooltip formatter={(v: any) => fmtPKR(Number(v))}/>
-        <Bar dataKey="value" fill="var(--chart-1)" radius={[0,4,4,0]}/>
+        <Bar
+          dataKey="value"
+          fill="var(--chart-1)"
+          radius={[0,4,4,0]}
+          cursor={onSelect ? "pointer" : undefined}
+          onClick={(p: any) => onSelect?.(p?.payload as Slice)}
+        />
       </BarChart>
     </ResponsiveContainer>
   );
 }
 
-function PieChartS({ data }: { data: { label: string; value: number }[] }) {
+function PieChartS({ data, onSelect }: { data: Slice[]; onSelect?: (s: Slice) => void }) {
   return (
     <ResponsiveContainer>
       <PieChart>
-        <Pie data={data} dataKey="value" nameKey="label" cx="50%" cy="50%" outerRadius={100} label>
+        <Pie
+          data={data} dataKey="value" nameKey="label" cx="50%" cy="50%" outerRadius={100} label
+          cursor={onSelect ? "pointer" : undefined}
+          onClick={(p: any) => onSelect?.((p?.payload?.payload ?? p?.payload) as Slice)}
+        >
           {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]}/>)}
         </Pie>
         <Tooltip/>

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { Printer, FileText, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/accounts/invoices")({
   component: InvoicesPage,
@@ -241,10 +242,10 @@ function NewInvoiceDialog({ clients, types, creatorId, onDone }: { clients: any[
           </Select>
         </F>
         <F label="Issue Date *">
-          <Input type="date" value={form.issue_date} onChange={(e) => setForm({ ...form, issue_date: e.target.value })}/>
+          <DateField value={form.issue_date} onChange={(v) => setForm({ ...form, issue_date: v })}/>
         </F>
         <F label="First Due Date *">
-          <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })}/>
+          <DateField value={form.due_date} onChange={(v) => setForm({ ...form, due_date: v })}/>
         </F>
         <div className="col-span-2">
           <F label="Description">

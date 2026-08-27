@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { Download } from "lucide-react";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/accounts/receivables")({
   component: ReceivablesPage,
@@ -97,8 +98,8 @@ function ReceivablesPage() {
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
-        <Input type="date" value={from} onChange={e => setFrom(e.target.value)}/>
-        <Input type="date" value={to} onChange={e => setTo(e.target.value)}/>
+        <DateField value={from} onChange={(v) => setFrom(v)}/>
+        <DateField value={to} onChange={(v) => setTo(v)}/>
         <Button variant="outline" onClick={exportCsv}><Download className="w-4 h-4 mr-1"/>Export CSV</Button>
       </CardContent></Card>
 
@@ -223,7 +224,7 @@ function RecordPaymentDialog({ receivable }: { receivable: any }) {
         <DialogHeader><DialogTitle>Record payment — {receivable.receivable_number}</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Amount (PKR)"><Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}/></Field>
-          <Field label="Payment date"><Input type="date" value={date} onChange={e => setDate(e.target.value)}/></Field>
+          <Field label="Payment date"><DateField value={date} onChange={(v) => setDate(v)}/></Field>
           <Field label="Installment">
             <Select value={instId} onValueChange={setInstId}>
               <SelectTrigger><SelectValue/></SelectTrigger>

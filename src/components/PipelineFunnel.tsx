@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtPKR } from "@/lib/format";
+import { DateField } from "@/components/DateField";
 
 type Props = {
   defaultFrom?: string;
@@ -110,9 +111,9 @@ export function PipelineFunnel({ defaultFrom, defaultTo, lockUserId, title }: Pr
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3 p-3 border-b">
         <label className="text-sm text-muted-foreground">Date</label>
-        <Input type="date" value={fromDraft} onChange={(e) => setFromDraft(e.target.value)} className="w-[150px]" />
+        <DateField value={fromDraft} onChange={(v) => setFromDraft(v)} className="w-[150px]"/>
         <span className="text-muted-foreground">–</span>
-        <Input type="date" value={toDraft} onChange={(e) => setToDraft(e.target.value)} className="w-[150px]" />
+        <DateField value={toDraft} onChange={(v) => setToDraft(v)} className="w-[150px]"/>
         {!lockUserId && (
           <Select value={userDraft} onValueChange={setUserDraft}>
             <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>

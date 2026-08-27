@@ -11,22 +11,30 @@ export const Route = createFileRoute("/_app/operations/performance")({
 });
 
 function PerformancePage() {
-  const { hasRole } = useAuth();
-  if (!hasRole(["admin", "management"])) return <Navigate to="/operations/reimbursements" replace />;
+  const { hasRole, profile, user } = useAuth();
+  const isPrivileged = hasRole(["admin", "management"]);
+  const isLead = hasRole("team_lead");
+  if (!isPrivileged && !isLead) return <Navigate to="/operations/reimbursements" replace />;
+
+  const myId = profile?.id ?? user?.id ?? "";
+  const myTeam = profile?.team_id ?? null;
 
   const { data } = useQuery({
-    queryKey: ["ops-performance"],
+    queryKey: ["ops-performance", isPrivileged, myId, myTeam],
     queryFn: async () => {
       const sb = supabase as any;
       const [profs, deals, payables, payroll, stages] = await Promise.all([
-        sb.from("profiles").select("id, full_name, email, designation, monthly_salary"),
+        sb.from("profiles").select("id, full_name, email, designation, monthly_salary, team_id"),
         sb.from("deals").select("assigned_do_id, stage_id, gross_premium, net_premium, total_income"),
         sb.from("commission_payables").select("beneficiary_id, commission_amount"),
         sb.from("payroll_runs").select("profile_id, net_salary, status"),
         sb.from("deal_stages").select("id, is_won, is_lost"),
       ]);
       const stageMap = new Map<string, any>((stages.data ?? []).map((s: any) => [s.id, s]));
-      const rows = (profs.data ?? []).map((p: any) => {
+      // Team leads only ever see themselves and their own team members.
+      const visibleProfiles = (profs.data ?? []).filter((p: any) =>
+        isPrivileged || p.id === myId || (!!myTeam && p.team_id === myTeam));
+      const rows = visibleProfiles.map((p: any) => {
         const myDeals = (deals.data ?? []).filter((d: any) => d.assigned_do_id === p.id);
         const won = myDeals.filter((d: any) => stageMap.get(d.stage_id)?.is_won);
         const lost = myDeals.filter((d: any) => stageMap.get(d.stage_id)?.is_lost);

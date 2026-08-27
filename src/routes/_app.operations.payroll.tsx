@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { fmtPKR } from "@/lib/format";
 import { toast } from "sonner";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/operations/payroll")({
   component: PayrollPage,
@@ -165,7 +166,7 @@ function PayrollPage() {
               <F label="Salary Tax %"><Input type="number" step="0.01" value={empDialog.salary_tax_percentage ?? 0} onChange={e => setEmpDialog({ ...empDialog, salary_tax_percentage: e.target.value })}/></F>
               <F label="Default Allowances"><Input type="number" value={empDialog.default_allowances ?? 0} onChange={e => setEmpDialog({ ...empDialog, default_allowances: e.target.value })}/></F>
               <F label="Default Deductions"><Input type="number" value={empDialog.default_deductions ?? 0} onChange={e => setEmpDialog({ ...empDialog, default_deductions: e.target.value })}/></F>
-              <F label="Joining Date"><Input type="date" value={empDialog.joining_date ?? ""} onChange={e => setEmpDialog({ ...empDialog, joining_date: e.target.value })}/></F>
+              <F label="Joining Date"><DateField value={empDialog.joining_date ?? ""} onChange={(v) => setEmpDialog({ ...empDialog, joining_date: v })}/></F>
               <F label="Employment Status">
                 <Select value={empDialog.employment_status ?? "active"} onValueChange={v => setEmpDialog({ ...empDialog, employment_status: v })}>
                   <SelectTrigger><SelectValue/></SelectTrigger>

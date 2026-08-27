@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
+import { DateField } from "@/components/DateField";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
@@ -205,7 +207,7 @@ function DealDetail() {
               </Select>
             </Field>
             <Field label="Payment Receive Date *">
-              <Input type="date" value={pay.payment_receive_date} onChange={(e)=>setPay(p=>({...p, payment_receive_date: e.target.value}))}/>
+              <DateField value={pay.payment_receive_date} onChange={(v)=>setPay(p=>({...p, payment_receive_date: v}))} placeholder="Receive date"/>
             </Field>
             <Field label="Payment Schedule *">
               <Select value={pay.payment_schedule} onValueChange={(v)=>setPay(p=>({...p, payment_schedule: v}))}>
@@ -256,8 +258,42 @@ function DealDetail() {
 
       <DealInvoicesAndTravel dealId={id} stage={stage} isTravel={(type ?? "").toLowerCase() === "travel"} />
 
+      <StageHistory dealId={id} stages={data.stages} profiles={data.profiles} />
+
       {d.notes && <Card className="mt-4"><CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader><CardContent className="text-sm whitespace-pre-wrap">{d.notes}</CardContent></Card>}
     </div>
+  );
+}
+
+/** Deal stage change log — visible to Admin & Management only. */
+function StageHistory({ dealId, stages, profiles }: { dealId: string; stages: any[]; profiles: any[] }) {
+  const { hasRole } = useAuth();
+  const allowed = hasRole(["admin", "management"]);
+  const { data: history } = useQuery({
+    enabled: allowed,
+    queryKey: ["deal-stage-history", dealId],
+    queryFn: async () =>
+      (await (supabase as any).from("deal_stage_history").select("*").eq("deal_id", dealId).order("created_at", { ascending: false })).data ?? [],
+  });
+  if (!allowed) return null;
+  const stageName = (sid: string | null) => stages.find((s) => s.id === sid)?.name ?? "—";
+  const personName = (pid: string | null) => profiles.find((p) => p.id === pid)?.full_name ?? "System";
+  return (
+    <Card className="mt-4">
+      <CardHeader><CardTitle className="text-base">Stage History <Badge variant="secondary">Admin & Management</Badge></CardTitle></CardHeader>
+      <CardContent className="text-sm">
+        {(history ?? []).length === 0 && <div className="text-muted-foreground">No stage changes recorded yet.</div>}
+        <ul className="space-y-2">
+          {(history ?? []).map((h: any) => (
+            <li key={h.id} className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2 last:border-0">
+              <span className="text-muted-foreground">{new Date(h.created_at).toLocaleString()}</span>
+              <span className="font-medium">{h.from_stage_id ? `${stageName(h.from_stage_id)} → ` : ""}{stageName(h.to_stage_id)}</span>
+              <span className="text-muted-foreground">by {personName(h.changed_by)}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -406,8 +442,8 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
         <div className="grid sm:grid-cols-4 gap-3">
           <Field label="Total Policy Amount *"><Input type="number" step="0.01" value={totalPolicy} onChange={e => setTotalPolicy(Number(e.target.value) || 0)}/></Field>
           <Field label="Total Posting Amount *"><Input type="number" step="0.01" value={totalPost} onChange={e => setTotalPost(Number(e.target.value) || 0)}/></Field>
-          <Field label="Posting From *"><Input type="date" value={from} onChange={e => setFrom(e.target.value)} onKeyDown={e => e.preventDefault()}/></Field>
-          <Field label="Posting To *"><Input type="date" value={to} onChange={e => setTo(e.target.value)} onKeyDown={e => e.preventDefault()} min={from || undefined}/></Field>
+          <Field label="Posting From *"><DateField value={from} onChange={setFrom} placeholder="From date"/></Field>
+          <Field label="Posting To *"><DateField value={to} onChange={setTo} placeholder="To date"/></Field>
         </div>
         <div className="flex justify-end">
           <Button size="sm" onClick={saveHeader}>{header ? "Update Header" : "Save Header"}</Button>
@@ -438,7 +474,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                     <tr key={r.id} className="border-t">
                       <td className="p-2">{r.sr_no}</td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.travel_agent ?? ""} onBlur={e => updateRow(r.id, { travel_agent: e.target.value })}/></td>
-                      <td className="p-2"><Input type="date" className="h-8" defaultValue={r.date_issued ?? ""} onBlur={e => updateRow(r.id, { date_issued: e.target.value || null })}/></td>
+                      <td className="p-2"><DateField value={r.date_issued ?? ""} onChange={(v) => updateRow(r.id, { date_issued: v || null })} className="h-8" placeholder="Date"/></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.policy_number ?? ""} onBlur={e => updateRow(r.id, { policy_number: e.target.value })}/></td>
                       <td className="p-2"><Input type="number" step="0.01" className="h-8 text-right" defaultValue={r.premium ?? 0} onBlur={e => updateRow(r.id, { premium: Number(e.target.value) || 0 })}/></td>
                       <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={r.commission_percentage ?? 0} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>
