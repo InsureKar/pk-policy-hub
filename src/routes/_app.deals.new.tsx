@@ -105,6 +105,21 @@ function NewDealPage() {
     return (t?.name ?? "").toLowerCase() === "travel";
   }, [form.insurance_type_id, lists?.types]);
 
+  // Policy end date is auto-calculated as start + 1 year (minus a day) for every
+  // product except Travel, where cover length varies per policy.
+  const setStartDate = (v: string) => {
+    setForm((f) => {
+      const next = { ...f, policy_start_date: v };
+      if (v && !isTravel) {
+        const d = new Date(`${v}T00:00:00`);
+        d.setFullYear(d.getFullYear() + 1);
+        d.setDate(d.getDate() - 1);
+        next.policy_end_date = d.toISOString().slice(0, 10);
+      }
+      return next;
+    });
+  };
+
   // Travel uses its own bulk format (Sr / Travel Agent / Date / Policy / Premium / Commission / Payable)
   const [travelRows, setTravelRows] = useState<TravelPolicyRow[]>([emptyTravelRow()]);
   const [travelTransfers, setTravelTransfers] = useState<TravelTransferRow[]>([emptyTransferRow()]);
@@ -336,8 +351,23 @@ function NewDealPage() {
                   <SelectContent>{lists?.types.map(t=><SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
-              <Field label="Policy Start"><Input type="date" value={form.policy_start_date} onChange={(e)=>set("policy_start_date", e.target.value)}/></Field>
-              <Field label="Policy End"><Input type="date" value={form.policy_end_date} onChange={(e)=>set("policy_end_date", e.target.value)}/></Field>
+              <Field label="Policy Start">
+                <DateField value={form.policy_start_date} onChange={setStartDate} placeholder="Start date"/>
+              </Field>
+              <Field label={isTravel ? "Policy End" : "Policy End (auto +1 year)"}>
+                <DateField value={form.policy_end_date} onChange={(v)=>set("policy_end_date", v)} placeholder="End date"/>
+              </Field>
+              <Field label="Payment Mode / Schedule">
+                <Select value={form.payment_schedule} onValueChange={(v)=>set("payment_schedule", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select payment mode"/></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Monthly">Monthly</SelectItem>
+                    <SelectItem value="Quarterly">Quarterly</SelectItem>
+                    <SelectItem value="Bi-Annually">Bi-Annually</SelectItem>
+                    <SelectItem value="Annually">Annually</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
             </CardContent>
           </Card>
 
