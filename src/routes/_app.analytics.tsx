@@ -106,7 +106,7 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
   return <Card><CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader><CardContent className="h-80">{children}</CardContent></Card>;
 }
 
-function BarChartH({ data }: { data: { label: string; value: number }[] }) {
+function BarChartH({ data, onSelect }: { data: Slice[]; onSelect?: (s: Slice) => void }) {
   return (
     <ResponsiveContainer>
       <BarChart data={data} layout="vertical">
@@ -114,17 +114,27 @@ function BarChartH({ data }: { data: { label: string; value: number }[] }) {
         <XAxis type="number" tick={{ fontSize: 11 }}/>
         <YAxis dataKey="label" type="category" width={140} tick={{ fontSize: 11 }}/>
         <Tooltip formatter={(v: any) => fmtPKR(Number(v))}/>
-        <Bar dataKey="value" fill="var(--chart-1)" radius={[0,4,4,0]}/>
+        <Bar
+          dataKey="value"
+          fill="var(--chart-1)"
+          radius={[0,4,4,0]}
+          cursor={onSelect ? "pointer" : undefined}
+          onClick={(p: any) => onSelect?.(p?.payload as Slice)}
+        />
       </BarChart>
     </ResponsiveContainer>
   );
 }
 
-function PieChartS({ data }: { data: { label: string; value: number }[] }) {
+function PieChartS({ data, onSelect }: { data: Slice[]; onSelect?: (s: Slice) => void }) {
   return (
     <ResponsiveContainer>
       <PieChart>
-        <Pie data={data} dataKey="value" nameKey="label" cx="50%" cy="50%" outerRadius={100} label>
+        <Pie
+          data={data} dataKey="value" nameKey="label" cx="50%" cy="50%" outerRadius={100} label
+          cursor={onSelect ? "pointer" : undefined}
+          onClick={(p: any) => onSelect?.((p?.payload?.payload ?? p?.payload) as Slice)}
+        >
           {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]}/>)}
         </Pie>
         <Tooltip/>
