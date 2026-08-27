@@ -442,8 +442,8 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
         <div className="grid sm:grid-cols-4 gap-3">
           <Field label="Total Policy Amount *"><Input type="number" step="0.01" value={totalPolicy} onChange={e => setTotalPolicy(Number(e.target.value) || 0)}/></Field>
           <Field label="Total Posting Amount *"><Input type="number" step="0.01" value={totalPost} onChange={e => setTotalPost(Number(e.target.value) || 0)}/></Field>
-          <Field label="Posting From *"><Input type="date" value={from} onChange={e => setFrom(e.target.value)} onKeyDown={e => e.preventDefault()}/></Field>
-          <Field label="Posting To *"><Input type="date" value={to} onChange={e => setTo(e.target.value)} onKeyDown={e => e.preventDefault()} min={from || undefined}/></Field>
+          <Field label="Posting From *"><DateField value={from} onChange={setFrom} placeholder="From date"/></Field>
+          <Field label="Posting To *"><DateField value={to} onChange={setTo} placeholder="To date"/></Field>
         </div>
         <div className="flex justify-end">
           <Button size="sm" onClick={saveHeader}>{header ? "Update Header" : "Save Header"}</Button>
@@ -474,7 +474,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                     <tr key={r.id} className="border-t">
                       <td className="p-2">{r.sr_no}</td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.travel_agent ?? ""} onBlur={e => updateRow(r.id, { travel_agent: e.target.value })}/></td>
-                      <td className="p-2"><Input type="date" className="h-8" defaultValue={r.date_issued ?? ""} onBlur={e => updateRow(r.id, { date_issued: e.target.value || null })}/></td>
+                      <td className="p-2"><DateField value={r.date_issued ?? ""} onChange={(v) => updateRow(r.id, { date_issued: v || null })} className="h-8" placeholder="Date"/></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.policy_number ?? ""} onBlur={e => updateRow(r.id, { policy_number: e.target.value })}/></td>
                       <td className="p-2"><Input type="number" step="0.01" className="h-8 text-right" defaultValue={r.premium ?? 0} onBlur={e => updateRow(r.id, { premium: Number(e.target.value) || 0 })}/></td>
                       <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={r.commission_percentage ?? 0} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>
