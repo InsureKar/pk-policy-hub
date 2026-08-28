@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtPKR } from "@/lib/format";
-import { computeDeal } from "@/lib/calc";
+import { aggregateDealFinancials } from "@/lib/calc";
 import { Briefcase, TrendingUp, CheckCircle2, XCircle, Activity, Wallet, BadgePercent, Coins, Target as TargetIcon, RefreshCw, Sparkles } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
 import { useAuth } from "@/lib/auth";
@@ -23,7 +23,7 @@ function DashboardPage() {
     queryKey: ["dashboard", user?.id],
     queryFn: async () => {
       const [{ data: deals }, { data: stages }, { data: companies }, { data: settings }, { data: targets }] = await Promise.all([
-        supabase.from("deals").select("id, gross_premium, net_premium, commission_percentage, marketing_budget_percentage, loading, b2b_commission, total_income, stage_id, insurance_company_id, created_at, policy_end_date, deal_type, assigned_do_id, team_lead_id" as any),
+        supabase.from("deals").select("id, gross_premium, net_premium, commission_percentage, marketing_budget_percentage, loading, b2b_commission, base_percentage, total_income, stage_id, insurance_company_id, created_at, policy_end_date, deal_type, assigned_do_id, team_lead_id" as any),
         supabase.from("deal_stages").select("id, name, is_won, is_lost"),
         supabase.from("insurance_companies").select("id, name"),
         supabase.from("app_settings").select("key, value").eq("key", "tagged_premium_base_percentage").maybeSingle(),
@@ -43,24 +43,20 @@ function DashboardPage() {
   const isLost = (d: any) => d.stage_id && lostStageIds.has(d.stage_id);
   const isWon = (d: any) => d.stage_id && wonStageIds.has(d.stage_id);
 
-  // Business segregation
+  // MANDATORY RULE: Total Business = Fresh Business + Renewal Business (Lost excluded)
   const freshDeals = data.deals.filter(d => d.deal_type === "fresh" && !isLost(d));
   const renewalDeals = data.deals.filter(d => d.deal_type === "renewal" && !isLost(d));
   const lostDeals = data.deals.filter(isLost);
-  const activeDeals = data.deals.filter(d => !isLost(d)); // Total = Fresh + Renewal + Pipeline (all non-lost)
+  const activeDeals = [...freshDeals, ...renewalDeals];
 
-  const sumGross = (arr: any[]) => arr.reduce((a, d) => a + Number(d.gross_premium || 0), 0);
-  const sumIncome = (arr: any[]) => arr.reduce((a, d) => a + Number(d.total_income || 0), 0);
-  const sumNet = (arr: any[]) => arr.reduce((a, d) => a + Number(d.net_premium || 0), 0);
+  // All money figures come from the centralized engine (single source of truth).
+  const freshAgg = aggregateDealFinancials(freshDeals as any, data.basePct);
+  const renewalAgg = aggregateDealFinancials(renewalDeals as any, data.basePct);
 
-  const totalGross = sumGross(activeDeals);
-  const totalNet = sumNet(activeDeals);
-  const totalIncome = sumIncome(activeDeals);
-  const tagged = activeDeals.reduce((a, d) => a + computeDeal({
-    gross_premium: Number(d.gross_premium), commission_percentage: Number(d.commission_percentage),
-    marketing_budget_percentage: Number(d.marketing_budget_percentage),
-    loading: Number(d.loading), b2b_commission: Number(d.b2b_commission),
-  }, data.basePct).tagged_premium, 0);
+  const totalGross = freshAgg.gross_premium + renewalAgg.gross_premium;
+  const totalNet = freshAgg.net_premium + renewalAgg.net_premium;
+  const totalIncome = freshAgg.total_income + renewalAgg.total_income;
+  const tagged = freshAgg.tagged_premium + renewalAgg.tagged_premium;
 
   const total = data.deals.length;
   const won = data.deals.filter(isWon).length;
@@ -95,13 +91,8 @@ function DashboardPage() {
 
   const chartColors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))", "oklch(0.6 0.15 30)"];
 
-  // Business Overview: Total / Fresh / Renewal / Lost
-  const overview = [
-    { label: "Total Business", icon: Briefcase, value: fmtPKR(totalGross), sub: `${activeDeals.length} deals (Fresh + Renewal + Pipeline)`, tone: "primary" },
-    { label: "Fresh", icon: Sparkles, value: fmtPKR(sumGross(freshDeals)), sub: `${freshDeals.length} deals`, tone: "success" },
-    { label: "Renewal", icon: RefreshCw, value: fmtPKR(sumGross(renewalDeals)), sub: `${renewalDeals.length} deals`, tone: "accent" },
-    { label: "Lost", icon: XCircle, value: fmtPKR(sumGross(lostDeals)), sub: `${lostDeals.length} deals`, tone: "destructive" },
-  ];
+  // Business Overview is rendered by the Pipeline Funnel (Fresh / Renewal / Pipeline)
+
 
   // Targets (for DO/TL and admin viewing self)
   const monthKey = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
@@ -155,6 +146,8 @@ function DashboardPage() {
         <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Business Overview</div>
         <PipelineFunnel />
       </div>
+
+
 
 
       {/* Target Achievement widget (DO/TL only, but Admin also sees if they have targets set) */}

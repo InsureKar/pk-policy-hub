@@ -10,11 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { computeDeal } from "@/lib/calc";
+import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
+import { DateField } from "@/components/DateField";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/deals/$id")({
   component: DealDetail,
@@ -26,8 +27,6 @@ const PAYMENT_MODES = ["IBFT", "Cheque", "Cash", "Pay Order", "Online Payment"] 
 function DealDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
-  const { hasRole } = useAuth();
-  const isAdmin = hasRole("admin");
   // Premium & Commission section matches the original spec — visible to all roles.
   const canSeeFinancials = true;
 
@@ -55,12 +54,15 @@ function DealDetail() {
   const [stageId, setStageId] = useState<string>("");
   useEffect(() => { if (data?.deal?.stage_id) setStageId(data.deal.stage_id); }, [data?.deal?.stage_id]);
 
-  const calc = useMemo(() => data?.deal ? computeDeal({
-    gross_premium: Number(data.deal.gross_premium),
-    commission_percentage: Number(data.deal.commission_percentage),
-    marketing_budget_percentage: Number(data.deal.marketing_budget_percentage),
-    loading: Number(data.deal.loading), b2b_commission: Number(data.deal.b2b_commission),
-  }, data.basePct) : null, [data]);
+  const calc = useMemo(() => data?.deal ? calculateDealFinancials({
+    gross_premium: data.deal.gross_premium,
+    net_premium: data.deal.net_premium,
+    commission_percentage: data.deal.commission_percentage,
+    marketing_budget_percentage: data.deal.marketing_budget_percentage,
+    loading: data.deal.loading,
+    b2b_commission: data.deal.b2b_commission,
+    base_percentage: (data.deal as any).base_percentage ?? data.basePct,
+  }) : null, [data]);
 
   // Payment form state
   const [pay, setPay] = useState({
@@ -164,21 +166,24 @@ function DealDetail() {
           <Card>
             <CardHeader><CardTitle className="text-base">Premium & Income</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
-              {isAdmin && d.base_premium != null && <KV k="Base Premium" v={fmtPKR(Number(d.base_premium))} />}
-              <KV k="Gross Premium" v={fmtPKR(Number(d.gross_premium))} />
-              <KV k="Net Premium" v={fmtPKR(Number(d.net_premium))} />
-              <KV k="Commission %" v={fmtPct(Number(d.commission_percentage))} />
-              <KV k="Marketing %" v={fmtPct(Number(d.marketing_budget_percentage))} />
-              <KV k="Loading" v={fmtPKR(Number(d.loading))} />
-              <KV k="B2B Commission" v={fmtPKR(Number(d.b2b_commission))} />
-              <hr/>
-              <KV k="Commission Before Tax" v={fmtPKR(Number(d.commission_before_tax))} />
-              <KV k="Commission After Tax" v={fmtPKR(Number(d.commission_after_tax))} />
-              <KV k="Marketing After Tax" v={fmtPKR(Number(d.marketing_after_tax))} />
-              <KV k="Total Income" v={<span className="font-semibold">{fmtPKR(Number(d.total_income))}</span>} />
-              <KV k="Income %" v={fmtPct(Number(d.income_percentage))} />
               {calc && <>
-                <KV k="Tagged Premium %" v={fmtPct(calc.tagged_premium_percentage)} />
+                <KV k="Gross Premium" v={fmtPKR(calc.gross_premium)} />
+                <KV k="Net Premium" v={fmtPKR(calc.net_premium)} />
+                <KV k="Tagged Premium (auto)" v={<span className="font-semibold">{fmtPKR(calc.tagged_premium)}</span>} />
+                <KV k="Commission %" v={fmtPct(calc.commission_percentage)} />
+                <KV k="Marketing %" v={fmtPct(calc.marketing_budget_percentage)} />
+                <KV k="Loading" v={fmtPKR(calc.loading)} />
+                <KV k="B2B Commission" v={fmtPKR(calc.b2b_commission)} />
+                <hr/>
+                <KV k="Commission Before Tax" v={fmtPKR(calc.commission_before_tax)} />
+                <KV k="Commission Tax (17%)" v={fmtPKR(calc.commission_tax)} />
+                <KV k="Commission After Tax" v={fmtPKR(calc.commission_after_tax)} />
+                <KV k="Marketing Before Tax" v={fmtPKR(calc.marketing_before_tax)} />
+                <KV k="Marketing Tax (9%)" v={fmtPKR(calc.marketing_tax)} />
+                <KV k="Marketing After Tax" v={fmtPKR(calc.marketing_after_tax)} />
+                <KV k="Total Income" v={<span className="font-semibold">{fmtPKR(calc.total_income)}</span>} />
+                <KV k="Income %" v={fmtPct(calc.income_percentage)} />
+                <KV k={`Tagged Premium % (base ${calc.base_percentage}%)`} v={fmtPct(calc.tagged_premium_percentage)} />
                 <KV k="Tagged Premium" v={<span className="font-semibold">{fmtPKR(calc.tagged_premium)}</span>} />
               </>}
             </CardContent>
@@ -202,7 +207,7 @@ function DealDetail() {
               </Select>
             </Field>
             <Field label="Payment Receive Date *">
-              <Input type="date" value={pay.payment_receive_date} onChange={(e)=>setPay(p=>({...p, payment_receive_date: e.target.value}))}/>
+              <DateField value={pay.payment_receive_date} onChange={(v)=>setPay(p=>({...p, payment_receive_date: v}))} placeholder="Receive date"/>
             </Field>
             <Field label="Payment Schedule *">
               <Select value={pay.payment_schedule} onValueChange={(v)=>setPay(p=>({...p, payment_schedule: v}))}>
@@ -253,8 +258,42 @@ function DealDetail() {
 
       <DealInvoicesAndTravel dealId={id} stage={stage} isTravel={(type ?? "").toLowerCase() === "travel"} />
 
+      <StageHistory dealId={id} stages={data.stages} profiles={data.profiles} />
+
       {d.notes && <Card className="mt-4"><CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader><CardContent className="text-sm whitespace-pre-wrap">{d.notes}</CardContent></Card>}
     </div>
+  );
+}
+
+/** Deal stage change log — visible to Admin & Management only. */
+function StageHistory({ dealId, stages, profiles }: { dealId: string; stages: any[]; profiles: any[] }) {
+  const { hasRole } = useAuth();
+  const allowed = hasRole(["admin", "management"]);
+  const { data: history } = useQuery({
+    enabled: allowed,
+    queryKey: ["deal-stage-history", dealId],
+    queryFn: async () =>
+      (await (supabase as any).from("deal_stage_history").select("*").eq("deal_id", dealId).order("created_at", { ascending: false })).data ?? [],
+  });
+  if (!allowed) return null;
+  const stageName = (sid: string | null) => stages.find((s) => s.id === sid)?.name ?? "—";
+  const personName = (pid: string | null) => profiles.find((p) => p.id === pid)?.full_name ?? "System";
+  return (
+    <Card className="mt-4">
+      <CardHeader><CardTitle className="text-base">Stage History <Badge variant="secondary">Admin & Management</Badge></CardTitle></CardHeader>
+      <CardContent className="text-sm">
+        {(history ?? []).length === 0 && <div className="text-muted-foreground">No stage changes recorded yet.</div>}
+        <ul className="space-y-2">
+          {(history ?? []).map((h: any) => (
+            <li key={h.id} className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2 last:border-0">
+              <span className="text-muted-foreground">{new Date(h.created_at).toLocaleString()}</span>
+              <span className="font-medium">{h.from_stage_id ? `${stageName(h.from_stage_id)} → ` : ""}{stageName(h.to_stage_id)}</span>
+              <span className="text-muted-foreground">by {personName(h.changed_by)}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -366,10 +405,25 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
   };
 
   const updateRow = async (id: string, patch: any) => {
+    // Travel policy numbers must be unique across every record in the system
+    if (typeof patch.policy_number === "string" && patch.policy_number.trim()) {
+      const { data: conflict } = await supabase.rpc("travel_policy_conflict" as any, {
+        _policy_number: patch.policy_number, _exclude_row_id: id,
+      } as any);
+      const hit = Array.isArray(conflict) ? conflict[0] : conflict;
+      if (hit) {
+        toast.error(
+          `Policy number already exists — ${hit.source ?? "record"}${hit.reference ? ` (${hit.reference})` : ""}. Enter a unique policy number.`,
+        );
+        qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
+        return;
+      }
+    }
     const { error } = await supabase.from("travel_posting_rows").update(patch).eq("id", id);
     if (error) toast.error(error.message);
     else qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
   };
+
   const deleteRow = async (id: string) => {
     const { error } = await supabase.from("travel_posting_rows").delete().eq("id", id);
     if (error) toast.error(error.message);
@@ -388,8 +442,8 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
         <div className="grid sm:grid-cols-4 gap-3">
           <Field label="Total Policy Amount *"><Input type="number" step="0.01" value={totalPolicy} onChange={e => setTotalPolicy(Number(e.target.value) || 0)}/></Field>
           <Field label="Total Posting Amount *"><Input type="number" step="0.01" value={totalPost} onChange={e => setTotalPost(Number(e.target.value) || 0)}/></Field>
-          <Field label="Posting From *"><Input type="date" value={from} onChange={e => setFrom(e.target.value)} onKeyDown={e => e.preventDefault()}/></Field>
-          <Field label="Posting To *"><Input type="date" value={to} onChange={e => setTo(e.target.value)} onKeyDown={e => e.preventDefault()} min={from || undefined}/></Field>
+          <Field label="Posting From *"><DateField value={from} onChange={setFrom} placeholder="From date"/></Field>
+          <Field label="Posting To *"><DateField value={to} onChange={setTo} placeholder="To date"/></Field>
         </div>
         <div className="flex justify-end">
           <Button size="sm" onClick={saveHeader}>{header ? "Update Header" : "Save Header"}</Button>
@@ -420,7 +474,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                     <tr key={r.id} className="border-t">
                       <td className="p-2">{r.sr_no}</td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.travel_agent ?? ""} onBlur={e => updateRow(r.id, { travel_agent: e.target.value })}/></td>
-                      <td className="p-2"><Input type="date" className="h-8" defaultValue={r.date_issued ?? ""} onBlur={e => updateRow(r.id, { date_issued: e.target.value || null })}/></td>
+                      <td className="p-2"><DateField value={r.date_issued ?? ""} onChange={(v) => updateRow(r.id, { date_issued: v || null })} className="h-8" placeholder="Date"/></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.policy_number ?? ""} onBlur={e => updateRow(r.id, { policy_number: e.target.value })}/></td>
                       <td className="p-2"><Input type="number" step="0.01" className="h-8 text-right" defaultValue={r.premium ?? 0} onBlur={e => updateRow(r.id, { premium: Number(e.target.value) || 0 })}/></td>
                       <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={r.commission_percentage ?? 0} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>

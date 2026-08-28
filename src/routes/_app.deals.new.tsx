@@ -10,8 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { computeDeal } from "@/lib/calc";
+import { calculateDealFinancials } from "@/lib/calc";
+import {
+  TravelBulkPolicies, emptyTravelRow, emptyTransferRow, payableOf,
+  type TravelPolicyRow, type TravelTransferRow,
+} from "@/components/TravelBulkPolicies";
 import { fmtPKR, fmtPct } from "@/lib/format";
+import { DateField } from "@/components/DateField";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/deals/new")({
@@ -21,30 +26,32 @@ export const Route = createFileRoute("/_app/deals/new")({
 function NewDealPage() {
   const nav = useNavigate();
   const { user, hasRole } = useAuth();
-  const isAdmin = hasRole("admin");
   // Premium & Commission section is available to every user creating a deal,
   // matching the original spec — no tax or marketing-budget restrictions.
   const canSeeFinancials = true;
   const canSeeMarketing = true;
-  const canSeeLiveCalc = true;
+  // Live Calculations panel: Admin & Management only
+  const canSeeLiveCalc = hasRole(["admin", "management"]);
 
 
   const { data: lists } = useQuery({
     queryKey: ["deal-form-lists"],
     queryFn: async () => {
       // clients are automatically scoped by RLS to what the current user can see
-      const [clients, stages, companies, types, sources, settings] = await Promise.all([
+      const [clients, stages, companies, types, sources, settings, people] = await Promise.all([
         supabase.from("clients").select("id, company_name, full_name, client_type").order("company_name"),
         supabase.from("deal_stages").select("*").order("sort_order"),
         supabase.from("insurance_companies").select("id, name").eq("active", true).order("name"),
         supabase.from("insurance_types").select("id, name").eq("active", true).order("name"),
         supabase.from("lead_sources").select("id, name").eq("active", true).order("name"),
         supabase.from("app_settings").select("key, value").eq("key", "tagged_premium_base_percentage").maybeSingle(),
+        supabase.from("profiles").select("id, full_name").order("full_name"),
       ]);
       return {
         clients: clients.data ?? [], stages: stages.data ?? [],
         companies: companies.data ?? [], types: types.data ?? [],
         sources: sources.data ?? [],
+        people: people.data ?? [],
         basePct: Number(settings.data?.value ?? 13),
       };
     },
@@ -53,9 +60,17 @@ function NewDealPage() {
   const [form, setForm] = useState({
     client_id: "", cover_note_number: "", policy_number: "",
     source_id: "", insurance_company_id: "", insurance_type_id: "", stage_id: "",
-    base_premium: 0,
+    net_premium: 0,
     gross_premium: 0, commission_percentage: 0,
     marketing_budget_percentage: 0, loading: 0, b2b_commission: 0,
+    b2b_taker_id: "", b2b_commission_type: "fixed" as "fixed" | "percentage",
+    b2b_commission_percentage: 0,
+    payment_destination: "company" as "company" | "insurance_company",
+    payment_schedule: "" as string,
+    payment_mode: "" as string,
+    payment_receive_date: "",
+    transaction_reference: "",
+    payment_remarks: "",
     policy_start_date: "", policy_end_date: "", notes: "",
     deal_type: "fresh" as "fresh" | "renewal",
     policy_type: "single" as "single" | "bulk",
@@ -63,35 +78,146 @@ function NewDealPage() {
   const [bulkRows, setBulkRows] = useState<Array<{cover_note_number:string;policy_number:string;gross_premium:number;net_premium:number;remarks:string}>>([
     { cover_note_number: "", policy_number: "", gross_premium: 0, net_premium: 0, remarks: "" },
   ]);
+  const [dupErrors, setDupErrors] = useState<Record<number, string>>({});
   const addBulkRow = () => setBulkRows(r => [...r, { cover_note_number: "", policy_number: "", gross_premium: 0, net_premium: 0, remarks: "" }]);
   const removeBulkRow = (i: number) => setBulkRows(r => r.filter((_, idx) => idx !== i));
   const updateBulkRow = (i: number, k: string, v: any) => setBulkRows(r => r.map((row, idx) => idx === i ? { ...row, [k]: v } : row));
-  const bulkTotals = useMemo(() => bulkRows.reduce((a, r) => ({
-    gross: a.gross + Number(r.gross_premium || 0),
-    net: a.net + Number(r.net_premium || 0),
-    count: a.count + 1,
-  }), { gross: 0, net: 0, count: 0 }), [bulkRows]);
+  const norm = (v: string) => (v || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const checkDuplicate = async (i: number, value: string) => {
+    const n = norm(value);
+    setDupErrors(prev => { const c = { ...prev }; delete c[i]; return c; });
+    if (!n) return;
+    const localIdx = bulkRows.findIndex((r, idx) => idx !== i && norm(r.policy_number) === n);
+    if (localIdx >= 0) {
+      setDupErrors(prev => ({ ...prev, [i]: `Duplicate of row ${localIdx + 1} in this deal` }));
+      return;
+    }
+    const { data } = await supabase.rpc("deal_policy_conflict" as any, { _policy_number: value, _exclude_row: null });
+    const c: any = data;
+    if (c) {
+      const where = c.source === "deal" ? "deal" : "bulk policy on deal";
+      setDupErrors(prev => ({ ...prev, [i]: `Already used on ${where} ${c.deal_number ?? "—"}${c.client_name ? ` (${c.client_name})` : ""}` }));
+    }
+  };
+
   const isTravel = useMemo(() => {
     const t = lists?.types.find(x => x.id === form.insurance_type_id);
     return (t?.name ?? "").toLowerCase() === "travel";
   }, [form.insurance_type_id, lists?.types]);
 
+  // Policy end date is auto-calculated as start + 1 year (minus a day) for every
+  // product except Travel, where cover length varies per policy.
+  const setStartDate = (v: string) => {
+    setForm((f) => {
+      const next = { ...f, policy_start_date: v };
+      if (v && !isTravel) {
+        const d = new Date(`${v}T00:00:00`);
+        d.setFullYear(d.getFullYear() + 1);
+        d.setDate(d.getDate() - 1);
+        next.policy_end_date = d.toISOString().slice(0, 10);
+      }
+      return next;
+    });
+  };
+
+  // Travel uses its own bulk format (Sr / Travel Agent / Date / Policy / Premium / Commission / Payable)
+  const [travelRows, setTravelRows] = useState<TravelPolicyRow[]>([emptyTravelRow()]);
+  const [travelTransfers, setTravelTransfers] = useState<TravelTransferRow[]>([emptyTransferRow()]);
+  const [travelDupErrors, setTravelDupErrors] = useState<Record<number, string>>({});
+  const checkTravelDuplicate = async (i: number, value: string) => {
+    const n = norm(value);
+    setTravelDupErrors(prev => { const c = { ...prev }; delete c[i]; return c; });
+    if (!n) return;
+    const localIdx = travelRows.findIndex((r, idx) => idx !== i && norm(r.policy_number) === n);
+    if (localIdx >= 0) {
+      setTravelDupErrors(prev => ({ ...prev, [i]: `Duplicate of row ${localIdx + 1} in this deal` }));
+      return;
+    }
+    const { data } = await supabase.rpc("travel_policy_conflict" as any, { _policy_number: value, _exclude_row: null });
+    const hit: any = Array.isArray(data) ? data[0] : data;
+    if (hit) setTravelDupErrors(prev => ({ ...prev, [i]: `Policy number already used${hit.reference ? ` on ${hit.reference}` : ""}` }));
+  };
+
+  const bulkTotals = useMemo(() => {
+    if (isTravel) {
+      return travelRows.reduce((a, r) => ({
+        gross: a.gross + Number(r.premium || 0),
+        net: a.net + payableOf(r),
+        count: a.count + 1,
+      }), { gross: 0, net: 0, count: 0 });
+    }
+    return bulkRows.reduce((a, r) => ({
+      gross: a.gross + Number(r.gross_premium || 0),
+      net: a.net + Number(r.net_premium || 0),
+      count: a.count + 1,
+    }), { gross: 0, net: 0, count: 0 });
+  }, [bulkRows, travelRows, isTravel]);
+
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setNum = (k: keyof typeof form, v: string) => set(k, (Number(v) || 0) as never);
 
-  const netPremium = useMemo(
-    () => Math.max(0, form.gross_premium - (form.commission_percentage * form.gross_premium) / 100),
-    [form.gross_premium, form.commission_percentage],
+  const effGross = form.policy_type === "bulk" ? bulkTotals.gross : form.gross_premium;
+  // B2B commission: percentage is auto-calculated from gross premium, fixed is used as entered.
+  const b2bAmount = useMemo(
+    () => form.b2b_commission_type === "percentage"
+      ? Math.round(effGross * (Number(form.b2b_commission_percentage) || 0)) / 100
+      : Number(form.b2b_commission) || 0,
+    [form.b2b_commission_type, form.b2b_commission_percentage, form.b2b_commission, effGross],
   );
-  const calc = useMemo(() => computeDeal(form, lists?.basePct ?? 13), [form, lists?.basePct]);
+
+  // Single source of truth — real-time recalculation on every input change.
+  const calc = useMemo(
+    () => calculateDealFinancials({
+      ...form,
+      gross_premium: effGross,
+      b2b_commission: b2bAmount,
+      base_percentage: lists?.basePct,
+    }),
+    [form, effGross, b2bAmount, lists?.basePct],
+  );
 
   const submit = async () => {
     if (!user) return;
     if (!form.client_id) return toast.error("Please pick a client");
     const effectiveGross = form.policy_type === "bulk" ? bulkTotals.gross : form.gross_premium;
-    const effectiveNet = form.policy_type === "bulk" ? bulkTotals.net : netPremium;
+    const effectiveNet = form.policy_type === "bulk" ? bulkTotals.net : form.net_premium;
     if (!(effectiveGross > 0)) return toast.error("Gross premium is required");
-    if (form.policy_type === "bulk" && bulkRows.length === 0) return toast.error("Add at least one bulk policy row");
+    if (!Number.isFinite(form.net_premium) || form.net_premium < 0) return toast.error("Net premium must be a positive number");
+    const isTravelBulk = form.policy_type === "bulk" && isTravel;
+    if (form.policy_type === "bulk" && (isTravelBulk ? travelRows.length === 0 : bulkRows.length === 0)) return toast.error("Add at least one bulk policy row");
+    if (isTravelBulk) {
+      const seen = new Map<string, number>();
+      for (let i = 0; i < travelRows.length; i++) {
+        const r = travelRows[i];
+        if (r.commission_percentage < 0 || r.commission_percentage > 45) return toast.error(`Row ${i + 1}: commission must be between 0% and 45%`);
+        const n = norm(r.policy_number);
+        if (!n) return toast.error(`Row ${i + 1}: policy number is required`);
+        if (seen.has(n)) return toast.error(`Duplicate policy number in rows ${seen.get(n)! + 1} and ${i + 1}`);
+        seen.set(n, i);
+        const { data: conflict } = await supabase.rpc("travel_policy_conflict" as any, { _policy_number: r.policy_number, _exclude_row: null });
+        const hit: any = Array.isArray(conflict) ? conflict[0] : conflict;
+        if (hit) return toast.error(`Policy ${r.policy_number} already exists${hit.reference ? ` on ${hit.reference}` : ""}`);
+      }
+      const payable = travelRows.reduce((a, r) => a + payableOf(r), 0);
+      const transferred = travelTransfers.reduce((a, t) => a + Number(t.amount || 0), 0);
+      if (transferred > 0 && Math.abs(transferred - payable) > 0.01) {
+        return toast.error("Amount transfer total must match Payable to Insurance Company");
+      }
+    } else if (form.policy_type === "bulk") {
+      await Promise.all(bulkRows.map((r, i) => checkDuplicate(i, r.policy_number)));
+      const seen = new Map<string, number>();
+      for (let i = 0; i < bulkRows.length; i++) {
+        const n = norm(bulkRows[i].policy_number);
+        if (!n) continue;
+        if (seen.has(n)) return toast.error(`Duplicate policy number in rows ${seen.get(n)! + 1} and ${i + 1}`);
+        seen.set(n, i);
+        const { data: conflict } = await supabase.rpc("deal_policy_conflict" as any, { _policy_number: bulkRows[i].policy_number, _exclude_row: null });
+        if (conflict) {
+          const c: any = conflict;
+          return toast.error(`Policy ${bulkRows[i].policy_number} already exists on deal ${c.deal_number ?? "—"}${c.client_name ? ` (${c.client_name})` : ""}`);
+        }
+      }
+    }
     const payload: any = {
       ...form,
       created_by: user.id,
@@ -100,18 +226,61 @@ function NewDealPage() {
       insurance_company_id: form.insurance_company_id || null,
       insurance_type_id: form.insurance_type_id || null,
       stage_id: form.stage_id || null,
-      base_premium: isAdmin ? (form.base_premium || null) : null,
       marketing_budget_percentage: canSeeMarketing ? form.marketing_budget_percentage : 0,
       gross_premium: effectiveGross,
       net_premium: effectiveNet,
+      base_percentage: lists?.basePct ?? 13,
       policy_start_date: form.policy_start_date || null,
       policy_end_date: form.policy_end_date || null,
       deal_type: form.deal_type,
       policy_type: form.policy_type,
+      b2b_commission: b2bAmount,
+      b2b_taker_id: form.b2b_taker_id || null,
+      b2b_commission_type: form.b2b_commission_type,
+      b2b_commission_percentage: Number(form.b2b_commission_percentage) || 0,
+      payment_destination: form.payment_destination,
+      payment_schedule: form.payment_schedule || null,
+      payment_mode: form.payment_destination === "company" ? (form.payment_mode || null) : null,
+      payment_receive_date: form.payment_destination === "company" ? (form.payment_receive_date || null) : null,
+      transaction_reference: form.payment_destination === "company" ? (form.transaction_reference.trim() || null) : null,
+      payment_remarks: form.payment_destination === "company" ? (form.payment_remarks.trim() || null) : null,
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
-    if (form.policy_type === "bulk" && data) {
+    if (form.policy_type === "bulk" && data && isTravel) {
+      const payable = travelRows.reduce((a, r) => a + payableOf(r), 0);
+      const transferred = travelTransfers.reduce((a, t) => a + Number(t.amount || 0), 0);
+      const { data: posting, error: pErr } = await supabase.from("travel_postings").insert({
+        deal_id: data.id,
+        total_policy_amount: effectiveGross,
+        total_posting_amount: transferred || payable,
+      }).select("id").maybeSingle();
+      if (pErr || !posting) toast.error("Deal created, but travel posting failed: " + (pErr?.message ?? ""));
+      else {
+        const { error: rErr } = await supabase.from("travel_posting_rows").insert(
+          travelRows.map((r, idx) => ({
+            posting_id: posting.id, sr_no: idx + 1,
+            travel_agent: r.travel_agent || null,
+            date_issued: r.date_issued || null,
+            policy_number: r.policy_number || null,
+            premium: r.premium, commission_percentage: r.commission_percentage,
+            agent_name: r.agent_name || null, remarks: r.remarks || null,
+          })),
+        );
+        if (rErr) toast.error("Deal created, but travel rows failed: " + rErr.message);
+        const filled = travelTransfers.filter(t => Number(t.amount || 0) > 0 || t.bank_name || t.tid);
+        if (filled.length) {
+          const { error: tErr } = await supabase.from("travel_posting_transfers" as any).insert(
+            filled.map((t, idx) => ({
+              posting_id: posting.id, sr_no: idx + 1,
+              transfer_date: t.transfer_date || null, bank_name: t.bank_name || null,
+              amount: t.amount, tid: t.tid || null, agent: t.agent || null,
+            })) as any,
+          );
+          if (tErr) toast.error("Deal created, but transfer details failed: " + tErr.message);
+        }
+      }
+    } else if (form.policy_type === "bulk" && data) {
       const rows = bulkRows.map((r, idx) => ({ ...r, deal_id: data.id, row_number: idx + 1 }));
       const { error: bErr } = await supabase.from("deal_policies").insert(rows);
       if (bErr) toast.error("Deal created, but bulk rows failed: " + bErr.message);
@@ -128,12 +297,12 @@ function NewDealPage() {
       <PageHeader
         title="New Deal"
         subtitle={canSeeFinancials
-          ? "Team, DO and Team Lead are attached automatically. Net Premium auto-calculates."
+          ? "Team, DO and Team Lead are attached automatically. Tagged Premium is calculated automatically."
           : "Team is attached automatically. Enter policy and premium details below."}
       />
 
-      <div className="grid lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
+      <div className={canSeeLiveCalc ? "grid lg:grid-cols-3 gap-4" : "grid gap-4"}>
+        <div className={`space-y-4 ${canSeeLiveCalc ? "lg:col-span-2" : ""}`}>
           <Card>
             <CardHeader><CardTitle className="text-base">Basic Information</CardTitle></CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-4">
@@ -187,12 +356,35 @@ function NewDealPage() {
                   <SelectContent>{lists?.types.map(t=><SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
-              <Field label="Policy Start"><Input type="date" value={form.policy_start_date} onChange={(e)=>set("policy_start_date", e.target.value)}/></Field>
-              <Field label="Policy End"><Input type="date" value={form.policy_end_date} onChange={(e)=>set("policy_end_date", e.target.value)}/></Field>
+              <Field label="Policy Start">
+                <DateField value={form.policy_start_date} onChange={setStartDate} placeholder="Start date"/>
+              </Field>
+              <Field label={isTravel ? "Policy End" : "Policy End (auto +1 year)"}>
+                <DateField value={form.policy_end_date} onChange={(v)=>set("policy_end_date", v)} placeholder="End date"/>
+              </Field>
+              <Field label="Payment Mode / Schedule">
+                <Select value={form.payment_schedule} onValueChange={(v)=>set("payment_schedule", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select payment mode"/></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Monthly">Monthly</SelectItem>
+                    <SelectItem value="Quarterly">Quarterly</SelectItem>
+                    <SelectItem value="Bi-Annually">Bi-Annually</SelectItem>
+                    <SelectItem value="Annually">Annually</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
             </CardContent>
           </Card>
 
-          {form.policy_type === "bulk" && (
+          {form.policy_type === "bulk" && isTravel && (
+            <TravelBulkPolicies
+              rows={travelRows} setRows={setTravelRows}
+              transfers={travelTransfers} setTransfers={setTravelTransfers}
+              dupErrors={travelDupErrors} onCheckDuplicate={checkTravelDuplicate}
+            />
+          )}
+
+          {form.policy_type === "bulk" && !isTravel && (
             <Card>
               <CardHeader><CardTitle className="text-base">Bulk Policies</CardTitle></CardHeader>
               <CardContent className="space-y-3">
@@ -214,7 +406,16 @@ function NewDealPage() {
                         <tr key={i} className="border-t">
                           <td className="p-2">{i+1}</td>
                           <td className="p-2"><Input value={r.cover_note_number} onChange={e=>updateBulkRow(i,"cover_note_number",e.target.value)}/></td>
-                          <td className="p-2"><Input value={r.policy_number} onChange={e=>updateBulkRow(i,"policy_number",e.target.value)}/></td>
+                          <td className="p-2">
+                            <Input
+                              value={r.policy_number}
+                              aria-invalid={!!dupErrors[i]}
+                              className={dupErrors[i] ? "border-destructive" : ""}
+                              onChange={e=>updateBulkRow(i,"policy_number",e.target.value)}
+                              onBlur={e=>checkDuplicate(i, e.target.value)}
+                            />
+                            {dupErrors[i] && <p className="text-xs text-destructive mt-1">{dupErrors[i]}</p>}
+                          </td>
                           <td className="p-2"><Input type="number" step="0.01" className="text-right" value={r.gross_premium} onChange={e=>updateBulkRow(i,"gross_premium",Number(e.target.value)||0)}/></td>
                           <td className="p-2"><Input type="number" step="0.01" className="text-right" value={r.net_premium} onChange={e=>updateBulkRow(i,"net_premium",Number(e.target.value)||0)}/></td>
                           <td className="p-2"><Input value={r.remarks} onChange={e=>updateBulkRow(i,"remarks",e.target.value)}/></td>
@@ -242,7 +443,7 @@ function NewDealPage() {
             <Card className="border-amber-500/50">
               <CardHeader><CardTitle className="text-base">Travel Product Detected</CardTitle></CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Travel Posting details (Posting From/To, per-row postings, Balanced/Excess/Deficit reconciliation) will be entered on the Deal detail page after creation. The deal cannot be moved to Won until posting is Balanced.
+                Choose Policy Type “Bulk Policies” to enter travel policies in the travel sheet format (Travel Agent, Date of Issued, Policy No., Premium, Commission 0–45%, auto Payable to Insurance Company, Agent, Remarks) plus the amount transfer details. Posting From/To and Balanced/Excess/Deficit reconciliation remain on the Deal detail page; the deal cannot be moved to Won until posting is Balanced.
               </CardContent>
             </Card>
           )}
@@ -250,24 +451,99 @@ function NewDealPage() {
           <Card>
             <CardHeader><CardTitle className="text-base">Premium{canSeeFinancials ? " & Commission" : ""}</CardTitle></CardHeader>
             <CardContent className="grid sm:grid-cols-3 gap-4">
-              {isAdmin && (
-                <Field label="Base Premium (PKR)"><Input type="number" step="0.01" value={form.base_premium} onChange={(e)=>setNum("base_premium", e.target.value)}/></Field>
-              )}
-              <Field label="Gross Premium (PKR) *"><Input type="number" step="0.01" value={form.gross_premium} onChange={(e)=>setNum("gross_premium", e.target.value)}/></Field>
+              <Field label="Gross Premium (PKR) *"><Input type="number" step="0.01" min="0" value={form.gross_premium} onChange={(e)=>setNum("gross_premium", e.target.value)}/></Field>
+              <Field label="Net Premium (PKR)"><Input type="number" step="0.01" min="0" value={form.net_premium} onChange={(e)=>setNum("net_premium", e.target.value)}/></Field>
+              <Field label="Tagged Premium (auto)"><Input readOnly tabIndex={-1} value={fmtPKR(calc.tagged_premium)} className="bg-muted/50"/></Field>
               {canSeeFinancials && (
                 <>
                   <Field label="Commission %"><Input type="number" step="0.001" value={form.commission_percentage} onChange={(e)=>setNum("commission_percentage", e.target.value)}/></Field>
-                  <Field label="Net Premium (auto)"><Input readOnly value={fmtPKR(netPremium)} className="bg-muted/50"/></Field>
                   {canSeeMarketing && (
                     <Field label="Marketing Budget %"><Input type="number" step="0.001" value={form.marketing_budget_percentage} onChange={(e)=>setNum("marketing_budget_percentage", e.target.value)}/></Field>
                   )}
 
                   <Field label="Loading (PKR)"><Input type="number" step="0.01" value={form.loading} onChange={(e)=>setNum("loading", e.target.value)}/></Field>
-                  <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={form.b2b_commission} onChange={(e)=>setNum("b2b_commission", e.target.value)}/></Field>
+                  <Field label="Payment Destination">
+                    <Select value={form.payment_destination} onValueChange={(v)=>set("payment_destination", v as "company" | "insurance_company")}>
+                      <SelectTrigger><SelectValue/></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="company">Paid to Company (receivable)</SelectItem>
+                        <SelectItem value="insurance_company">Paid directly to Insurance Company</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </>
               )}
             </CardContent>
           </Card>
+
+          {canSeeFinancials && form.payment_destination === "company" && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Payment to Company — Collection Details</CardTitle></CardHeader>
+              <CardContent className="grid sm:grid-cols-3 gap-4">
+                <Field label="Payment Method">
+                  <Select value={form.payment_mode} onValueChange={(v)=>set("payment_mode", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select method"/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Bank via Cheque Deposit">Bank via Cheque Deposit</SelectItem>
+                      <SelectItem value="Online Transfer">Online Transfer</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Card">Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Payment Receive Date">
+                  <DateField value={form.payment_receive_date} onChange={(v)=>set("payment_receive_date", v)} placeholder="Receive date"/>
+                </Field>
+                <Field label="Transaction / Cheque Reference">
+                  <Input value={form.transaction_reference} onChange={(e)=>set("transaction_reference", e.target.value)} placeholder="TID / Cheque no."/>
+                </Field>
+                <div className="sm:col-span-3">
+                  <Field label="Payment Remarks">
+                    <Input value={form.payment_remarks} onChange={(e)=>set("payment_remarks", e.target.value)}/>
+                  </Field>
+                </div>
+                <p className="sm:col-span-3 text-xs text-muted-foreground">
+                  Payments collected by the company post to Accounts as a premium receivable, and the amount payable onward to the insurance company appears under the Payables / expense head.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+
+
+          {canSeeFinancials && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">B2B Commission</CardTitle></CardHeader>
+              <CardContent className="grid sm:grid-cols-3 gap-4">
+                <Field label="B2B Commission Taker">
+                  <Select value={form.b2b_taker_id} onValueChange={(v)=>set("b2b_taker_id", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select person"/></SelectTrigger>
+                    <SelectContent>{lists?.people.map(p=><SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </Field>
+                <Field label="B2B Commission Type">
+                  <Select value={form.b2b_commission_type} onValueChange={(v)=>set("b2b_commission_type", v as "fixed" | "percentage")}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentage (%)</SelectItem>
+                      <SelectItem value="fixed">Fixed Amount</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                {form.b2b_commission_type === "percentage" ? (
+                  <>
+                    <Field label="B2B Commission %"><Input type="number" step="0.001" value={form.b2b_commission_percentage} onChange={(e)=>setNum("b2b_commission_percentage", e.target.value)}/></Field>
+                    <Field label="B2B Commission Amount (auto)"><Input readOnly tabIndex={-1} value={fmtPKR(b2bAmount)} className="bg-muted/50"/></Field>
+                  </>
+                ) : (
+                  <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={form.b2b_commission} onChange={(e)=>setNum("b2b_commission", e.target.value)}/></Field>
+                )}
+                <p className="sm:col-span-3 text-xs text-muted-foreground">
+                  Tax deduction on this B2B commission is handled by the Accountant in Accounts → B2B Commission.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>
@@ -285,13 +561,16 @@ function NewDealPage() {
             <Card>
               <CardHeader><CardTitle className="text-base">Live Calculations</CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <Row k="Net Premium (Gross − Commission)" v={fmtPKR(netPremium)} />
+                <Row k="Gross Premium" v={fmtPKR(calc.gross_premium)} />
+                <Row k="Net Premium (manual)" v={fmtPKR(calc.net_premium)} />
                 <Row k="Commission Before Tax" v={fmtPKR(calc.commission_before_tax)} />
-                <Row k="Commission After Tax (-17%)" v={fmtPKR(calc.commission_after_tax)} />
+                <Row k="Commission Tax (17%)" v={fmtPKR(calc.commission_tax)} />
+                <Row k="Commission After Tax" v={fmtPKR(calc.commission_after_tax)} />
                 <Row k="Marketing Before Tax" v={fmtPKR(calc.marketing_before_tax)} />
-                <Row k="Marketing After Tax (-9%)" v={fmtPKR(calc.marketing_after_tax)} />
+                <Row k="Marketing Tax (9%)" v={fmtPKR(calc.marketing_tax)} />
+                <Row k="Marketing After Tax" v={fmtPKR(calc.marketing_after_tax)} />
                 <hr className="my-2"/>
-                <Row k="Total Income" v={fmtPKR(calc.total_income)} strong />
+                <Row k="Total Income (Comm. + Mktg + Loading − B2B)" v={fmtPKR(calc.total_income)} strong />
                 <Row k="Income %" v={fmtPct(calc.income_percentage)} />
                 <Row k={`Tagged Premium % (base ${lists?.basePct ?? 13}%)`} v={fmtPct(calc.tagged_premium_percentage)} />
                 <Row k="Tagged Premium" v={fmtPKR(calc.tagged_premium)} strong />

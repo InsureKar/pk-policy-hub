@@ -14,8 +14,14 @@ export const Route = createFileRoute("/_app/review")({
 });
 
 function ReviewPage() {
-  const { hasRole, loading } = useAuth();
+  const { hasRole, loading, profile, user } = useAuth();
   const [userId, setUserId] = useState<string>("");
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+  const [stageFilter, setStageFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  const isPrivileged = hasRole("admin") || hasRole("management");
+  const isLead = hasRole("team_lead");
 
   const { data } = useQuery({
     queryKey: ["review-users"],
@@ -26,7 +32,7 @@ function ReviewPage() {
       ]);
       return { profiles: profiles.data ?? [], roles: roles.data ?? [] };
     },
-    enabled: hasRole("admin") || hasRole("management"),
+    enabled: isPrivileged || isLead,
   });
 
   const { data: userData } = useQuery({
@@ -41,21 +47,42 @@ function ReviewPage() {
       return {
         deals: (deals.data ?? []) as any[],
         stages: stages.data ?? [],
+        types: types.data ?? [],
         typeMap: new Map((types.data ?? []).map(t => [t.id, t.name])),
       };
     },
   });
 
-  if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
-  if (!hasRole("admin") && !hasRole("management")) return <Navigate to="/dashboard" replace />;
-
-  const reviewableIds = new Set((data?.roles ?? []).filter(r => r.role === "do" || r.role === "team_lead").map(r => r.user_id));
-  const users = (data?.profiles ?? []).filter(p => reviewableIds.has(p.id));
-
   const wonIds = useMemo(() => new Set((userData?.stages ?? []).filter(s => s.is_won).map(s => s.id)), [userData?.stages]);
   const lostIds = useMemo(() => new Set((userData?.stages ?? []).filter(s => s.is_lost).map(s => s.id)), [userData?.stages]);
 
-  const deals = userData?.deals ?? [];
+  // Last 24 months for the month filter.
+  const monthOptions = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 24 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleString("en-US", { month: "long", year: "numeric" }) };
+    });
+  }, []);
+
+  if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
+  if (!isPrivileged && !isLead) return <Navigate to="/dashboard" replace />;
+
+  const reviewableIds = new Set((data?.roles ?? []).filter(r => r.role === "do" || r.role === "team_lead").map(r => r.user_id));
+  const myId = profile?.id ?? user?.id ?? "";
+  const myTeam = profile?.team_id ?? null;
+  // Team leads may only review themselves and their own team members.
+  const users = (data?.profiles ?? []).filter(p =>
+    reviewableIds.has(p.id) && (isPrivileged || p.id === myId || (!!myTeam && p.team_id === myTeam))
+  );
+
+  const allDeals = (userData?.deals ?? []).filter((d: any) => {
+    if (stageFilter !== "all" && d.stage_id !== stageFilter) return false;
+    if (categoryFilter !== "all" && d.insurance_type_id !== categoryFilter) return false;
+    if (monthFilter !== "all" && String(d.created_at).slice(0, 7) !== monthFilter) return false;
+    return true;
+  });
+  const deals = allDeals;
   const pipeline = deals.filter(d => !wonIds.has(d.stage_id) && !lostIds.has(d.stage_id));
   const won = deals.filter(d => wonIds.has(d.stage_id));
   const lost = deals.filter(d => lostIds.has(d.stage_id));
@@ -89,14 +116,37 @@ function ReviewPage() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
-      <PageHeader title="Review User" subtitle="Drill into any Team Lead or DO's pipeline, business, product mix and month-wise trend." />
+      <PageHeader title="Review User" subtitle={isPrivileged
+        ? "Drill into any Team Lead or DO's pipeline, business, product mix and month-wise trend."
+        : "Review your own and your team members' pipeline, business, product mix and month-wise trend."} />
       <Card className="mb-4">
-        <CardContent className="p-4 flex items-center gap-3">
+        <CardContent className="p-4 flex flex-wrap items-center gap-3">
           <span className="text-sm text-muted-foreground">User:</span>
           <Select value={userId} onValueChange={setUserId}>
-            <SelectTrigger className="w-[300px]"><SelectValue placeholder="Select user"/></SelectTrigger>
+            <SelectTrigger className="w-[260px]"><SelectValue placeholder="Select user"/></SelectTrigger>
             <SelectContent>
               {users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={monthFilter} onValueChange={setMonthFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Month"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Months</SelectItem>
+              {monthOptions.map(m => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={stageFilter} onValueChange={setStageFilter}>
+            <SelectTrigger className="w-[170px]"><SelectValue placeholder="Stage"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stages</SelectItem>
+              {(userData?.stages ?? []).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Category"/></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {(userData?.types ?? []).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </CardContent>

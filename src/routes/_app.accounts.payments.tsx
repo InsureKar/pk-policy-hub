@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { Download } from "lucide-react";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/accounts/payments")({
   component: PaymentsPage,
@@ -70,8 +71,8 @@ function PaymentsPage() {
             <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
-        <Input type="date" value={from} onChange={e => setFrom(e.target.value)}/>
-        <Input type="date" value={to} onChange={e => setTo(e.target.value)}/>
+        <DateField value={from} onChange={(v) => setFrom(v)}/>
+        <DateField value={to} onChange={(v) => setTo(v)}/>
         <Button variant="outline" onClick={exportCsv}><Download className="w-4 h-4 mr-1"/>Export CSV</Button>
       </CardContent></Card>
 

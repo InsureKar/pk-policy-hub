@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fmtPKR } from "@/lib/format";
 import { Download } from "lucide-react";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/accounts/reports")({
   component: ReportsPage,
@@ -179,8 +180,8 @@ function ReportsPage() {
             <SelectItem value="do">DO-wise Collections</SelectItem>
           </SelectContent>
         </Select>
-        <Input type="date" value={from} onChange={e => setFrom(e.target.value)}/>
-        <Input type="date" value={to} onChange={e => setTo(e.target.value)}/>
+        <DateField value={from} onChange={(v) => setFrom(v)}/>
+        <DateField value={to} onChange={(v) => setTo(v)}/>
         <Button variant="outline" onClick={exportCsv}><Download className="w-4 h-4 mr-1"/>CSV</Button>
         <Button variant="outline" onClick={doPrint}>Print / PDF</Button>
       </CardContent></Card>

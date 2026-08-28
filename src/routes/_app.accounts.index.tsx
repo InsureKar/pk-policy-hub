@@ -13,22 +13,35 @@ function AccountsDashboard() {
   const { data } = useQuery({
     queryKey: ["accounts-dashboard"],
     queryFn: async () => {
-      const [recv, pay, payables, deals] = await Promise.all([
-        supabase.from("receivables").select("id,total_amount,paid_amount,outstanding_amount,status,first_due_date,gross_premium,net_premium,commission_receivable,created_at"),
+      const sb = supabase as any;
+      const [recv, pay, payables, deals, ledger, taxes] = await Promise.all([
+        supabase.from("receivables").select("id,total_amount,paid_amount,outstanding_amount,status,first_due_date,gross_premium,net_premium,commission_receivable,created_at,excluded_from_receivable" as any),
         supabase.from("payments").select("id,amount,payment_date,created_at"),
         supabase.from("commission_payables").select("id,commission_amount,status,paid_date,created_at"),
         supabase.from("deals").select("id,gross_premium,net_premium,stage_id"),
+        sb.from("payables").select("id,category,original_amount,paid_amount,outstanding_amount,status"),
+        sb.from("tax_records").select("id,tax_type,amount,paid_amount"),
       ]);
       return {
-        recv: recv.data ?? [],
+        recv: (recv.data ?? []) as any[],
         pay: pay.data ?? [],
         payables: payables.data ?? [],
         deals: deals.data ?? [],
+        ledger: (ledger.data ?? []) as any[],
+        taxes: (taxes.data ?? []) as any[],
       };
     },
   });
 
-  const recv = data?.recv ?? [];
+  const allRecv = (data?.recv ?? []) as any[];
+  const excludedDirect = allRecv.filter(r => r.excluded_from_receivable).reduce((a, r) => a + Number(r.total_amount), 0);
+  const ledger = data?.ledger ?? [];
+  const taxes = data?.taxes ?? [];
+  const sumCat = (c: string) => ledger.filter(p => p.category === c).reduce((a, p) => a + Number(p.original_amount || 0), 0);
+  const sumTax = (t: string) => taxes.filter(x => x.tax_type === t).reduce((a, x) => a + Number(x.amount || 0), 0);
+  const taxOutstanding = taxes.reduce((a, x) => a + Math.max(0, Number(x.amount || 0) - Number(x.paid_amount || 0)), 0);
+  const payablesOutstanding = ledger.reduce((a, p) => a + Number(p.outstanding_amount || 0), 0);
+  const recv = allRecv.filter(r => !r.excluded_from_receivable);
   const pay = data?.pay ?? [];
   const payables = data?.payables ?? [];
 
@@ -99,6 +112,16 @@ function AccountsDashboard() {
         <KPI label="Monthly Comm. Paid" value={fmtPKR(monthlyCommissionPaid)}/>
         <KPI label="Total Gross Premium" value={fmtPKR(totalGross)}/>
         <KPI label="Total Net Premium" value={fmtPKR(totalNet)}/>
+        <KPI label="Excluded Direct Insurance Payments" value={fmtPKR(excludedDirect)}/>
+        <KPI label="B2B Commission Payable" value={fmtPKR(sumCat("b2b_commission"))}/>
+        <KPI label="Expense Payables" value={fmtPKR(sumCat("expense"))}/>
+        <KPI label="Other Payables" value={fmtPKR(sumCat("other"))}/>
+        <KPI label="Total Outstanding Payables" value={fmtPKR(payablesOutstanding)} tone="danger"/>
+        <KPI label="Total Income Tax" value={fmtPKR(sumTax("income_tax"))}/>
+        <KPI label="Total Sales Tax" value={fmtPKR(sumTax("sales_tax"))}/>
+        <KPI label="Total Marketing Budget Tax" value={fmtPKR(sumTax("marketing_budget_tax"))}/>
+        <KPI label="Total Commission Taker Tax" value={fmtPKR(sumTax("commission_taker_tax") + sumTax("b2b_commission_tax"))}/>
+        <KPI label="Total Tax Payable" value={fmtPKR(taxOutstanding)} tone="danger"/>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">

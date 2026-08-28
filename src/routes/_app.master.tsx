@@ -69,21 +69,22 @@ function CompaniesTab() {
     queryFn: async () => (await supabase.from("insurance_companies").select("*").order("name")).data ?? [],
   });
   const add = async () => {
-    if (!name.trim()) return;
-    const { error } = await supabase.from("insurance_companies").insert({ name });
-    if (error) toast.error(error.message);
-    else {
-      setName("");
-      // seed commission rows for the new company
-      const { data: created } = await supabase.from("insurance_companies").select("id").eq("name", name).single();
-      if (created) {
-        await supabase.from("company_commission_rates").insert(
-          LINES.map(l => ({ company_id: created.id, line_of_business: l.key, percentage: 0 }))
-        );
-      }
-      qc.invalidateQueries({ queryKey: ["ic"] });
-      qc.invalidateQueries({ queryKey: ["ccr"] });
-    }
+    const clean = name.trim();
+    if (!clean) return toast.error("Enter a company name");
+    const { data: created, error } = await supabase
+      .from("insurance_companies")
+      .insert({ name: clean })
+      .select("id, name")
+      .single();
+    if (error) return toast.error(error.message);
+    setName("");
+    // seed commission rows for the new company
+    await supabase.from("company_commission_rates").insert(
+      LINES.map(l => ({ company_id: created.id, line_of_business: l.key, percentage: 0 }))
+    );
+    toast.success(`${created.name} added`);
+    qc.invalidateQueries({ queryKey: ["ic"] });
+    qc.invalidateQueries({ queryKey: ["ccr"] });
   };
   const toggle = async (id: string, active: boolean) => {
     const { error } = await supabase.from("insurance_companies").update({ active: !active }).eq("id", id);
