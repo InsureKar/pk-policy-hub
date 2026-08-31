@@ -609,9 +609,13 @@ function NewDealPage() {
             </CardContent>
           </Card>
 
-          {canSeeFinancials && form.payment_destination === "company" && (
+          {canSeeFinancials && (
             <Card>
-              <CardHeader><CardTitle className="text-base">Payment to Company — Collection Details</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">
+                {form.payment_destination === "company"
+                  ? "Payment to Company — Collection Details"
+                  : "Payment Directly to Insurance Company — Details"}
+              </CardTitle></CardHeader>
               <CardContent className="grid sm:grid-cols-3 gap-4">
                 <Field label="Payment Method">
                   <Select value={form.payment_mode} onValueChange={(v)=>set("payment_mode", v)}>
