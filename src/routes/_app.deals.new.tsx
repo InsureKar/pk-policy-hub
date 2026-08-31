@@ -16,6 +16,7 @@ import {
   type TravelPolicyRow, type TravelTransferRow,
 } from "@/components/TravelBulkPolicies";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
+import { MoneyInput, amountInWords } from "@/components/MoneyInput";
 import { DateField } from "@/components/DateField";
 import { toast } from "sonner";
 
