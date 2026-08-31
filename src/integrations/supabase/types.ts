@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -127,6 +127,8 @@ export type Database = {
           ntn: string | null
           phone: string | null
           poc_address: string | null
+          poc_department: string | null
+          poc_designation: string | null
           poc_email: string | null
           poc_name: string | null
           poc_number: string | null
@@ -154,6 +156,8 @@ export type Database = {
           ntn?: string | null
           phone?: string | null
           poc_address?: string | null
+          poc_department?: string | null
+          poc_designation?: string | null
           poc_email?: string | null
           poc_name?: string | null
           poc_number?: string | null
@@ -181,6 +185,8 @@ export type Database = {
           ntn?: string | null
           phone?: string | null
           poc_address?: string | null
+          poc_department?: string | null
+          poc_designation?: string | null
           poc_email?: string | null
           poc_name?: string | null
           poc_number?: string | null
@@ -549,9 +555,11 @@ export type Database = {
           notes: string | null
           payment_destination: string
           payment_mode: string | null
+          payment_proof_url: string | null
           payment_receive_date: string | null
           payment_remarks: string | null
           payment_schedule: string | null
+          payment_year: number | null
           policy_end_date: string | null
           policy_number: string | null
           policy_start_date: string | null
@@ -607,9 +615,11 @@ export type Database = {
           notes?: string | null
           payment_destination?: string
           payment_mode?: string | null
+          payment_proof_url?: string | null
           payment_receive_date?: string | null
           payment_remarks?: string | null
           payment_schedule?: string | null
+          payment_year?: number | null
           policy_end_date?: string | null
           policy_number?: string | null
           policy_start_date?: string | null
@@ -665,9 +675,11 @@ export type Database = {
           notes?: string | null
           payment_destination?: string
           payment_mode?: string | null
+          payment_proof_url?: string | null
           payment_receive_date?: string | null
           payment_remarks?: string | null
           payment_schedule?: string | null
+          payment_year?: number | null
           policy_end_date?: string | null
           policy_number?: string | null
           policy_start_date?: string | null
@@ -2001,6 +2013,76 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          deal_id: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          deal_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          deal_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
             referencedColumns: ["id"]
           },
         ]

@@ -27,8 +27,18 @@ const PAYMENT_MODES = ["IBFT", "Cheque", "Cash", "Pay Order", "Online Payment"] 
 function DealDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
-  // Premium & Commission section matches the original spec — visible to all roles.
-  const canSeeFinancials = true;
+  const { hasRole } = useAuth();
+  // Premium & Income calculations are restricted to Admin and Management.
+  const canSeeFinancials = hasRole(["admin", "management"]);
+  const canManageDeal = canSeeFinancials;
+
+  const deleteDeal = async () => {
+    if (!window.confirm("Delete this deal permanently? This cannot be undone.")) return;
+    const { error } = await supabase.from("deals").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deal deleted");
+    window.location.href = "/deals";
+  };
 
 
   const { data } = useQuery({
@@ -139,6 +149,9 @@ function DealDetail() {
               <SelectTrigger className="w-[200px]"><SelectValue/></SelectTrigger>
               <SelectContent>{data.stages.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
             </Select>
+            {canManageDeal && (
+              <Button variant="destructive" size="sm" onClick={deleteDeal}>Delete Deal</Button>
+            )}
           </div>
         }
       />

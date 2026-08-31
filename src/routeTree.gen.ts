@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTeamsRouteImport } from './routes/_app.teams'
+import { Route as AppTasksRouteImport } from './routes/_app.tasks'
 import { Route as AppTargetsRouteImport } from './routes/_app.targets'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppReviewRouteImport } from './routes/_app.review'
@@ -77,6 +78,11 @@ const AppUsersRoute = AppUsersRouteImport.update({
 const AppTeamsRoute = AppTeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksRoute = AppTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTargetsRoute = AppTargetsRouteImport.update({
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof AppReviewRoute
   '/settings': typeof AppSettingsRoute
   '/targets': typeof AppTargetsRoute
+  '/tasks': typeof AppTasksRoute
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
@@ -309,6 +316,7 @@ export interface FileRoutesByTo {
   '/review': typeof AppReviewRoute
   '/settings': typeof AppSettingsRoute
   '/targets': typeof AppTargetsRoute
+  '/tasks': typeof AppTasksRoute
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
@@ -352,6 +360,7 @@ export interface FileRoutesById {
   '/_app/review': typeof AppReviewRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/targets': typeof AppTargetsRoute
+  '/_app/tasks': typeof AppTasksRoute
   '/_app/teams': typeof AppTeamsRoute
   '/_app/users': typeof AppUsersRoute
   '/_app/accounts/approvals': typeof AppAccountsApprovalsRoute
@@ -395,6 +404,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/settings'
     | '/targets'
+    | '/tasks'
     | '/teams'
     | '/users'
     | '/accounts/approvals'
@@ -434,6 +444,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/settings'
     | '/targets'
+    | '/tasks'
     | '/teams'
     | '/users'
     | '/accounts/approvals'
@@ -476,6 +487,7 @@ export interface FileRouteTypes {
     | '/_app/review'
     | '/_app/settings'
     | '/_app/targets'
+    | '/_app/tasks'
     | '/_app/teams'
     | '/_app/users'
     | '/_app/accounts/approvals'
@@ -550,6 +562,13 @@ declare module '@tanstack/react-router' {
       path: '/teams'
       fullPath: '/teams'
       preLoaderRoute: typeof AppTeamsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tasks': {
+      id: '/_app/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AppTasksRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/targets': {
@@ -861,6 +880,7 @@ interface AppRouteChildren {
   AppReviewRoute: typeof AppReviewRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTargetsRoute: typeof AppTargetsRoute
+  AppTasksRoute: typeof AppTasksRoute
   AppTeamsRoute: typeof AppTeamsRoute
   AppUsersRoute: typeof AppUsersRoute
   AppDealsIdRoute: typeof AppDealsIdRoute
@@ -883,6 +903,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppReviewRoute: AppReviewRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTargetsRoute: AppTargetsRoute,
+  AppTasksRoute: AppTasksRoute,
   AppTeamsRoute: AppTeamsRoute,
   AppUsersRoute: AppUsersRoute,
   AppDealsIdRoute: AppDealsIdRoute,
