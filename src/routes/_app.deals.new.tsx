@@ -15,7 +15,7 @@ import {
   TravelBulkPolicies, emptyTravelRow, emptyTransferRow, payableOf,
   type TravelPolicyRow, type TravelTransferRow,
 } from "@/components/TravelBulkPolicies";
-import { fmtPKR, fmtPct } from "@/lib/format";
+import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { DateField } from "@/components/DateField";
 import { toast } from "sonner";
 
@@ -26,11 +26,10 @@ export const Route = createFileRoute("/_app/deals/new")({
 function NewDealPage() {
   const nav = useNavigate();
   const { user, hasRole } = useAuth();
-  // Premium & Commission section is available to every user creating a deal,
-  // matching the original spec — no tax or marketing-budget restrictions.
+  // Premium & Commission inputs stay available to every user creating a deal.
   const canSeeFinancials = true;
   const canSeeMarketing = true;
-  // Live Calculations panel: Admin & Management only
+  // Calculated Premium & Income figures (Tagged Premium, Live Calculations): Admin & Management only
   const canSeeLiveCalc = hasRole(["admin", "management"]);
 
 
@@ -71,6 +70,7 @@ function NewDealPage() {
     payment_receive_date: "",
     transaction_reference: "",
     payment_remarks: "",
+    payment_proof_url: "",
     policy_start_date: "", policy_end_date: "", notes: "",
     deal_type: "fresh" as "fresh" | "renewal",
     policy_type: "single" as "single" | "bulk",
@@ -165,16 +165,77 @@ function NewDealPage() {
     [form.b2b_commission_type, form.b2b_commission_percentage, form.b2b_commission, effGross],
   );
 
+  // Bulk policies feed Gross & Net premium straight into Premium & Commission.
+  const effNet = form.policy_type === "bulk" ? bulkTotals.net : form.net_premium;
+
   // Single source of truth — real-time recalculation on every input change.
   const calc = useMemo(
     () => calculateDealFinancials({
       ...form,
       gross_premium: effGross,
+      net_premium: effNet,
       b2b_commission: b2bAmount,
       base_percentage: lists?.basePct,
     }),
-    [form, effGross, b2bAmount, lists?.basePct],
+    [form, effGross, effNet, b2bAmount, lists?.basePct],
   );
+
+  // ── Payment schedule instalment plan (auto-calculated from the total premium) ──
+  const SCHEDULE_COUNT: Record<string, number> = { Monthly: 12, Quarterly: 4, "Bi-Annually": 2, Annually: 1 };
+  const scheduleLabels = (n: number) =>
+    n === 4 ? ["1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"]
+      : n === 2 ? ["1st Half", "2nd Half"]
+      : n === 12 ? Array.from({ length: 12 }, (_, i) => `Month ${i + 1}`)
+      : ["Full Payment"];
+  const instalments = useMemo(() => {
+    const count = SCHEDULE_COUNT[form.payment_schedule] ?? 0;
+    if (!count || !(effGross > 0)) return [];
+    const per = Math.round((effGross / count) * 100) / 100;
+    const last = Math.round((effGross - per * (count - 1)) * 100) / 100;
+    const start = form.policy_start_date ? new Date(`${form.policy_start_date}T00:00:00`) : new Date();
+    const step = 12 / count;
+    const labels = scheduleLabels(count);
+    return Array.from({ length: count }, (_, i) => {
+      const due = new Date(start);
+      due.setMonth(due.getMonth() + Math.round(i * step));
+      return { label: labels[i], due: due.toISOString().slice(0, 10), amount: i === count - 1 ? last : per };
+    });
+  }, [form.payment_schedule, form.policy_start_date, effGross]);
+
+  // All instalments of a policy year are tagged to the policy start year.
+  const paymentYear = form.policy_start_date
+    ? Number(form.policy_start_date.slice(0, 4))
+    : new Date().getFullYear();
+
+  // ── Duplicate Cover Note number check ──
+  const [cnError, setCnError] = useState("");
+  const checkCoverNote = async (value: string) => {
+    setCnError("");
+    const n = norm(value);
+    if (!n) return;
+    const [deals, policies] = await Promise.all([
+      supabase.from("deals").select("deal_number, cover_note_number").not("cover_note_number", "is", null),
+      supabase.from("deal_policies").select("cover_note_number, deal_id").not("cover_note_number", "is", null),
+    ]);
+    const hitDeal = (deals.data ?? []).find((d) => norm(d.cover_note_number ?? "") === n);
+    if (hitDeal) return setCnError(`Cover note already used on deal ${hitDeal.deal_number}`);
+    const hitPolicy = (policies.data ?? []).find((p) => norm(p.cover_note_number ?? "") === n);
+    if (hitPolicy) setCnError("Cover note already used on an existing bulk policy row");
+  };
+
+  // ── Payment proof upload (mandatory before a deal can be saved) ──
+  const [uploading, setUploading] = useState(false);
+  const uploadProof = async (file: File) => {
+    if (!user) return;
+    setUploading(true);
+    const path = `payment-proofs/${user.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+    const { error } = await supabase.storage.from("crm-documents").upload(path, file, { upsert: false });
+    setUploading(false);
+    if (error) return toast.error(error.message);
+    set("payment_proof_url", path);
+    toast.success("Payment proof uploaded");
+  };
+
 
   const submit = async () => {
     if (!user) return;
@@ -183,6 +244,8 @@ function NewDealPage() {
     const effectiveNet = form.policy_type === "bulk" ? bulkTotals.net : form.net_premium;
     if (!(effectiveGross > 0)) return toast.error("Gross premium is required");
     if (!Number.isFinite(form.net_premium) || form.net_premium < 0) return toast.error("Net premium must be a positive number");
+    if (cnError) return toast.error(cnError);
+    if (!form.payment_proof_url) return toast.error("Payment proof is required before the deal can be saved");
     const isTravelBulk = form.policy_type === "bulk" && isTravel;
     if (form.policy_type === "bulk" && (isTravelBulk ? travelRows.length === 0 : bulkRows.length === 0)) return toast.error("Add at least one bulk policy row");
     if (isTravelBulk) {
@@ -240,10 +303,14 @@ function NewDealPage() {
       b2b_commission_percentage: Number(form.b2b_commission_percentage) || 0,
       payment_destination: form.payment_destination,
       payment_schedule: form.payment_schedule || null,
-      payment_mode: form.payment_destination === "company" ? (form.payment_mode || null) : null,
-      payment_receive_date: form.payment_destination === "company" ? (form.payment_receive_date || null) : null,
-      transaction_reference: form.payment_destination === "company" ? (form.transaction_reference.trim() || null) : null,
-      payment_remarks: form.payment_destination === "company" ? (form.payment_remarks.trim() || null) : null,
+      // Collection details are captured for both destinations; the receivable
+      // exclusion for direct-to-insurer payments is handled in Accounts.
+      payment_mode: form.payment_mode || null,
+      payment_receive_date: form.payment_receive_date || null,
+      transaction_reference: form.transaction_reference.trim() || null,
+      payment_remarks: form.payment_remarks.trim() || null,
+      payment_proof_url: form.payment_proof_url || null,
+      payment_year: paymentYear,
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
@@ -336,7 +403,16 @@ function NewDealPage() {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Cover Note Number"><Input value={form.cover_note_number} onChange={(e)=>set("cover_note_number", e.target.value)}/></Field>
+              <Field label="Cover Note Number">
+                <Input
+                  value={form.cover_note_number}
+                  aria-invalid={!!cnError}
+                  className={cnError ? "border-destructive" : ""}
+                  onChange={(e)=>{ set("cover_note_number", e.target.value); if (cnError) setCnError(""); }}
+                  onBlur={(e)=>checkCoverNote(e.target.value)}
+                />
+                {cnError && <p className="text-xs text-destructive mt-1">{cnError}</p>}
+              </Field>
               <Field label="Policy Number"><Input value={form.policy_number} onChange={(e)=>set("policy_number", e.target.value)}/></Field>
               <Field label="Source">
                 <Select value={form.source_id} onValueChange={(v)=>set("source_id", v)}>
@@ -359,7 +435,7 @@ function NewDealPage() {
               <Field label="Policy Start">
                 <DateField value={form.policy_start_date} onChange={setStartDate} placeholder="Start date"/>
               </Field>
-              <Field label={isTravel ? "Policy End" : "Policy End (auto +1 year)"}>
+              <Field label={isTravel ? "Policy End (solar calendar)" : "Policy End (auto +1 solar year)"}>
                 <DateField value={form.policy_end_date} onChange={(v)=>set("policy_end_date", v)} placeholder="End date"/>
               </Field>
               <Field label="Payment Mode / Schedule">
@@ -375,6 +451,43 @@ function NewDealPage() {
               </Field>
             </CardContent>
           </Card>
+
+          {instalments.length > 1 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">
+                  {form.payment_schedule} Instalment Plan — {instalments.length} payments · tagged to year {paymentYear}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="text-xs text-muted-foreground">
+                      <tr><th className="text-left p-2">Instalment</th><th className="text-left p-2">Due Date</th><th className="text-right p-2">Amount Due (auto)</th></tr>
+                    </thead>
+                    <tbody>
+                      {instalments.map((ins, i) => (
+                        <tr key={i} className="border-t">
+                          <td className="p-2">{ins.label}</td>
+                          <td className="p-2">{fmtDate(ins.due)}</td>
+                          <td className="p-2 text-right tabular-nums">{fmtPKR(ins.amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="border-t font-medium">
+                      <tr>
+                        <td className="p-2" colSpan={2}>Total</td>
+                        <td className="p-2 text-right tabular-nums">{fmtPKR(effGross)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Amounts are auto-calculated from the total gross premium. All instalments received against this policy stay tagged to {paymentYear}.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {form.policy_type === "bulk" && isTravel && (
             <TravelBulkPolicies
@@ -451,9 +564,28 @@ function NewDealPage() {
           <Card>
             <CardHeader><CardTitle className="text-base">Premium{canSeeFinancials ? " & Commission" : ""}</CardTitle></CardHeader>
             <CardContent className="grid sm:grid-cols-3 gap-4">
-              <Field label="Gross Premium (PKR) *"><Input type="number" step="0.01" min="0" value={form.gross_premium} onChange={(e)=>setNum("gross_premium", e.target.value)}/></Field>
-              <Field label="Net Premium (PKR)"><Input type="number" step="0.01" min="0" value={form.net_premium} onChange={(e)=>setNum("net_premium", e.target.value)}/></Field>
-              <Field label="Tagged Premium (auto)"><Input readOnly tabIndex={-1} value={fmtPKR(calc.tagged_premium)} className="bg-muted/50"/></Field>
+              <Field label={form.policy_type === "bulk" ? "Gross Premium (PKR) — from bulk policies" : "Gross Premium (PKR) *"}>
+                <MoneyInput
+                  value={effGross}
+                  readOnly={form.policy_type === "bulk"}
+                  className={form.policy_type === "bulk" ? "bg-muted/50" : ""}
+                  onChange={(v)=>set("gross_premium", v)}
+                />
+              </Field>
+              <Field label={form.policy_type === "bulk" ? "Net Premium (PKR) — from bulk policies" : "Net Premium (PKR)"}>
+                <MoneyInput
+                  value={effNet}
+                  readOnly={form.policy_type === "bulk"}
+                  className={form.policy_type === "bulk" ? "bg-muted/50" : ""}
+                  onChange={(v)=>set("net_premium", v)}
+                />
+              </Field>
+              {canSeeLiveCalc && (
+                <Field label="Tagged Premium (auto)">
+                  <Input readOnly tabIndex={-1} value={fmtPKR(calc.tagged_premium)} className="bg-muted/50"/>
+                  <p className="text-[11px] leading-tight text-muted-foreground mt-1">{amountInWords(calc.tagged_premium)}</p>
+                </Field>
+              )}
               {canSeeFinancials && (
                 <>
                   <Field label="Commission %"><Input type="number" step="0.001" value={form.commission_percentage} onChange={(e)=>setNum("commission_percentage", e.target.value)}/></Field>

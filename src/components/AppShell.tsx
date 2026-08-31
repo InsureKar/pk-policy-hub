@@ -47,6 +47,7 @@ const groups: NavGroup[] = [
       { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
       { to: "/clients", label: "Clients", icon: Building2, module: "clients" },
       { to: "/leads/unassigned", label: "Unassigned Leads", icon: Inbox, module: "leads", roles: ["admin"] },
+      { to: "/tasks", label: "Tasks", icon: CalendarClock },
     ],
   },
   {
