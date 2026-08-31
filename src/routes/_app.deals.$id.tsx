@@ -149,6 +149,9 @@ function DealDetail() {
               <SelectTrigger className="w-[200px]"><SelectValue/></SelectTrigger>
               <SelectContent>{data.stages.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
             </Select>
+            {canManageDeal && (
+              <Button variant="destructive" size="sm" onClick={deleteDeal}>Delete Deal</Button>
+            )}
           </div>
         }
       />
