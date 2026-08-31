@@ -639,8 +639,18 @@ function NewDealPage() {
                     <Input value={form.payment_remarks} onChange={(e)=>set("payment_remarks", e.target.value)}/>
                   </Field>
                 </div>
+                <div className="sm:col-span-3 space-y-1.5">
+                  <Label className="text-xs">Payment Proof * (required to save the deal)</Label>
+                  <Input type="file" accept="image/*,application/pdf" disabled={uploading}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadProof(f); }} />
+                  <p className={`text-xs ${form.payment_proof_url ? "text-emerald-600" : "text-muted-foreground"}`}>
+                    {uploading ? "Uploading…" : form.payment_proof_url ? `Attached: ${form.payment_proof_url.split("/").pop()}` : "Attach the receipt / deposit slip / transfer screenshot."}
+                  </p>
+                </div>
                 <p className="sm:col-span-3 text-xs text-muted-foreground">
-                  Payments collected by the company post to Accounts as a premium receivable, and the amount payable onward to the insurance company appears under the Payables / expense head.
+                  {form.payment_destination === "company"
+                    ? "Payments collected by the company post to Accounts as a premium receivable, and the amount payable onward to the insurance company appears under the Payables / expense head."
+                    : "Paid directly to the insurance company — these details are recorded for the audit trail but are NOT counted as a premium receivable in Accounts."}
                 </p>
               </CardContent>
             </Card>
