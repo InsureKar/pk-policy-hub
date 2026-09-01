@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
+import { Route as AppTicketsRouteImport } from './routes/_app.tickets'
 import { Route as AppTeamsRouteImport } from './routes/_app.teams'
 import { Route as AppTasksRouteImport } from './routes/_app.tasks'
 import { Route as AppTargetsRouteImport } from './routes/_app.targets'
@@ -29,9 +30,16 @@ import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app.clients'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppAccountsRouteImport } from './routes/_app.accounts'
+import { Route as AppTicketsIndexRouteImport } from './routes/_app.tickets.index'
 import { Route as AppOperationsIndexRouteImport } from './routes/_app.operations.index'
 import { Route as AppDealsIndexRouteImport } from './routes/_app.deals.index'
 import { Route as AppAccountsIndexRouteImport } from './routes/_app.accounts.index'
+import { Route as AppTicketsTeamRouteImport } from './routes/_app.tickets.team'
+import { Route as AppTicketsSlaRouteImport } from './routes/_app.tickets.sla'
+import { Route as AppTicketsReportsRouteImport } from './routes/_app.tickets.reports'
+import { Route as AppTicketsMineRouteImport } from './routes/_app.tickets.mine'
+import { Route as AppTicketsAllRouteImport } from './routes/_app.tickets.all'
+import { Route as AppTicketsIdRouteImport } from './routes/_app.tickets.$id'
 import { Route as AppOperationsReportsRouteImport } from './routes/_app.operations.reports'
 import { Route as AppOperationsReimbursementsRouteImport } from './routes/_app.operations.reimbursements'
 import { Route as AppOperationsPerformanceRouteImport } from './routes/_app.operations.performance'
@@ -73,6 +81,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppUsersRoute = AppUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTicketsRoute = AppTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTeamsRoute = AppTeamsRouteImport.update({
@@ -150,6 +163,11 @@ const AppAccountsRoute = AppAccountsRouteImport.update({
   path: '/accounts',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTicketsIndexRoute = AppTicketsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
 const AppOperationsIndexRoute = AppOperationsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -164,6 +182,36 @@ const AppAccountsIndexRoute = AppAccountsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppAccountsRoute,
+} as any)
+const AppTicketsTeamRoute = AppTicketsTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsSlaRoute = AppTicketsSlaRouteImport.update({
+  id: '/sla',
+  path: '/sla',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsReportsRoute = AppTicketsReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsMineRoute = AppTicketsMineRouteImport.update({
+  id: '/mine',
+  path: '/mine',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsAllRoute = AppTicketsAllRouteImport.update({
+  id: '/all',
+  path: '/all',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsIdRoute = AppTicketsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppTicketsRoute,
 } as any)
 const AppOperationsReportsRoute = AppOperationsReportsRouteImport.update({
   id: '/reports',
@@ -278,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/targets': typeof AppTargetsRoute
   '/tasks': typeof AppTasksRoute
   '/teams': typeof AppTeamsRoute
+  '/tickets': typeof AppTicketsRouteWithChildren
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/accounts/b2b': typeof AppAccountsB2bRoute
@@ -297,9 +346,16 @@ export interface FileRoutesByFullPath {
   '/operations/performance': typeof AppOperationsPerformanceRoute
   '/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/operations/reports': typeof AppOperationsReportsRoute
+  '/tickets/$id': typeof AppTicketsIdRoute
+  '/tickets/all': typeof AppTicketsAllRoute
+  '/tickets/mine': typeof AppTicketsMineRoute
+  '/tickets/reports': typeof AppTicketsReportsRoute
+  '/tickets/sla': typeof AppTicketsSlaRoute
+  '/tickets/team': typeof AppTicketsTeamRoute
   '/accounts/': typeof AppAccountsIndexRoute
   '/deals/': typeof AppDealsIndexRoute
   '/operations/': typeof AppOperationsIndexRoute
+  '/tickets/': typeof AppTicketsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -337,9 +393,16 @@ export interface FileRoutesByTo {
   '/operations/performance': typeof AppOperationsPerformanceRoute
   '/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/operations/reports': typeof AppOperationsReportsRoute
+  '/tickets/$id': typeof AppTicketsIdRoute
+  '/tickets/all': typeof AppTicketsAllRoute
+  '/tickets/mine': typeof AppTicketsMineRoute
+  '/tickets/reports': typeof AppTicketsReportsRoute
+  '/tickets/sla': typeof AppTicketsSlaRoute
+  '/tickets/team': typeof AppTicketsTeamRoute
   '/accounts': typeof AppAccountsIndexRoute
   '/deals': typeof AppDealsIndexRoute
   '/operations': typeof AppOperationsIndexRoute
+  '/tickets': typeof AppTicketsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -362,6 +425,7 @@ export interface FileRoutesById {
   '/_app/targets': typeof AppTargetsRoute
   '/_app/tasks': typeof AppTasksRoute
   '/_app/teams': typeof AppTeamsRoute
+  '/_app/tickets': typeof AppTicketsRouteWithChildren
   '/_app/users': typeof AppUsersRoute
   '/_app/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/_app/accounts/b2b': typeof AppAccountsB2bRoute
@@ -381,9 +445,16 @@ export interface FileRoutesById {
   '/_app/operations/performance': typeof AppOperationsPerformanceRoute
   '/_app/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/_app/operations/reports': typeof AppOperationsReportsRoute
+  '/_app/tickets/$id': typeof AppTicketsIdRoute
+  '/_app/tickets/all': typeof AppTicketsAllRoute
+  '/_app/tickets/mine': typeof AppTicketsMineRoute
+  '/_app/tickets/reports': typeof AppTicketsReportsRoute
+  '/_app/tickets/sla': typeof AppTicketsSlaRoute
+  '/_app/tickets/team': typeof AppTicketsTeamRoute
   '/_app/accounts/': typeof AppAccountsIndexRoute
   '/_app/deals/': typeof AppDealsIndexRoute
   '/_app/operations/': typeof AppOperationsIndexRoute
+  '/_app/tickets/': typeof AppTicketsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -406,6 +477,7 @@ export interface FileRouteTypes {
     | '/targets'
     | '/tasks'
     | '/teams'
+    | '/tickets'
     | '/users'
     | '/accounts/approvals'
     | '/accounts/b2b'
@@ -425,9 +497,16 @@ export interface FileRouteTypes {
     | '/operations/performance'
     | '/operations/reimbursements'
     | '/operations/reports'
+    | '/tickets/$id'
+    | '/tickets/all'
+    | '/tickets/mine'
+    | '/tickets/reports'
+    | '/tickets/sla'
+    | '/tickets/team'
     | '/accounts/'
     | '/deals/'
     | '/operations/'
+    | '/tickets/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -465,9 +544,16 @@ export interface FileRouteTypes {
     | '/operations/performance'
     | '/operations/reimbursements'
     | '/operations/reports'
+    | '/tickets/$id'
+    | '/tickets/all'
+    | '/tickets/mine'
+    | '/tickets/reports'
+    | '/tickets/sla'
+    | '/tickets/team'
     | '/accounts'
     | '/deals'
     | '/operations'
+    | '/tickets'
   id:
     | '__root__'
     | '/'
@@ -489,6 +575,7 @@ export interface FileRouteTypes {
     | '/_app/targets'
     | '/_app/tasks'
     | '/_app/teams'
+    | '/_app/tickets'
     | '/_app/users'
     | '/_app/accounts/approvals'
     | '/_app/accounts/b2b'
@@ -508,9 +595,16 @@ export interface FileRouteTypes {
     | '/_app/operations/performance'
     | '/_app/operations/reimbursements'
     | '/_app/operations/reports'
+    | '/_app/tickets/$id'
+    | '/_app/tickets/all'
+    | '/_app/tickets/mine'
+    | '/_app/tickets/reports'
+    | '/_app/tickets/sla'
+    | '/_app/tickets/team'
     | '/_app/accounts/'
     | '/_app/deals/'
     | '/_app/operations/'
+    | '/_app/tickets/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -555,6 +649,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof AppUsersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tickets': {
+      id: '/_app/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof AppTicketsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/teams': {
@@ -662,6 +763,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/tickets/': {
+      id: '/_app/tickets/'
+      path: '/'
+      fullPath: '/tickets/'
+      preLoaderRoute: typeof AppTicketsIndexRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
     '/_app/operations/': {
       id: '/_app/operations/'
       path: '/'
@@ -682,6 +790,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/accounts/'
       preLoaderRoute: typeof AppAccountsIndexRouteImport
       parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/tickets/team': {
+      id: '/_app/tickets/team'
+      path: '/team'
+      fullPath: '/tickets/team'
+      preLoaderRoute: typeof AppTicketsTeamRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/sla': {
+      id: '/_app/tickets/sla'
+      path: '/sla'
+      fullPath: '/tickets/sla'
+      preLoaderRoute: typeof AppTicketsSlaRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/reports': {
+      id: '/_app/tickets/reports'
+      path: '/reports'
+      fullPath: '/tickets/reports'
+      preLoaderRoute: typeof AppTicketsReportsRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/mine': {
+      id: '/_app/tickets/mine'
+      path: '/mine'
+      fullPath: '/tickets/mine'
+      preLoaderRoute: typeof AppTicketsMineRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/all': {
+      id: '/_app/tickets/all'
+      path: '/all'
+      fullPath: '/tickets/all'
+      preLoaderRoute: typeof AppTicketsAllRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/$id': {
+      id: '/_app/tickets/$id'
+      path: '/$id'
+      fullPath: '/tickets/$id'
+      preLoaderRoute: typeof AppTicketsIdRouteImport
+      parentRoute: typeof AppTicketsRoute
     }
     '/_app/operations/reports': {
       id: '/_app/operations/reports'
@@ -866,6 +1016,30 @@ const AppOperationsRouteWithChildren = AppOperationsRoute._addFileChildren(
   AppOperationsRouteChildren,
 )
 
+interface AppTicketsRouteChildren {
+  AppTicketsIdRoute: typeof AppTicketsIdRoute
+  AppTicketsAllRoute: typeof AppTicketsAllRoute
+  AppTicketsMineRoute: typeof AppTicketsMineRoute
+  AppTicketsReportsRoute: typeof AppTicketsReportsRoute
+  AppTicketsSlaRoute: typeof AppTicketsSlaRoute
+  AppTicketsTeamRoute: typeof AppTicketsTeamRoute
+  AppTicketsIndexRoute: typeof AppTicketsIndexRoute
+}
+
+const AppTicketsRouteChildren: AppTicketsRouteChildren = {
+  AppTicketsIdRoute: AppTicketsIdRoute,
+  AppTicketsAllRoute: AppTicketsAllRoute,
+  AppTicketsMineRoute: AppTicketsMineRoute,
+  AppTicketsReportsRoute: AppTicketsReportsRoute,
+  AppTicketsSlaRoute: AppTicketsSlaRoute,
+  AppTicketsTeamRoute: AppTicketsTeamRoute,
+  AppTicketsIndexRoute: AppTicketsIndexRoute,
+}
+
+const AppTicketsRouteWithChildren = AppTicketsRoute._addFileChildren(
+  AppTicketsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccountsRoute: typeof AppAccountsRouteWithChildren
   AppAnalyticsRoute: typeof AppAnalyticsRoute
@@ -882,6 +1056,7 @@ interface AppRouteChildren {
   AppTargetsRoute: typeof AppTargetsRoute
   AppTasksRoute: typeof AppTasksRoute
   AppTeamsRoute: typeof AppTeamsRoute
+  AppTicketsRoute: typeof AppTicketsRouteWithChildren
   AppUsersRoute: typeof AppUsersRoute
   AppDealsIdRoute: typeof AppDealsIdRoute
   AppDealsNewRoute: typeof AppDealsNewRoute
@@ -905,6 +1080,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTargetsRoute: AppTargetsRoute,
   AppTasksRoute: AppTasksRoute,
   AppTeamsRoute: AppTeamsRoute,
+  AppTicketsRoute: AppTicketsRouteWithChildren,
   AppUsersRoute: AppUsersRoute,
   AppDealsIdRoute: AppDealsIdRoute,
   AppDealsNewRoute: AppDealsNewRoute,

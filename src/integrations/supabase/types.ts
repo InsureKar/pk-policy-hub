@@ -2213,6 +2213,356 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_activity_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          storage_path: string
+          ticket_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          storage_path: string
+          ticket_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          storage_path?: string
+          ticket_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_attachments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          department: Database["public"]["Enums"]["ticket_department"]
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          department: Database["public"]["Enums"]["ticket_department"]
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          department?: Database["public"]["Enums"]["ticket_department"]
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      ticket_comments: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          mentions: string[]
+          ticket_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_comments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_sla_settings: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          hours: number
+          id: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          hours?: number
+          id?: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          hours?: number
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_sla_settings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          assigned_department:
+            | Database["public"]["Enums"]["ticket_department"]
+            | null
+          assigned_team_id: string | null
+          assigned_to: string | null
+          assignee_kind:
+            | Database["public"]["Enums"]["ticket_assignee_kind"]
+            | null
+          category_id: string | null
+          client_id: string | null
+          closed_at: string | null
+          created_at: string
+          created_by: string
+          deal_id: string | null
+          department: Database["public"]["Enums"]["ticket_department"]
+          description: string | null
+          due_date: string | null
+          first_response_at: string | null
+          id: string
+          insurance_company_id: string | null
+          policy_id: string | null
+          policy_number: string | null
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          resolution_minutes: number | null
+          resolved_at: string | null
+          service_module: string | null
+          sla_breached: boolean
+          sla_due_at: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          ticket_number: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_department?:
+            | Database["public"]["Enums"]["ticket_department"]
+            | null
+          assigned_team_id?: string | null
+          assigned_to?: string | null
+          assignee_kind?:
+            | Database["public"]["Enums"]["ticket_assignee_kind"]
+            | null
+          category_id?: string | null
+          client_id?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by: string
+          deal_id?: string | null
+          department: Database["public"]["Enums"]["ticket_department"]
+          description?: string | null
+          due_date?: string | null
+          first_response_at?: string | null
+          id?: string
+          insurance_company_id?: string | null
+          policy_id?: string | null
+          policy_number?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolution_minutes?: number | null
+          resolved_at?: string | null
+          service_module?: string | null
+          sla_breached?: boolean
+          sla_due_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          ticket_number: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_department?:
+            | Database["public"]["Enums"]["ticket_department"]
+            | null
+          assigned_team_id?: string | null
+          assigned_to?: string | null
+          assignee_kind?:
+            | Database["public"]["Enums"]["ticket_assignee_kind"]
+            | null
+          category_id?: string | null
+          client_id?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string
+          deal_id?: string | null
+          department?: Database["public"]["Enums"]["ticket_department"]
+          description?: string | null
+          due_date?: string | null
+          first_response_at?: string | null
+          id?: string
+          insurance_company_id?: string | null
+          policy_id?: string | null
+          policy_number?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolution_minutes?: number | null
+          resolved_at?: string | null
+          service_module?: string | null
+          sla_breached?: boolean
+          sla_due_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          ticket_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_assigned_team_id_fkey"
+            columns: ["assigned_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_insurance_company_id_fkey"
+            columns: ["insurance_company_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "v_renewals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       travel_posting_rows: {
         Row: {
           agent_name: string | null
@@ -2556,6 +2906,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_view_ticket: {
+        Args: { _t: Database["public"]["Tables"]["tickets"]["Row"] }
+        Returns: boolean
+      }
       current_user_team: { Args: never; Returns: string }
       deal_policy_conflict: {
         Args: { _exclude_row?: string; _policy_number: string }
@@ -2644,6 +2998,17 @@ export type Database = {
         | "marketing_budget_tax"
         | "commission_taker_tax"
         | "b2b_commission_tax"
+      ticket_assignee_kind: "employee" | "team" | "department"
+      ticket_department: "operations" | "accounts" | "technology" | "sales"
+      ticket_priority: "critical" | "high" | "medium" | "low"
+      ticket_status:
+        | "new"
+        | "assigned"
+        | "in_progress"
+        | "on_hold"
+        | "resolved"
+        | "closed"
+        | "reopened"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2827,6 +3192,18 @@ export const Constants = {
         "marketing_budget_tax",
         "commission_taker_tax",
         "b2b_commission_tax",
+      ],
+      ticket_assignee_kind: ["employee", "team", "department"],
+      ticket_department: ["operations", "accounts", "technology", "sales"],
+      ticket_priority: ["critical", "high", "medium", "low"],
+      ticket_status: [
+        "new",
+        "assigned",
+        "in_progress",
+        "on_hold",
+        "resolved",
+        "closed",
+        "reopened",
       ],
     },
   },
