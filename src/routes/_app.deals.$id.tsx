@@ -280,6 +280,11 @@ function DealDetail() {
 
       <StageHistory dealId={id} stages={data.stages} profiles={data.profiles} />
 
+      <div className="mt-4">
+        <RelatedTickets dealId={id} clientId={d.client_id ?? undefined} policyNumber={d.policy_number} />
+      </div>
+
+
       {d.notes && <Card className="mt-4"><CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader><CardContent className="text-sm whitespace-pre-wrap">{d.notes}</CardContent></Card>}
     </div>
   );
