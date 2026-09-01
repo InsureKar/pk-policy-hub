@@ -36,16 +36,18 @@ function DealsList() {
   const { data } = useQuery({
     queryKey: ["deals-list"],
     queryFn: async () => {
-      const [deals, stages, companies, types, profiles] = await Promise.all([
+      const [deals, stages, companies, types, profiles, clients] = await Promise.all([
         supabase.from("deals").select("*").order("created_at", { ascending: false }),
         supabase.from("deal_stages").select("*").order("sort_order"),
         supabase.from("insurance_companies").select("id, name"),
         supabase.from("insurance_types").select("id, name"),
         supabase.from("profiles").select("id, full_name"),
+        supabase.from("clients").select("id, full_name, company_name, client_type"),
       ]);
       return {
         deals: deals.data ?? [], stages: stages.data ?? [],
         companies: companies.data ?? [], types: types.data ?? [], profiles: profiles.data ?? [],
+        clients: clients.data ?? [],
       };
     },
   });
@@ -54,6 +56,7 @@ function DealsList() {
   const companyMap = useMemo(() => new Map((data?.companies ?? []).map(c => [c.id, c.name])), [data]);
   const typeMap = useMemo(() => new Map((data?.types ?? []).map(t => [t.id, t.name])), [data]);
   const profileMap = useMemo(() => new Map((data?.profiles ?? []).map(p => [p.id, p.full_name])), [data]);
+  const clientMap = useMemo(() => new Map((data?.clients ?? []).map(c => [c.id, c.client_type === "corporate" ? c.company_name : c.full_name])), [data]);
 
   // Last 24 months, newest first — used for the month filter.
   const monthOptions = useMemo(() => {
