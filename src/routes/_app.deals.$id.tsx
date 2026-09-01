@@ -569,15 +569,17 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
     else qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
   };
 
-  return (
-    <Card className="mt-4 border-blue-500/30">
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          Travel Posting
-          <Badge variant="outline" className={badgeCls[status]}>{status.toUpperCase()}</Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 text-sm">
+  const [full, setFull] = useState(false);
+  const [headerEl, body] = [
+    <CardTitle className="text-base flex items-center gap-2">
+      Travel Posting
+      <Badge variant="outline" className={badgeCls[status]}>{status.toUpperCase()}</Badge>
+    </CardTitle>,
+    null,
+  ];
+  void headerEl; void body;
+
+  const content = (
         <div className="grid sm:grid-cols-4 gap-3">
           <Field label="Total Policy Amount *"><Input type="number" step="0.01" value={totalPolicy} onChange={e => setTotalPolicy(Number(e.target.value) || 0)}/></Field>
           <Field label="Total Posting Amount *"><Input type="number" step="0.01" value={totalPost} onChange={e => setTotalPost(Number(e.target.value) || 0)}/></Field>
