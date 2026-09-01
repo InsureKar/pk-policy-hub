@@ -10,12 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { DateField } from "@/components/DateField";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Maximize2, Pencil } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/deals/$id")({
   component: DealDetail,
@@ -138,8 +140,10 @@ function DealDetail() {
     qc.invalidateQueries({ queryKey: ["deal", id] });
   };
 
+  const isTravelDeal = (type ?? "").toLowerCase() === "travel";
+
   return (
-    <div className="p-6 max-w-[1400px] mx-auto">
+    <div className={cn("p-6 mx-auto", isTravelDeal ? "max-w-none w-full" : "max-w-[1400px]")}>
       <Link to="/deals" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-2"><ArrowLeft className="w-4 h-4"/>Back to deals</Link>
       <PageHeader title={d.deal_number} subtitle={`${clientName ?? "—"} · Created ${fmtDate(d.created_at)}`}
         actions={
@@ -150,7 +154,10 @@ function DealDetail() {
               <SelectContent>{data.stages.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
             </Select>
             {canManageDeal && (
-              <Button variant="destructive" size="sm" onClick={deleteDeal}>Delete Deal</Button>
+              <>
+                <EditDealDialog deal={d} lists={data} onSaved={() => qc.invalidateQueries({ queryKey: ["deal", id] })} />
+                <Button variant="destructive" size="sm" onClick={deleteDeal}>Delete Deal</Button>
+              </>
             )}
           </div>
         }
