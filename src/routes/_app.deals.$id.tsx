@@ -285,6 +285,125 @@ function DealDetail() {
   );
 }
 
+/** Admin & Management can edit any deal's core fields. */
+function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState<any>({});
+  useEffect(() => { if (open) setF({ ...deal }); }, [open, deal]);
+  const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
+  const setNum = (k: string, v: string) => set(k, Number(v) || 0);
+  const clientLabel = (c: any) => (c.client_type === "individual" ? (c.full_name || c.company_name) : c.company_name) || "—";
+
+  const save = async () => {
+    const { error } = await supabase.from("deals").update({
+      client_id: f.client_id || null,
+      insurance_company_id: f.insurance_company_id || null,
+      insurance_type_id: f.insurance_type_id || null,
+      source_id: f.source_id || null,
+      assigned_do_id: f.assigned_do_id || null,
+      team_id: f.team_id || null,
+      team_lead_id: f.team_lead_id || null,
+      deal_type: f.deal_type,
+      cover_note_number: f.cover_note_number || null,
+      policy_number: f.policy_number || null,
+      policy_start_date: f.policy_start_date || null,
+      policy_end_date: f.policy_end_date || null,
+      gross_premium: Number(f.gross_premium) || 0,
+      net_premium: Number(f.net_premium) || 0,
+      commission_percentage: Number(f.commission_percentage) || 0,
+      marketing_budget_percentage: Number(f.marketing_budget_percentage) || 0,
+      loading: Number(f.loading) || 0,
+      b2b_commission: Number(f.b2b_commission) || 0,
+      notes: f.notes ?? null,
+    }).eq("id", deal.id);
+    if (error) return toast.error(error.message);
+    toast.success("Deal updated");
+    setOpen(false);
+    onSaved();
+  };
+
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}><Pencil className="w-4 h-4 mr-1"/>Edit Deal</Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Edit Deal — {deal.deal_number}</DialogTitle></DialogHeader>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 py-2">
+            <Field label="Client">
+              <Select value={f.client_id ?? ""} onValueChange={(v) => set("client_id", v)}>
+                <SelectTrigger><SelectValue placeholder="Select client"/></SelectTrigger>
+                <SelectContent>{lists.clients.map((c: any) => <SelectItem key={c.id} value={c.id}>{clientLabel(c)}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+            <Field label="Deal Type">
+              <Select value={f.deal_type ?? "fresh"} onValueChange={(v) => set("deal_type", v)}>
+                <SelectTrigger><SelectValue/></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fresh">Fresh</SelectItem>
+                  <SelectItem value="renewal">Renewal</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Insurance Company">
+              <Select value={f.insurance_company_id ?? ""} onValueChange={(v) => set("insurance_company_id", v)}>
+                <SelectTrigger><SelectValue placeholder="Select company"/></SelectTrigger>
+                <SelectContent>{lists.companies.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+            <Field label="Product">
+              <Select value={f.insurance_type_id ?? ""} onValueChange={(v) => set("insurance_type_id", v)}>
+                <SelectTrigger><SelectValue placeholder="Select product"/></SelectTrigger>
+                <SelectContent>{lists.types.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+            <Field label="Source">
+              <Select value={f.source_id ?? ""} onValueChange={(v) => set("source_id", v)}>
+                <SelectTrigger><SelectValue placeholder="Select source"/></SelectTrigger>
+                <SelectContent>{lists.sources.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+            <Field label="Assigned DO">
+              <Select value={f.assigned_do_id ?? ""} onValueChange={(v) => set("assigned_do_id", v)}>
+                <SelectTrigger><SelectValue placeholder="Select DO"/></SelectTrigger>
+                <SelectContent>{lists.profiles.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.full_name || "—"}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+            <Field label="Team">
+              <Select value={f.team_id ?? ""} onValueChange={(v) => set("team_id", v)}>
+                <SelectTrigger><SelectValue placeholder="Select team"/></SelectTrigger>
+                <SelectContent>{lists.teams.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+            <Field label="Team Lead">
+              <Select value={f.team_lead_id ?? ""} onValueChange={(v) => set("team_lead_id", v)}>
+                <SelectTrigger><SelectValue placeholder="Select team lead"/></SelectTrigger>
+                <SelectContent>{lists.profiles.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.full_name || "—"}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+            <Field label="Cover Note Number"><Input value={f.cover_note_number ?? ""} onChange={(e) => set("cover_note_number", e.target.value)}/></Field>
+            <Field label="Policy Number"><Input value={f.policy_number ?? ""} onChange={(e) => set("policy_number", e.target.value)}/></Field>
+            <Field label="Policy Start"><DateField value={f.policy_start_date ?? ""} onChange={(v) => set("policy_start_date", v)} placeholder="Start date"/></Field>
+            <Field label="Policy End"><DateField value={f.policy_end_date ?? ""} onChange={(v) => set("policy_end_date", v)} placeholder="End date"/></Field>
+            <Field label="Gross Premium (PKR)"><Input type="number" step="0.01" value={f.gross_premium ?? 0} onChange={(e) => setNum("gross_premium", e.target.value)}/></Field>
+            <Field label="Net Premium (PKR)"><Input type="number" step="0.01" value={f.net_premium ?? 0} onChange={(e) => setNum("net_premium", e.target.value)}/></Field>
+            <Field label="Commission %"><Input type="number" step="0.001" value={f.commission_percentage ?? 0} onChange={(e) => setNum("commission_percentage", e.target.value)}/></Field>
+            <Field label="Marketing Budget %"><Input type="number" step="0.001" value={f.marketing_budget_percentage ?? 0} onChange={(e) => setNum("marketing_budget_percentage", e.target.value)}/></Field>
+            <Field label="Loading (PKR)"><Input type="number" step="0.01" value={f.loading ?? 0} onChange={(e) => setNum("loading", e.target.value)}/></Field>
+            <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={f.b2b_commission ?? 0} onChange={(e) => setNum("b2b_commission", e.target.value)}/></Field>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <Field label="Notes"><Textarea rows={3} value={f.notes ?? ""} onChange={(e) => set("notes", e.target.value)}/></Field>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button onClick={save}>Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 /** Deal stage change log — visible to Admin & Management only. */
 function StageHistory({ dealId, stages, profiles }: { dealId: string; stages: any[]; profiles: any[] }) {
   const { hasRole } = useAuth();
