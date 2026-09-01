@@ -188,20 +188,37 @@ function NewDealPage() {
       : n === 2 ? ["1st Half", "2nd Half"]
       : n === 12 ? Array.from({ length: 12 }, (_, i) => `Month ${i + 1}`)
       : ["Full Payment"];
+  // Quarterly / Bi-Annual: the first payment is entered manually, the rest is
+  // distributed evenly across the remaining periods so the total always equals Net Premium.
+  const [firstPayment, setFirstPayment] = useState(0);
+  const manualSchedule = form.payment_schedule === "Quarterly" || form.payment_schedule === "Bi-Annually";
   const instalments = useMemo(() => {
     const count = SCHEDULE_COUNT[form.payment_schedule] ?? 0;
-    if (!count || !(effGross > 0)) return [];
-    const per = Math.round((effGross / count) * 100) / 100;
-    const last = Math.round((effGross - per * (count - 1)) * 100) / 100;
+    const total = manualSchedule ? effNet : effGross;
+    if (!count || !(total > 0)) return [];
     const start = form.policy_start_date ? new Date(`${form.policy_start_date}T00:00:00`) : new Date();
     const step = 12 / count;
     const labels = scheduleLabels(count);
+    let amounts: number[];
+    if (manualSchedule) {
+      const first = Math.min(Math.max(firstPayment, 0), total);
+      const remaining = Math.round((total - first) * 100) / 100;
+      const per = Math.round((remaining / (count - 1)) * 100) / 100;
+      amounts = [first, ...Array.from({ length: count - 1 }, (_, i) =>
+        i === count - 2 ? Math.round((remaining - per * (count - 2)) * 100) / 100 : per)];
+    } else {
+      const per = Math.round((total / count) * 100) / 100;
+      amounts = Array.from({ length: count }, (_, i) =>
+        i === count - 1 ? Math.round((total - per * (count - 1)) * 100) / 100 : per);
+    }
     return Array.from({ length: count }, (_, i) => {
       const due = new Date(start);
       due.setMonth(due.getMonth() + Math.round(i * step));
-      return { label: labels[i], due: due.toISOString().slice(0, 10), amount: i === count - 1 ? last : per };
+      return { label: labels[i], due: due.toISOString().slice(0, 10), amount: amounts[i], manual: manualSchedule && i === 0 };
     });
-  }, [form.payment_schedule, form.policy_start_date, effGross]);
+  }, [form.payment_schedule, form.policy_start_date, effGross, effNet, manualSchedule, firstPayment]);
+  const scheduleTotal = instalments.reduce((a, i) => a + i.amount, 0);
+
 
   // All instalments of a policy year are tagged to the policy start year.
   const paymentYear = form.policy_start_date
