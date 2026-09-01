@@ -36,16 +36,18 @@ function DealsList() {
   const { data } = useQuery({
     queryKey: ["deals-list"],
     queryFn: async () => {
-      const [deals, stages, companies, types, profiles] = await Promise.all([
+      const [deals, stages, companies, types, profiles, clients] = await Promise.all([
         supabase.from("deals").select("*").order("created_at", { ascending: false }),
         supabase.from("deal_stages").select("*").order("sort_order"),
         supabase.from("insurance_companies").select("id, name"),
         supabase.from("insurance_types").select("id, name"),
         supabase.from("profiles").select("id, full_name"),
+        supabase.from("clients").select("id, full_name, company_name, client_type"),
       ]);
       return {
         deals: deals.data ?? [], stages: stages.data ?? [],
         companies: companies.data ?? [], types: types.data ?? [], profiles: profiles.data ?? [],
+        clients: clients.data ?? [],
       };
     },
   });
@@ -54,6 +56,7 @@ function DealsList() {
   const companyMap = useMemo(() => new Map((data?.companies ?? []).map(c => [c.id, c.name])), [data]);
   const typeMap = useMemo(() => new Map((data?.types ?? []).map(t => [t.id, t.name])), [data]);
   const profileMap = useMemo(() => new Map((data?.profiles ?? []).map(p => [p.id, p.full_name])), [data]);
+  const clientMap = useMemo(() => new Map((data?.clients ?? []).map(c => [c.id, c.client_type === "corporate" ? c.company_name : c.full_name])), [data]);
 
   // Last 24 months, newest first — used for the month filter.
   const monthOptions = useMemo(() => {
@@ -126,7 +129,7 @@ function DealsList() {
             <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="text-left px-4 py-2.5">Deal #</th>
-                <th className="text-left px-4 py-2.5">Company</th>
+                <th className="text-left px-4 py-2.5">Client Name</th>
                 <th className="text-left px-4 py-2.5">Type</th>
                 <th className="text-left px-4 py-2.5">Deal Type</th>
                 <th className="text-left px-4 py-2.5">Stage</th>
@@ -142,7 +145,7 @@ function DealsList() {
                 return (
                   <tr key={d.id} className="border-t hover:bg-muted/30">
                     <td className="px-4 py-2.5"><Link to="/deals/$id" params={{ id: d.id }} className="font-medium text-primary hover:underline">{d.deal_number}</Link></td>
-                    <td className="px-4 py-2.5">{d.insurance_company_id ? companyMap.get(d.insurance_company_id) : "—"}</td>
+                    <td className="px-4 py-2.5">{d.client_id ? clientMap.get(d.client_id) ?? "—" : <span className="text-muted-foreground italic">Unassigned</span>}</td>
                     <td className="px-4 py-2.5">{d.insurance_type_id ? typeMap.get(d.insurance_type_id) : "—"}</td>
                     <td className="px-4 py-2.5"><Badge variant="outline">{d.deal_type === "renewal" ? "Renewal" : "Fresh"}</Badge></td>
                     <td className="px-4 py-2.5">
