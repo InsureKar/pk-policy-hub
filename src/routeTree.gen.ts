@@ -34,6 +34,7 @@ import { Route as AppTicketsIndexRouteImport } from './routes/_app.tickets.index
 import { Route as AppOperationsIndexRouteImport } from './routes/_app.operations.index'
 import { Route as AppDealsIndexRouteImport } from './routes/_app.deals.index'
 import { Route as AppAccountsIndexRouteImport } from './routes/_app.accounts.index'
+import { Route as AppTicketsIdRouteImport } from './routes/_app.tickets.$id'
 import { Route as AppOperationsReportsRouteImport } from './routes/_app.operations.reports'
 import { Route as AppOperationsReimbursementsRouteImport } from './routes/_app.operations.reimbursements'
 import { Route as AppOperationsPerformanceRouteImport } from './routes/_app.operations.performance'
@@ -177,6 +178,11 @@ const AppAccountsIndexRoute = AppAccountsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppAccountsRoute,
 } as any)
+const AppTicketsIdRoute = AppTicketsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
 const AppOperationsReportsRoute = AppOperationsReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -310,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/operations/performance': typeof AppOperationsPerformanceRoute
   '/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/operations/reports': typeof AppOperationsReportsRoute
+  '/tickets/$id': typeof AppTicketsIdRoute
   '/accounts/': typeof AppAccountsIndexRoute
   '/deals/': typeof AppDealsIndexRoute
   '/operations/': typeof AppOperationsIndexRoute
@@ -351,6 +358,7 @@ export interface FileRoutesByTo {
   '/operations/performance': typeof AppOperationsPerformanceRoute
   '/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/operations/reports': typeof AppOperationsReportsRoute
+  '/tickets/$id': typeof AppTicketsIdRoute
   '/accounts': typeof AppAccountsIndexRoute
   '/deals': typeof AppDealsIndexRoute
   '/operations': typeof AppOperationsIndexRoute
@@ -397,6 +405,7 @@ export interface FileRoutesById {
   '/_app/operations/performance': typeof AppOperationsPerformanceRoute
   '/_app/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/_app/operations/reports': typeof AppOperationsReportsRoute
+  '/_app/tickets/$id': typeof AppTicketsIdRoute
   '/_app/accounts/': typeof AppAccountsIndexRoute
   '/_app/deals/': typeof AppDealsIndexRoute
   '/_app/operations/': typeof AppOperationsIndexRoute
@@ -443,6 +452,7 @@ export interface FileRouteTypes {
     | '/operations/performance'
     | '/operations/reimbursements'
     | '/operations/reports'
+    | '/tickets/$id'
     | '/accounts/'
     | '/deals/'
     | '/operations/'
@@ -484,6 +494,7 @@ export interface FileRouteTypes {
     | '/operations/performance'
     | '/operations/reimbursements'
     | '/operations/reports'
+    | '/tickets/$id'
     | '/accounts'
     | '/deals'
     | '/operations'
@@ -529,6 +540,7 @@ export interface FileRouteTypes {
     | '/_app/operations/performance'
     | '/_app/operations/reimbursements'
     | '/_app/operations/reports'
+    | '/_app/tickets/$id'
     | '/_app/accounts/'
     | '/_app/deals/'
     | '/_app/operations/'
@@ -719,6 +731,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsIndexRouteImport
       parentRoute: typeof AppAccountsRoute
     }
+    '/_app/tickets/$id': {
+      id: '/_app/tickets/$id'
+      path: '/$id'
+      fullPath: '/tickets/$id'
+      preLoaderRoute: typeof AppTicketsIdRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
     '/_app/operations/reports': {
       id: '/_app/operations/reports'
       path: '/reports'
@@ -903,10 +922,12 @@ const AppOperationsRouteWithChildren = AppOperationsRoute._addFileChildren(
 )
 
 interface AppTicketsRouteChildren {
+  AppTicketsIdRoute: typeof AppTicketsIdRoute
   AppTicketsIndexRoute: typeof AppTicketsIndexRoute
 }
 
 const AppTicketsRouteChildren: AppTicketsRouteChildren = {
+  AppTicketsIdRoute: AppTicketsIdRoute,
   AppTicketsIndexRoute: AppTicketsIndexRoute,
 }
 
