@@ -17,6 +17,7 @@ import {
 } from "@/components/TravelBulkPolicies";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { MoneyInput, amountInWords } from "@/components/MoneyInput";
+import { cn } from "@/lib/utils";
 import { DateField } from "@/components/DateField";
 import { toast } from "sonner";
 
@@ -188,20 +189,37 @@ function NewDealPage() {
       : n === 2 ? ["1st Half", "2nd Half"]
       : n === 12 ? Array.from({ length: 12 }, (_, i) => `Month ${i + 1}`)
       : ["Full Payment"];
+  // Quarterly / Bi-Annual: the first payment is entered manually, the rest is
+  // distributed evenly across the remaining periods so the total always equals Net Premium.
+  const [firstPayment, setFirstPayment] = useState(0);
+  const manualSchedule = form.payment_schedule === "Quarterly" || form.payment_schedule === "Bi-Annually";
   const instalments = useMemo(() => {
     const count = SCHEDULE_COUNT[form.payment_schedule] ?? 0;
-    if (!count || !(effGross > 0)) return [];
-    const per = Math.round((effGross / count) * 100) / 100;
-    const last = Math.round((effGross - per * (count - 1)) * 100) / 100;
+    const total = manualSchedule ? effNet : effGross;
+    if (!count || !(total > 0)) return [];
     const start = form.policy_start_date ? new Date(`${form.policy_start_date}T00:00:00`) : new Date();
     const step = 12 / count;
     const labels = scheduleLabels(count);
+    let amounts: number[];
+    if (manualSchedule) {
+      const first = Math.min(Math.max(firstPayment, 0), total);
+      const remaining = Math.round((total - first) * 100) / 100;
+      const per = Math.round((remaining / (count - 1)) * 100) / 100;
+      amounts = [first, ...Array.from({ length: count - 1 }, (_, i) =>
+        i === count - 2 ? Math.round((remaining - per * (count - 2)) * 100) / 100 : per)];
+    } else {
+      const per = Math.round((total / count) * 100) / 100;
+      amounts = Array.from({ length: count }, (_, i) =>
+        i === count - 1 ? Math.round((total - per * (count - 1)) * 100) / 100 : per);
+    }
     return Array.from({ length: count }, (_, i) => {
       const due = new Date(start);
       due.setMonth(due.getMonth() + Math.round(i * step));
-      return { label: labels[i], due: due.toISOString().slice(0, 10), amount: i === count - 1 ? last : per };
+      return { label: labels[i], due: due.toISOString().slice(0, 10), amount: amounts[i], manual: manualSchedule && i === 0 };
     });
-  }, [form.payment_schedule, form.policy_start_date, effGross]);
+  }, [form.payment_schedule, form.policy_start_date, effGross, effNet, manualSchedule, firstPayment]);
+  const scheduleTotal = instalments.reduce((a, i) => a + i.amount, 0);
+
 
   // All instalments of a policy year are tagged to the policy start year.
   const paymentYear = form.policy_start_date
@@ -464,31 +482,44 @@ function NewDealPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="text-xs text-muted-foreground">
-                      <tr><th className="text-left p-2">Instalment</th><th className="text-left p-2">Due Date</th><th className="text-right p-2">Amount Due (auto)</th></tr>
+                      <tr><th className="text-left p-2">Instalment</th><th className="text-left p-2">Due Date</th><th className="text-right p-2">Amount Due</th></tr>
                     </thead>
                     <tbody>
                       {instalments.map((ins, i) => (
                         <tr key={i} className="border-t">
                           <td className="p-2">{ins.label}</td>
                           <td className="p-2">{fmtDate(ins.due)}</td>
-                          <td className="p-2 text-right tabular-nums">{fmtPKR(ins.amount)}</td>
+                          <td className="p-2 text-right tabular-nums">
+                            {ins.manual ? (
+                              <div className="max-w-[200px] ml-auto">
+                                <MoneyInput value={firstPayment} onChange={(v) => setFirstPayment(v)} showWords={false}/>
+                              </div>
+                            ) : (
+                              <span>{fmtPKR(ins.amount)} <span className="text-xs text-muted-foreground">(auto)</span></span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot className="border-t font-medium">
                       <tr>
-                        <td className="p-2" colSpan={2}>Total</td>
-                        <td className="p-2 text-right tabular-nums">{fmtPKR(effGross)}</td>
+                        <td className="p-2" colSpan={2}>Total{manualSchedule ? " (must equal Net Premium)" : ""}</td>
+                        <td className={cn("p-2 text-right tabular-nums", manualSchedule && Math.abs(scheduleTotal - effNet) > 0.01 && "text-destructive")}>
+                          {fmtPKR(scheduleTotal)}
+                        </td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Amounts are auto-calculated from the total gross premium. All instalments received against this policy stay tagged to {paymentYear}.
+                  {manualSchedule
+                    ? `Enter the ${instalments[0].label} payment — the remaining amount is automatically distributed so the total always equals the Net Premium. All instalments stay tagged to ${paymentYear}.`
+                    : `Amounts are auto-calculated from the total gross premium. All instalments received against this policy stay tagged to ${paymentYear}.`}
                 </p>
               </CardContent>
             </Card>
           )}
+
 
           {form.policy_type === "bulk" && isTravel && (
             <TravelBulkPolicies
