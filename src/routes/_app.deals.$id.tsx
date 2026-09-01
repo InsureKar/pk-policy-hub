@@ -642,7 +642,30 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
             <p className="text-xs text-muted-foreground mt-2">Deal cannot progress to Won until posting is Balanced.</p>
           </div>
         )}
-      </CardContent>
+    </div>
+  );
+
+  return (
+    <Card className="mt-4 border-blue-500/30">
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-base flex items-center gap-2">
+          Travel Posting
+          <Badge variant="outline" className={badgeCls[status]}>{status.toUpperCase()}</Badge>
+        </CardTitle>
+        <Button size="sm" variant="outline" onClick={() => setFull(true)}><Maximize2 className="w-4 h-4 mr-1"/>Full Screen</Button>
+      </CardHeader>
+      <CardContent>{content}</CardContent>
+      <Dialog open={full} onOpenChange={setFull}>
+        <DialogContent className="max-w-[98vw] w-[98vw] h-[94vh] max-h-[94vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Travel Posting
+              <Badge variant="outline" className={badgeCls[status]}>{status.toUpperCase()}</Badge>
+            </DialogTitle>
+          </DialogHeader>
+          {content}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
