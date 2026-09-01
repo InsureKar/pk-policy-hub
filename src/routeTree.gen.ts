@@ -35,6 +35,7 @@ import { Route as AppOperationsIndexRouteImport } from './routes/_app.operations
 import { Route as AppDealsIndexRouteImport } from './routes/_app.deals.index'
 import { Route as AppAccountsIndexRouteImport } from './routes/_app.accounts.index'
 import { Route as AppTicketsTeamRouteImport } from './routes/_app.tickets.team'
+import { Route as AppTicketsSlaRouteImport } from './routes/_app.tickets.sla'
 import { Route as AppTicketsMineRouteImport } from './routes/_app.tickets.mine'
 import { Route as AppTicketsAllRouteImport } from './routes/_app.tickets.all'
 import { Route as AppTicketsIdRouteImport } from './routes/_app.tickets.$id'
@@ -184,6 +185,11 @@ const AppAccountsIndexRoute = AppAccountsIndexRouteImport.update({
 const AppTicketsTeamRoute = AppTicketsTeamRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsSlaRoute = AppTicketsSlaRouteImport.update({
+  id: '/sla',
+  path: '/sla',
   getParentRoute: () => AppTicketsRoute,
 } as any)
 const AppTicketsMineRoute = AppTicketsMineRouteImport.update({
@@ -337,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/tickets/$id': typeof AppTicketsIdRoute
   '/tickets/all': typeof AppTicketsAllRoute
   '/tickets/mine': typeof AppTicketsMineRoute
+  '/tickets/sla': typeof AppTicketsSlaRoute
   '/tickets/team': typeof AppTicketsTeamRoute
   '/accounts/': typeof AppAccountsIndexRoute
   '/deals/': typeof AppDealsIndexRoute
@@ -382,6 +389,7 @@ export interface FileRoutesByTo {
   '/tickets/$id': typeof AppTicketsIdRoute
   '/tickets/all': typeof AppTicketsAllRoute
   '/tickets/mine': typeof AppTicketsMineRoute
+  '/tickets/sla': typeof AppTicketsSlaRoute
   '/tickets/team': typeof AppTicketsTeamRoute
   '/accounts': typeof AppAccountsIndexRoute
   '/deals': typeof AppDealsIndexRoute
@@ -432,6 +440,7 @@ export interface FileRoutesById {
   '/_app/tickets/$id': typeof AppTicketsIdRoute
   '/_app/tickets/all': typeof AppTicketsAllRoute
   '/_app/tickets/mine': typeof AppTicketsMineRoute
+  '/_app/tickets/sla': typeof AppTicketsSlaRoute
   '/_app/tickets/team': typeof AppTicketsTeamRoute
   '/_app/accounts/': typeof AppAccountsIndexRoute
   '/_app/deals/': typeof AppDealsIndexRoute
@@ -482,6 +491,7 @@ export interface FileRouteTypes {
     | '/tickets/$id'
     | '/tickets/all'
     | '/tickets/mine'
+    | '/tickets/sla'
     | '/tickets/team'
     | '/accounts/'
     | '/deals/'
@@ -527,6 +537,7 @@ export interface FileRouteTypes {
     | '/tickets/$id'
     | '/tickets/all'
     | '/tickets/mine'
+    | '/tickets/sla'
     | '/tickets/team'
     | '/accounts'
     | '/deals'
@@ -576,6 +587,7 @@ export interface FileRouteTypes {
     | '/_app/tickets/$id'
     | '/_app/tickets/all'
     | '/_app/tickets/mine'
+    | '/_app/tickets/sla'
     | '/_app/tickets/team'
     | '/_app/accounts/'
     | '/_app/deals/'
@@ -772,6 +784,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/tickets/team'
       preLoaderRoute: typeof AppTicketsTeamRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/sla': {
+      id: '/_app/tickets/sla'
+      path: '/sla'
+      fullPath: '/tickets/sla'
+      preLoaderRoute: typeof AppTicketsSlaRouteImport
       parentRoute: typeof AppTicketsRoute
     }
     '/_app/tickets/mine': {
@@ -982,6 +1001,7 @@ interface AppTicketsRouteChildren {
   AppTicketsIdRoute: typeof AppTicketsIdRoute
   AppTicketsAllRoute: typeof AppTicketsAllRoute
   AppTicketsMineRoute: typeof AppTicketsMineRoute
+  AppTicketsSlaRoute: typeof AppTicketsSlaRoute
   AppTicketsTeamRoute: typeof AppTicketsTeamRoute
   AppTicketsIndexRoute: typeof AppTicketsIndexRoute
 }
@@ -990,6 +1010,7 @@ const AppTicketsRouteChildren: AppTicketsRouteChildren = {
   AppTicketsIdRoute: AppTicketsIdRoute,
   AppTicketsAllRoute: AppTicketsAllRoute,
   AppTicketsMineRoute: AppTicketsMineRoute,
+  AppTicketsSlaRoute: AppTicketsSlaRoute,
   AppTicketsTeamRoute: AppTicketsTeamRoute,
   AppTicketsIndexRoute: AppTicketsIndexRoute,
 }
