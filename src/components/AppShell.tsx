@@ -94,6 +94,18 @@ const groups: NavGroup[] = [
     ],
   },
   {
+    label: "Service Desk", icon: LifeBuoy,
+    items: [
+      { to: "/tickets", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/tickets/all", label: "Tickets", icon: Ticket },
+      { to: "/tickets/mine", label: "My Tickets", icon: Inbox },
+      { to: "/tickets/team", label: "Team Tickets", icon: UsersRound },
+      { to: "/tickets/sla", label: "SLA", icon: CalendarClock, roles: ["admin", "management", "team_lead"] },
+      { to: "/tickets/reports", label: "Reports", icon: BarChart3 },
+    ],
+  },
+  {
+
     label: "Master Data", icon: Database, module: "admin", roles: ["admin"], expandable: true,
     items: [
       { to: "/master", label: "Insurance Companies", icon: Building2, roles: ["admin"], search: { tab: "companies" } },
