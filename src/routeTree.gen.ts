@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
+import { Route as AppTicketsRouteImport } from './routes/_app.tickets'
 import { Route as AppTeamsRouteImport } from './routes/_app.teams'
 import { Route as AppTasksRouteImport } from './routes/_app.tasks'
 import { Route as AppTargetsRouteImport } from './routes/_app.targets'
@@ -73,6 +74,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppUsersRoute = AppUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTicketsRoute = AppTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTeamsRoute = AppTeamsRouteImport.update({
@@ -278,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/targets': typeof AppTargetsRoute
   '/tasks': typeof AppTasksRoute
   '/teams': typeof AppTeamsRoute
+  '/tickets': typeof AppTicketsRoute
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/accounts/b2b': typeof AppAccountsB2bRoute
@@ -318,6 +325,7 @@ export interface FileRoutesByTo {
   '/targets': typeof AppTargetsRoute
   '/tasks': typeof AppTasksRoute
   '/teams': typeof AppTeamsRoute
+  '/tickets': typeof AppTicketsRoute
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/accounts/b2b': typeof AppAccountsB2bRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/_app/targets': typeof AppTargetsRoute
   '/_app/tasks': typeof AppTasksRoute
   '/_app/teams': typeof AppTeamsRoute
+  '/_app/tickets': typeof AppTicketsRoute
   '/_app/users': typeof AppUsersRoute
   '/_app/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/_app/accounts/b2b': typeof AppAccountsB2bRoute
@@ -406,6 +415,7 @@ export interface FileRouteTypes {
     | '/targets'
     | '/tasks'
     | '/teams'
+    | '/tickets'
     | '/users'
     | '/accounts/approvals'
     | '/accounts/b2b'
@@ -446,6 +456,7 @@ export interface FileRouteTypes {
     | '/targets'
     | '/tasks'
     | '/teams'
+    | '/tickets'
     | '/users'
     | '/accounts/approvals'
     | '/accounts/b2b'
@@ -489,6 +500,7 @@ export interface FileRouteTypes {
     | '/_app/targets'
     | '/_app/tasks'
     | '/_app/teams'
+    | '/_app/tickets'
     | '/_app/users'
     | '/_app/accounts/approvals'
     | '/_app/accounts/b2b'
@@ -555,6 +567,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof AppUsersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tickets': {
+      id: '/_app/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof AppTicketsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/teams': {
@@ -882,6 +901,7 @@ interface AppRouteChildren {
   AppTargetsRoute: typeof AppTargetsRoute
   AppTasksRoute: typeof AppTasksRoute
   AppTeamsRoute: typeof AppTeamsRoute
+  AppTicketsRoute: typeof AppTicketsRoute
   AppUsersRoute: typeof AppUsersRoute
   AppDealsIdRoute: typeof AppDealsIdRoute
   AppDealsNewRoute: typeof AppDealsNewRoute
@@ -905,6 +925,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTargetsRoute: AppTargetsRoute,
   AppTasksRoute: AppTasksRoute,
   AppTeamsRoute: AppTeamsRoute,
+  AppTicketsRoute: AppTicketsRoute,
   AppUsersRoute: AppUsersRoute,
   AppDealsIdRoute: AppDealsIdRoute,
   AppDealsNewRoute: AppDealsNewRoute,
