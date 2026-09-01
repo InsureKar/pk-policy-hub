@@ -17,6 +17,7 @@ import {
 } from "@/components/TravelBulkPolicies";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { MoneyInput, amountInWords } from "@/components/MoneyInput";
+import { cn } from "@/lib/utils";
 import { DateField } from "@/components/DateField";
 import { toast } from "sonner";
 
