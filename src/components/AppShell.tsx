@@ -85,6 +85,7 @@ const groups: NavGroup[] = [
     label: "Operations", icon: Landmark, module: "operations", roles: ["admin", "management", "team_lead", "do"],
     items: [
       { to: "/operations", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "management"] },
+      { to: "/operations/underwriting", label: "Underwriting", icon: FileSearch },
       { to: "/operations/payroll", label: "Payroll", icon: Wallet2, roles: ["admin", "management"] },
       { to: "/operations/commissions", label: "Commissions", icon: HandCoins, roles: ["admin", "management"] },
       { to: "/operations/performance", label: "Employee Performance", icon: Award, roles: ["admin", "management"] },
