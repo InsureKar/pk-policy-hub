@@ -129,6 +129,8 @@ function ReceivablesPage() {
     const a = document.createElement("a"); a.href = url; a.download = `receivables-${Date.now()}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
+  const { data: headData } = useHeadRows(head !== "premium_receivable");
+
   const headCols: Record<string, { key: string; label: string; value: (r: any) => number }[]> = {
     commission_income: [{ key: "ci", label: "Commission Income", value: r => Number(r.commission_before_tax || 0) }],
     income_loading: [{ key: "il", label: "Income Loading", value: r => Number(r.loading || 0) }],
