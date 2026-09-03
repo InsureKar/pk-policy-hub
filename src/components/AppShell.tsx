@@ -91,6 +91,7 @@ const groups: NavGroup[] = [
       { to: "/operations/performance", label: "Employee Performance", icon: Award, roles: ["admin", "management"] },
       { to: "/operations/expenses", label: "Expenses", icon: ReceiptText, roles: ["admin", "management"] },
       { to: "/operations/reimbursements", label: "Reimbursements", icon: HandCoins },
+      { to: "/operations/dispatch", label: "Dispatch Record", icon: PackageCheck },
       { to: "/operations/reports", label: "Ops Reports", icon: BarChart3, roles: ["admin", "management"] },
     ],
   },
