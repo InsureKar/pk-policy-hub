@@ -112,6 +112,8 @@ function PayablesPage() {
         <KPI label="Total Outstanding" value={fmtPKR(totals.outstanding)} tone="danger" />
       </div>
 
+      <SubHeadTabs value={category} onChange={setCategory} items={SUBHEADS} />
+
       <Card><CardContent className="p-4 grid grid-cols-1 md:grid-cols-5 gap-3">
         <Input placeholder="Search payee / deal / description" value={search} onChange={e => setSearch(e.target.value)} />
         <Select value={category} onValueChange={setCategory}>
