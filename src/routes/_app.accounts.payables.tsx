@@ -162,6 +162,7 @@ function PayablesPage() {
                 <TableCell>{payeeOf(r)}</TableCell>
                 <TableCell className="font-mono text-xs">{data?.deals.get(r.deal_id) ?? "—"}</TableCell>
                 <TableCell className="max-w-[260px] truncate">{r.description ?? "—"}</TableCell>
+                {category === "b2b_commission" && <TableCell className="text-right tabular-nums">{fmtPKR(data?.dealB2b.get(r.deal_id) ?? 0)}</TableCell>}
                 <TableCell className="text-right tabular-nums">{fmtPKR(r.original_amount)}</TableCell>
                 <TableCell className="text-right tabular-nums text-emerald-600">{fmtPKR(r.paid_amount)}</TableCell>
                 <TableCell className="text-right tabular-nums font-medium">{fmtPKR(r.outstanding_amount ?? 0)}</TableCell>
