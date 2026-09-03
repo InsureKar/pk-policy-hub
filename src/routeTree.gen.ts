@@ -57,7 +57,6 @@ import { Route as AppAccountsPaymentsRouteImport } from './routes/_app.accounts.
 import { Route as AppAccountsPayablesRouteImport } from './routes/_app.accounts.payables'
 import { Route as AppAccountsInvoicesRouteImport } from './routes/_app.accounts.invoices'
 import { Route as AppAccountsInstallmentsRouteImport } from './routes/_app.accounts.installments'
-import { Route as AppAccountsChartRouteImport } from './routes/_app.accounts.chart'
 import { Route as AppAccountsB2bRouteImport } from './routes/_app.accounts.b2b'
 import { Route as AppAccountsApprovalsRouteImport } from './routes/_app.accounts.approvals'
 import { Route as AppOperationsUnderwritingIndexRouteImport } from './routes/_app.operations.underwriting.index'
@@ -306,11 +305,6 @@ const AppAccountsInstallmentsRoute = AppAccountsInstallmentsRouteImport.update({
   path: '/installments',
   getParentRoute: () => AppAccountsRoute,
 } as any)
-const AppAccountsChartRoute = AppAccountsChartRouteImport.update({
-  id: '/chart',
-  path: '/chart',
-  getParentRoute: () => AppAccountsRoute,
-} as any)
 const AppAccountsB2bRoute = AppAccountsB2bRouteImport.update({
   id: '/b2b',
   path: '/b2b',
@@ -363,7 +357,6 @@ export interface FileRoutesByFullPath {
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/accounts/b2b': typeof AppAccountsB2bRoute
-  '/accounts/chart': typeof AppAccountsChartRoute
   '/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/accounts/payables': typeof AppAccountsPayablesRoute
@@ -415,7 +408,6 @@ export interface FileRoutesByTo {
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/accounts/b2b': typeof AppAccountsB2bRoute
-  '/accounts/chart': typeof AppAccountsChartRoute
   '/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/accounts/payables': typeof AppAccountsPayablesRoute
@@ -472,7 +464,6 @@ export interface FileRoutesById {
   '/_app/users': typeof AppUsersRoute
   '/_app/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/_app/accounts/b2b': typeof AppAccountsB2bRoute
-  '/_app/accounts/chart': typeof AppAccountsChartRoute
   '/_app/accounts/installments': typeof AppAccountsInstallmentsRoute
   '/_app/accounts/invoices': typeof AppAccountsInvoicesRoute
   '/_app/accounts/payables': typeof AppAccountsPayablesRoute
@@ -529,7 +520,6 @@ export interface FileRouteTypes {
     | '/users'
     | '/accounts/approvals'
     | '/accounts/b2b'
-    | '/accounts/chart'
     | '/accounts/installments'
     | '/accounts/invoices'
     | '/accounts/payables'
@@ -581,7 +571,6 @@ export interface FileRouteTypes {
     | '/users'
     | '/accounts/approvals'
     | '/accounts/b2b'
-    | '/accounts/chart'
     | '/accounts/installments'
     | '/accounts/invoices'
     | '/accounts/payables'
@@ -637,7 +626,6 @@ export interface FileRouteTypes {
     | '/_app/users'
     | '/_app/accounts/approvals'
     | '/_app/accounts/b2b'
-    | '/_app/accounts/chart'
     | '/_app/accounts/installments'
     | '/_app/accounts/invoices'
     | '/_app/accounts/payables'
@@ -1015,13 +1003,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsInstallmentsRouteImport
       parentRoute: typeof AppAccountsRoute
     }
-    '/_app/accounts/chart': {
-      id: '/_app/accounts/chart'
-      path: '/chart'
-      fullPath: '/accounts/chart'
-      preLoaderRoute: typeof AppAccountsChartRouteImport
-      parentRoute: typeof AppAccountsRoute
-    }
     '/_app/accounts/b2b': {
       id: '/_app/accounts/b2b'
       path: '/b2b'
@@ -1063,7 +1044,6 @@ declare module '@tanstack/react-router' {
 interface AppAccountsRouteChildren {
   AppAccountsApprovalsRoute: typeof AppAccountsApprovalsRoute
   AppAccountsB2bRoute: typeof AppAccountsB2bRoute
-  AppAccountsChartRoute: typeof AppAccountsChartRoute
   AppAccountsInstallmentsRoute: typeof AppAccountsInstallmentsRoute
   AppAccountsInvoicesRoute: typeof AppAccountsInvoicesRoute
   AppAccountsPayablesRoute: typeof AppAccountsPayablesRoute
@@ -1077,7 +1057,6 @@ interface AppAccountsRouteChildren {
 const AppAccountsRouteChildren: AppAccountsRouteChildren = {
   AppAccountsApprovalsRoute: AppAccountsApprovalsRoute,
   AppAccountsB2bRoute: AppAccountsB2bRoute,
-  AppAccountsChartRoute: AppAccountsChartRoute,
   AppAccountsInstallmentsRoute: AppAccountsInstallmentsRoute,
   AppAccountsInvoicesRoute: AppAccountsInvoicesRoute,
   AppAccountsPayablesRoute: AppAccountsPayablesRoute,
