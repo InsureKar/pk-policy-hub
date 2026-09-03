@@ -6,8 +6,9 @@ export const Route = createFileRoute("/_app/accounts")({
   component: AccountsLayout,
 });
 
-const tabs = [
+const tabs: { to: string; label: string; exact?: boolean; adminOnly?: boolean }[] = [
   { to: "/accounts", label: "Dashboard", exact: true },
+
   { to: "/accounts/chart", label: "Chart of Accounts", adminOnly: true },
   { to: "/accounts/receivables", label: "Premium Receivables" },
 
