@@ -135,6 +135,8 @@ function TaxPage() {
         <KPI label="Tax Payable (outstanding)" value={fmtPKR(totals.outstanding)} tone="danger" />
       </div>
 
+      <SubHeadTabs value={type} onChange={setType} items={SUBHEADS} />
+
       <Card><CardContent className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <F label="Tax type"><Sel value={type} onChange={setType} options={[["all", "All Taxes"], ...Object.entries(TAX_LABEL)]} /></F>
         <F label="Deal"><Sel value={deal} onChange={setDeal} options={[["all", "All deals"], ...(data?.deals ?? []).map(d => [d.id, d.deal_number] as [string, string])]} /></F>
