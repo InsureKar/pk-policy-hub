@@ -60,6 +60,7 @@ import { Route as AppAccountsB2bRouteImport } from './routes/_app.accounts.b2b'
 import { Route as AppAccountsApprovalsRouteImport } from './routes/_app.accounts.approvals'
 import { Route as AppOperationsUnderwritingIndexRouteImport } from './routes/_app.operations.underwriting.index'
 import { Route as AppOperationsUnderwritingNewRouteImport } from './routes/_app.operations.underwriting.new'
+import { Route as AppOperationsUnderwritingIdRouteImport } from './routes/_app.operations.underwriting.$id'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -320,6 +321,12 @@ const AppOperationsUnderwritingNewRoute =
     path: '/underwriting/new',
     getParentRoute: () => AppOperationsRoute,
   } as any)
+const AppOperationsUnderwritingIdRoute =
+  AppOperationsUnderwritingIdRouteImport.update({
+    id: '/underwriting/$id',
+    path: '/underwriting/$id',
+    getParentRoute: () => AppOperationsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -370,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/deals/': typeof AppDealsIndexRoute
   '/operations/': typeof AppOperationsIndexRoute
   '/tickets/': typeof AppTicketsIndexRoute
+  '/operations/underwriting/$id': typeof AppOperationsUnderwritingIdRoute
   '/operations/underwriting/new': typeof AppOperationsUnderwritingNewRoute
   '/operations/underwriting/': typeof AppOperationsUnderwritingIndexRoute
 }
@@ -419,6 +427,7 @@ export interface FileRoutesByTo {
   '/deals': typeof AppDealsIndexRoute
   '/operations': typeof AppOperationsIndexRoute
   '/tickets': typeof AppTicketsIndexRoute
+  '/operations/underwriting/$id': typeof AppOperationsUnderwritingIdRoute
   '/operations/underwriting/new': typeof AppOperationsUnderwritingNewRoute
   '/operations/underwriting': typeof AppOperationsUnderwritingIndexRoute
 }
@@ -473,6 +482,7 @@ export interface FileRoutesById {
   '/_app/deals/': typeof AppDealsIndexRoute
   '/_app/operations/': typeof AppOperationsIndexRoute
   '/_app/tickets/': typeof AppTicketsIndexRoute
+  '/_app/operations/underwriting/$id': typeof AppOperationsUnderwritingIdRoute
   '/_app/operations/underwriting/new': typeof AppOperationsUnderwritingNewRoute
   '/_app/operations/underwriting/': typeof AppOperationsUnderwritingIndexRoute
 }
@@ -527,6 +537,7 @@ export interface FileRouteTypes {
     | '/deals/'
     | '/operations/'
     | '/tickets/'
+    | '/operations/underwriting/$id'
     | '/operations/underwriting/new'
     | '/operations/underwriting/'
   fileRoutesByTo: FileRoutesByTo
@@ -576,6 +587,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/operations'
     | '/tickets'
+    | '/operations/underwriting/$id'
     | '/operations/underwriting/new'
     | '/operations/underwriting'
   id:
@@ -629,6 +641,7 @@ export interface FileRouteTypes {
     | '/_app/deals/'
     | '/_app/operations/'
     | '/_app/tickets/'
+    | '/_app/operations/underwriting/$id'
     | '/_app/operations/underwriting/new'
     | '/_app/operations/underwriting/'
   fileRoutesById: FileRoutesById
@@ -999,6 +1012,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOperationsUnderwritingNewRouteImport
       parentRoute: typeof AppOperationsRoute
     }
+    '/_app/operations/underwriting/$id': {
+      id: '/_app/operations/underwriting/$id'
+      path: '/underwriting/$id'
+      fullPath: '/operations/underwriting/$id'
+      preLoaderRoute: typeof AppOperationsUnderwritingIdRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
   }
 }
 
@@ -1040,6 +1060,7 @@ interface AppOperationsRouteChildren {
   AppOperationsReimbursementsRoute: typeof AppOperationsReimbursementsRoute
   AppOperationsReportsRoute: typeof AppOperationsReportsRoute
   AppOperationsIndexRoute: typeof AppOperationsIndexRoute
+  AppOperationsUnderwritingIdRoute: typeof AppOperationsUnderwritingIdRoute
   AppOperationsUnderwritingNewRoute: typeof AppOperationsUnderwritingNewRoute
   AppOperationsUnderwritingIndexRoute: typeof AppOperationsUnderwritingIndexRoute
 }
@@ -1052,6 +1073,7 @@ const AppOperationsRouteChildren: AppOperationsRouteChildren = {
   AppOperationsReimbursementsRoute: AppOperationsReimbursementsRoute,
   AppOperationsReportsRoute: AppOperationsReportsRoute,
   AppOperationsIndexRoute: AppOperationsIndexRoute,
+  AppOperationsUnderwritingIdRoute: AppOperationsUnderwritingIdRoute,
   AppOperationsUnderwritingNewRoute: AppOperationsUnderwritingNewRoute,
   AppOperationsUnderwritingIndexRoute: AppOperationsUnderwritingIndexRoute,
 }

@@ -8,6 +8,7 @@ export const Route = createFileRoute("/_app/operations")({
 
 const tabs = [
   { to: "/operations", label: "Dashboard", exact: true, adminOnly: true },
+  { to: "/operations/underwriting", label: "Underwriting", adminOnly: false },
   { to: "/operations/payroll", label: "Payroll", adminOnly: true },
   { to: "/operations/commissions", label: "Commissions", adminOnly: true },
   { to: "/operations/performance", label: "Performance", adminOnly: true },
