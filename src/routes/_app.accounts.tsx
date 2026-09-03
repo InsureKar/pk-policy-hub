@@ -36,8 +36,9 @@ function AccountsLayout() {
         <p className="text-sm text-muted-foreground mt-1">Receivables, payables, invoices, installments and finance reports.</p>
       </div>
       <nav className="flex flex-wrap gap-1 border-b mb-6 overflow-x-auto">
-        {tabs.map((t) => {
+        {tabs.filter(t => !t.adminOnly || hasRole(["admin", "management"])).map((t) => {
           const active = t.exact ? pathname === t.to : pathname.startsWith(t.to);
+
           return (
             <Link key={t.to} to={t.to}
               className={cn(
