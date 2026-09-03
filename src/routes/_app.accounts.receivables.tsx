@@ -129,8 +129,37 @@ function ReceivablesPage() {
     const a = document.createElement("a"); a.href = url; a.download = `receivables-${Date.now()}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
+  const headCols: Record<string, { key: string; label: string; value: (r: any) => number }[]> = {
+    commission_income: [{ key: "ci", label: "Commission Income", value: r => Number(r.commission_before_tax || 0) }],
+    income_loading: [{ key: "il", label: "Income Loading", value: r => Number(r.loading || 0) }],
+    marketing_budget: [{ key: "mb", label: "Marketing Budget", value: r => Number(r.marketing_before_tax || 0) }],
+    commission: [{ key: "cm", label: "Commission", value: r => Number(r.commission_after_tax || 0) }],
+    advance_tax: [
+      { key: "atm", label: "Income Tax on Marketing Budget", value: r => r.tax.mkt },
+      { key: "atc", label: "Income Tax on Commission Income", value: r => r.tax.inc },
+      { key: "att", label: "Income Tax", value: r => r.tax.mkt + r.tax.inc },
+    ],
+    receivable_tax: [
+      { key: "rtm", label: "Income Tax on Marketing Budget", value: r => r.tax.mktOut },
+      { key: "rtc", label: "Income Tax on Commission Income", value: r => r.tax.incOut },
+      { key: "rtt", label: "Income Tax", value: r => r.tax.mktOut + r.tax.incOut },
+    ],
+  };
+
   return (
     <div className="space-y-4">
+      <SubHeadTabs value={head} onChange={setHead} items={SUBHEADS} />
+
+      {head !== "premium_receivable" && (
+        <DealAmountTable
+          rows={headData?.rows ?? []}
+          columns={headCols[head] ?? []}
+          clientOf={(r) => (headData?.clients.get(r.client_id) as string) ?? ""}
+          title={SUBHEADS.find(s => s.value === head)!.label}
+        />
+      )}
+
+      {head === "premium_receivable" && <>
       <Card><CardContent className="p-4 grid grid-cols-1 md:grid-cols-5 gap-3">
         <Input placeholder="Search receivable / deal / policy / client" value={search} onChange={e => setSearch(e.target.value)}/>
         <Select value={status} onValueChange={setStatus}>
