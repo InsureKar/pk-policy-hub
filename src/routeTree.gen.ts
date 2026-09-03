@@ -58,6 +58,7 @@ import { Route as AppAccountsInvoicesRouteImport } from './routes/_app.accounts.
 import { Route as AppAccountsInstallmentsRouteImport } from './routes/_app.accounts.installments'
 import { Route as AppAccountsB2bRouteImport } from './routes/_app.accounts.b2b'
 import { Route as AppAccountsApprovalsRouteImport } from './routes/_app.accounts.approvals'
+import { Route as AppOperationsUnderwritingNewRouteImport } from './routes/_app.operations.underwriting.new'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -306,6 +307,12 @@ const AppAccountsApprovalsRoute = AppAccountsApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AppAccountsRoute,
 } as any)
+const AppOperationsUnderwritingNewRoute =
+  AppOperationsUnderwritingNewRouteImport.update({
+    id: '/underwriting/new',
+    path: '/underwriting/new',
+    getParentRoute: () => AppOperationsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -356,6 +363,7 @@ export interface FileRoutesByFullPath {
   '/deals/': typeof AppDealsIndexRoute
   '/operations/': typeof AppOperationsIndexRoute
   '/tickets/': typeof AppTicketsIndexRoute
+  '/operations/underwriting/new': typeof AppOperationsUnderwritingNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -403,6 +411,7 @@ export interface FileRoutesByTo {
   '/deals': typeof AppDealsIndexRoute
   '/operations': typeof AppOperationsIndexRoute
   '/tickets': typeof AppTicketsIndexRoute
+  '/operations/underwriting/new': typeof AppOperationsUnderwritingNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -455,6 +464,7 @@ export interface FileRoutesById {
   '/_app/deals/': typeof AppDealsIndexRoute
   '/_app/operations/': typeof AppOperationsIndexRoute
   '/_app/tickets/': typeof AppTicketsIndexRoute
+  '/_app/operations/underwriting/new': typeof AppOperationsUnderwritingNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -507,6 +517,7 @@ export interface FileRouteTypes {
     | '/deals/'
     | '/operations/'
     | '/tickets/'
+    | '/operations/underwriting/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -554,6 +565,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/operations'
     | '/tickets'
+    | '/operations/underwriting/new'
   id:
     | '__root__'
     | '/'
@@ -605,6 +617,7 @@ export interface FileRouteTypes {
     | '/_app/deals/'
     | '/_app/operations/'
     | '/_app/tickets/'
+    | '/_app/operations/underwriting/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -959,6 +972,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsApprovalsRouteImport
       parentRoute: typeof AppAccountsRoute
     }
+    '/_app/operations/underwriting/new': {
+      id: '/_app/operations/underwriting/new'
+      path: '/underwriting/new'
+      fullPath: '/operations/underwriting/new'
+      preLoaderRoute: typeof AppOperationsUnderwritingNewRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
   }
 }
 
@@ -1000,6 +1020,7 @@ interface AppOperationsRouteChildren {
   AppOperationsReimbursementsRoute: typeof AppOperationsReimbursementsRoute
   AppOperationsReportsRoute: typeof AppOperationsReportsRoute
   AppOperationsIndexRoute: typeof AppOperationsIndexRoute
+  AppOperationsUnderwritingNewRoute: typeof AppOperationsUnderwritingNewRoute
 }
 
 const AppOperationsRouteChildren: AppOperationsRouteChildren = {
@@ -1010,6 +1031,7 @@ const AppOperationsRouteChildren: AppOperationsRouteChildren = {
   AppOperationsReimbursementsRoute: AppOperationsReimbursementsRoute,
   AppOperationsReportsRoute: AppOperationsReportsRoute,
   AppOperationsIndexRoute: AppOperationsIndexRoute,
+  AppOperationsUnderwritingNewRoute: AppOperationsUnderwritingNewRoute,
 }
 
 const AppOperationsRouteWithChildren = AppOperationsRoute._addFileChildren(
