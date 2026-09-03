@@ -2720,6 +2720,286 @@ export type Database = {
           },
         ]
       }
+      underwriting_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          request_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          request_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_activity_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "underwriting_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      underwriting_documents: {
+        Row: {
+          created_at: string
+          doc_type: string | null
+          file_path: string | null
+          id: string
+          name: string
+          request_id: string
+          status: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type?: string | null
+          file_path?: string | null
+          id?: string
+          name: string
+          request_id: string
+          status?: string
+          uploaded_by?: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string | null
+          file_path?: string | null
+          id?: string
+          name?: string
+          request_id?: string
+          status?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_documents_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "underwriting_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      underwriting_request_requirements: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          mandatory: boolean
+          notes: string | null
+          request_id: string
+          status: Database["public"]["Enums"]["uw_req_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          mandatory?: boolean
+          notes?: string | null
+          request_id: string
+          status?: Database["public"]["Enums"]["uw_req_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          mandatory?: boolean
+          notes?: string | null
+          request_id?: string
+          status?: Database["public"]["Enums"]["uw_req_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_request_requirements_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "underwriting_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      underwriting_requests: {
+        Row: {
+          agent_id: string
+          business_type: string | null
+          client_contact: string | null
+          client_id: string | null
+          client_type: string | null
+          coverage_required: string | null
+          created_at: string
+          created_by: string
+          deal_id: string | null
+          details: Json
+          estimated_premium: number | null
+          existing_policy_number: string | null
+          guarantee_request_type: string | null
+          id: string
+          insurance_class: Database["public"]["Enums"]["uw_class"]
+          insurer_id: string | null
+          payment_date: string | null
+          payment_received: boolean
+          policy_number: string | null
+          premium: number | null
+          previous_insurer: string | null
+          product: string | null
+          remarks: string | null
+          request_date: string
+          request_no: string | null
+          required_from: string | null
+          required_until: string | null
+          requirement_details: string | null
+          status: Database["public"]["Enums"]["uw_status"]
+          sum_insured: number | null
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string
+          business_type?: string | null
+          client_contact?: string | null
+          client_id?: string | null
+          client_type?: string | null
+          coverage_required?: string | null
+          created_at?: string
+          created_by?: string
+          deal_id?: string | null
+          details?: Json
+          estimated_premium?: number | null
+          existing_policy_number?: string | null
+          guarantee_request_type?: string | null
+          id?: string
+          insurance_class?: Database["public"]["Enums"]["uw_class"]
+          insurer_id?: string | null
+          payment_date?: string | null
+          payment_received?: boolean
+          policy_number?: string | null
+          premium?: number | null
+          previous_insurer?: string | null
+          product?: string | null
+          remarks?: string | null
+          request_date?: string
+          request_no?: string | null
+          required_from?: string | null
+          required_until?: string | null
+          requirement_details?: string | null
+          status?: Database["public"]["Enums"]["uw_status"]
+          sum_insured?: number | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          business_type?: string | null
+          client_contact?: string | null
+          client_id?: string | null
+          client_type?: string | null
+          coverage_required?: string | null
+          created_at?: string
+          created_by?: string
+          deal_id?: string | null
+          details?: Json
+          estimated_premium?: number | null
+          existing_policy_number?: string | null
+          guarantee_request_type?: string | null
+          id?: string
+          insurance_class?: Database["public"]["Enums"]["uw_class"]
+          insurer_id?: string | null
+          payment_date?: string | null
+          payment_received?: boolean
+          policy_number?: string | null
+          premium?: number | null
+          previous_insurer?: string | null
+          product?: string | null
+          remarks?: string | null
+          request_date?: string
+          request_no?: string | null
+          required_from?: string | null
+          required_until?: string | null
+          requirement_details?: string | null
+          status?: Database["public"]["Enums"]["uw_status"]
+          sum_insured?: number | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "underwriting_requests_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "underwriting_requests_insurer_id_fkey"
+            columns: ["insurer_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      underwriting_requirement_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          insurance_class: Database["public"]["Enums"]["uw_class"]
+          label: string
+          mandatory: boolean
+          sort_order: number
+          updated_at: string
+          variant: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          insurance_class: Database["public"]["Enums"]["uw_class"]
+          label: string
+          mandatory?: boolean
+          sort_order?: number
+          updated_at?: string
+          variant?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          insurance_class?: Database["public"]["Enums"]["uw_class"]
+          label?: string
+          mandatory?: boolean
+          sort_order?: number
+          updated_at?: string
+          variant?: string | null
+        }
+        Relationships: []
+      }
       user_module_permissions: {
         Row: {
           created_at: string
@@ -2910,6 +3190,7 @@ export type Database = {
         Args: { _t: Database["public"]["Tables"]["tickets"]["Row"] }
         Returns: boolean
       }
+      can_view_uw: { Args: { _req: string }; Returns: boolean }
       current_user_team: { Args: never; Returns: string }
       deal_policy_conflict: {
         Args: { _exclude_row?: string; _policy_number: string }
@@ -3009,6 +3290,42 @@ export type Database = {
         | "resolved"
         | "closed"
         | "reopened"
+      uw_class:
+        | "motor"
+        | "health"
+        | "life"
+        | "fire"
+        | "marine"
+        | "engineering"
+        | "liability"
+        | "guarantee"
+        | "misc"
+        | "other"
+      uw_req_status:
+        | "pending"
+        | "received"
+        | "not_applicable"
+        | "rejected"
+        | "expired"
+      uw_status:
+        | "draft"
+        | "submitted"
+        | "underwriting_review"
+        | "information_required"
+        | "quotation_requested"
+        | "quotation_received"
+        | "quotation_shared"
+        | "customer_accepted"
+        | "proposal_requested"
+        | "proposal_received"
+        | "covernote_requested"
+        | "covernote_issued"
+        | "payment_pending"
+        | "payment_received"
+        | "policy_requested"
+        | "policy_issued"
+        | "completed"
+        | "won"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3204,6 +3521,45 @@ export const Constants = {
         "resolved",
         "closed",
         "reopened",
+      ],
+      uw_class: [
+        "motor",
+        "health",
+        "life",
+        "fire",
+        "marine",
+        "engineering",
+        "liability",
+        "guarantee",
+        "misc",
+        "other",
+      ],
+      uw_req_status: [
+        "pending",
+        "received",
+        "not_applicable",
+        "rejected",
+        "expired",
+      ],
+      uw_status: [
+        "draft",
+        "submitted",
+        "underwriting_review",
+        "information_required",
+        "quotation_requested",
+        "quotation_received",
+        "quotation_shared",
+        "customer_accepted",
+        "proposal_requested",
+        "proposal_received",
+        "covernote_requested",
+        "covernote_issued",
+        "payment_pending",
+        "payment_received",
+        "policy_requested",
+        "policy_issued",
+        "completed",
+        "won",
       ],
     },
   },
