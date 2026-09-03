@@ -15,14 +15,60 @@ import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { Download } from "lucide-react";
 import { DateField } from "@/components/DateField";
+import { SubHeadTabs } from "@/components/SubHeadTabs";
+import { DealAmountTable } from "@/components/DealAmountTable";
 
 export const Route = createFileRoute("/_app/accounts/receivables")({
   component: ReceivablesPage,
 });
 
+const sbAny = supabase as any;
+
+const SUBHEADS = [
+  { value: "commission_income", label: "Commission Income" },
+  { value: "income_loading", label: "Income Loading" },
+  { value: "marketing_budget", label: "Marketing Budget" },
+  { value: "commission", label: "Commission" },
+  { value: "advance_tax", label: "Advance Tax" },
+  { value: "receivable_tax", label: "Receivable Tax" },
+  { value: "premium_receivable", label: "Premium Receivable" },
+];
+
+/** Deal-level breakdown sub-heads — read-only views of already stored values. */
+function useHeadRows(enabled: boolean) {
+  return useQuery({
+    queryKey: ["accounts-receivable-heads"],
+    enabled,
+    queryFn: async () => {
+      const [deals, clients, taxes] = await Promise.all([
+        sbAny.from("deals").select("id,deal_number,policy_number,client_id,created_at,commission_before_tax,commission_after_tax,marketing_before_tax,loading").order("created_at", { ascending: false }),
+        sbAny.from("clients").select("id,company_name,full_name"),
+        sbAny.from("tax_records").select("deal_id,tax_type,amount,paid_amount"),
+      ]);
+      const taxRows = (taxes.data ?? []) as any[];
+      const byDeal = new Map<string, { mkt: number; mktOut: number; inc: number; incOut: number }>();
+      for (const t of taxRows) {
+        if (!t.deal_id) continue;
+        const e = byDeal.get(t.deal_id) ?? { mkt: 0, mktOut: 0, inc: 0, incOut: 0 };
+        const amt = Number(t.amount || 0);
+        const out = Math.max(0, amt - Number(t.paid_amount || 0));
+        if (t.tax_type === "marketing_budget_tax") { e.mkt += amt; e.mktOut += out; }
+        if (t.tax_type === "income_tax") { e.inc += amt; e.incOut += out; }
+        byDeal.set(t.deal_id, e);
+      }
+      const rows = ((deals.data ?? []) as any[]).map(d => ({ ...d, tax: byDeal.get(d.id) ?? { mkt: 0, mktOut: 0, inc: 0, incOut: 0 } }));
+      return {
+        rows,
+        clients: new Map(((clients.data ?? []) as any[]).map(c => [c.id, c.company_name || c.full_name])),
+      };
+    },
+  });
+}
+
 function ReceivablesPage() {
   const { hasRole } = useAuth();
   const canManage = hasRole("admin");
+  const [head, setHead] = useState("premium_receivable");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [from, setFrom] = useState("");
