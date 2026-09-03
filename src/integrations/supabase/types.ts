@@ -769,6 +769,101 @@ export type Database = {
           },
         ]
       }
+      dispatch_access: {
+        Row: {
+          created_at: string
+          level: Database["public"]["Enums"]["permission_level"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          level?: Database["public"]["Enums"]["permission_level"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          level?: Database["public"]["Enums"]["permission_level"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dispatch_records: {
+        Row: {
+          card_count: number | null
+          cheque_amount: number | null
+          cheque_number: string | null
+          cheque_payee: string | null
+          cheque_status: string | null
+          client_id: string | null
+          client_name: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          dispatch_date: string
+          dispatcher_name: string | null
+          document_status: string
+          document_type: string
+          id: string
+          receiver_name: string | null
+          record_kind: string
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          card_count?: number | null
+          cheque_amount?: number | null
+          cheque_number?: string | null
+          cheque_payee?: string | null
+          cheque_status?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          dispatch_date?: string
+          dispatcher_name?: string | null
+          document_status?: string
+          document_type: string
+          id?: string
+          receiver_name?: string | null
+          record_kind?: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          card_count?: number | null
+          cheque_amount?: number | null
+          cheque_number?: string | null
+          cheque_payee?: string | null
+          cheque_status?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          dispatch_date?: string
+          dispatcher_name?: string | null
+          document_status?: string
+          document_type?: string
+          id?: string
+          receiver_name?: string | null
+          record_kind?: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_versions: {
         Row: {
           created_at: string
@@ -3195,6 +3290,10 @@ export type Database = {
       deal_policy_conflict: {
         Args: { _exclude_row?: string; _policy_number: string }
         Returns: Json
+      }
+      dispatch_allows: {
+        Args: { _min: Database["public"]["Enums"]["permission_level"] }
+        Returns: boolean
       }
       has_role: {
         Args: {

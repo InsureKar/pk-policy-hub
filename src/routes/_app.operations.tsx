@@ -14,6 +14,7 @@ const tabs = [
   { to: "/operations/performance", label: "Performance", adminOnly: true },
   { to: "/operations/expenses", label: "Expenses", adminOnly: true },
   { to: "/operations/reimbursements", label: "Reimbursements", adminOnly: false },
+  { to: "/operations/dispatch", label: "Dispatch Record", adminOnly: false },
   { to: "/operations/reports", label: "Reports", adminOnly: true },
 ];
 
