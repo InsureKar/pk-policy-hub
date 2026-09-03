@@ -30,6 +30,13 @@ const CATEGORY_LABEL: Record<string, string> = {
   other: "Other Payable",
 };
 
+const SUBHEADS = [
+  { value: "all", label: "All Payables" },
+  { value: "expense", label: "Expenses" },
+  { value: "tax", label: "Tax Payable" },
+  { value: "b2b_commission", label: "B2B Commission Payable" },
+];
+
 function PayablesPage() {
   const { hasRole } = useAuth();
   const isAdmin = hasRole(["admin", "management"]);
@@ -45,12 +52,13 @@ function PayablesPage() {
       const [p, profiles, deals] = await Promise.all([
         sb.from("payables").select("*").order("created_at", { ascending: false }),
         sb.from("profiles").select("id,full_name"),
-        sb.from("deals").select("id,deal_number"),
+        sb.from("deals").select("id,deal_number,b2b_commission,b2b_taker_id"),
       ]);
       return {
         rows: (p.data ?? []) as any[],
         profs: new Map(((profiles.data ?? []) as any[]).map(pr => [pr.id, pr.full_name])),
         deals: new Map(((deals.data ?? []) as any[]).map(d => [d.id, d.deal_number])),
+        dealB2b: new Map(((deals.data ?? []) as any[]).map(d => [d.id, Number(d.b2b_commission || 0)])),
       };
     },
   });
