@@ -10,6 +10,7 @@ const tabs = [
   { to: "/accounts", label: "Dashboard", exact: true },
   { to: "/accounts/receivables", label: "Premium Receivables" },
   { to: "/accounts/payables", label: "Payables" },
+  { to: "/accounts/sales", label: "Sales" },
   { to: "/accounts/tax", label: "Tax" },
   { to: "/accounts/b2b", label: "B2B Commission" },
   { to: "/accounts/installments", label: "Installments" },
