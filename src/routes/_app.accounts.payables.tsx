@@ -145,6 +145,7 @@ function PayablesPage() {
             <TableHead>Payee</TableHead>
             <TableHead>Deal / Transaction</TableHead>
             <TableHead>Description</TableHead>
+            {category === "b2b_commission" && <TableHead className="text-right">Actual Gross Amount of Net Commission</TableHead>}
             <TableHead className="text-right">Original</TableHead>
             <TableHead className="text-right">Paid</TableHead>
             <TableHead className="text-right">Outstanding</TableHead>
