@@ -40,7 +40,7 @@ function AccountsLayout() {
           const active = t.exact ? pathname === t.to : pathname.startsWith(t.to);
 
           return (
-            <Link key={t.to} to={t.to}
+            <Link key={t.to} to={t.to as any}
               className={cn(
                 "px-3 py-2 text-sm rounded-t-md border-b-2 -mb-px whitespace-nowrap transition-colors",
                 active ? "border-primary text-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground",
