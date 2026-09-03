@@ -21,11 +21,19 @@ export const Route = createFileRoute("/_app/accounts/tax")({
 
 const TAX_LABEL: Record<string, string> = {
   income_tax: "Income Tax",
-  sales_tax: "Sales Tax",
-  marketing_budget_tax: "Marketing Budget Tax",
+  sales_tax: "Sales Tax (5%)",
+  marketing_budget_tax: "Marketing Budget Tax (9%)",
   commission_taker_tax: "Commission Taker Tax",
   b2b_commission_tax: "B2B Commission Tax",
 };
+
+const SUBHEADS = [
+  { value: "all", label: "All Taxes" },
+  { value: "income_tax", label: "Income Tax" },
+  { value: "sales_tax", label: "Sales Tax (5%)" },
+  { value: "commission_taker_tax", label: "Commission Taker Tax" },
+  { value: "marketing_budget_tax", label: "Marketing Budget Tax (9%)" },
+];
 
 const sb = supabase as any;
 
