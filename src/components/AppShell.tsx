@@ -73,6 +73,7 @@ const groups: NavGroup[] = [
       { to: "/accounts", label: "Dashboard", icon: LayoutDashboard },
       { to: "/accounts/receivables", label: "Receivables", icon: Receipt },
       { to: "/accounts/payables", label: "Payables", icon: Wallet, roles: ["admin", "management"] },
+      { to: "/accounts/sales", label: "Sales", icon: TrendingUp, roles: ["admin", "management"] },
       { to: "/accounts/tax", label: "Tax", icon: Landmark, roles: ["admin", "management"] },
       { to: "/accounts/b2b", label: "B2B Commission", icon: HandCoins, roles: ["admin", "management"] },
       { to: "/accounts/installments", label: "Installments", icon: CalendarClock },
