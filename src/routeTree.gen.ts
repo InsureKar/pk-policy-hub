@@ -45,6 +45,7 @@ import { Route as AppOperationsReimbursementsRouteImport } from './routes/_app.o
 import { Route as AppOperationsPerformanceRouteImport } from './routes/_app.operations.performance'
 import { Route as AppOperationsPayrollRouteImport } from './routes/_app.operations.payroll'
 import { Route as AppOperationsExpensesRouteImport } from './routes/_app.operations.expenses'
+import { Route as AppOperationsDispatchRouteImport } from './routes/_app.operations.dispatch'
 import { Route as AppOperationsCommissionsRouteImport } from './routes/_app.operations.commissions'
 import { Route as AppLeadsUnassignedRouteImport } from './routes/_app.leads.unassigned'
 import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
@@ -243,6 +244,11 @@ const AppOperationsExpensesRoute = AppOperationsExpensesRouteImport.update({
   path: '/expenses',
   getParentRoute: () => AppOperationsRoute,
 } as any)
+const AppOperationsDispatchRoute = AppOperationsDispatchRouteImport.update({
+  id: '/dispatch',
+  path: '/dispatch',
+  getParentRoute: () => AppOperationsRoute,
+} as any)
 const AppOperationsCommissionsRoute =
   AppOperationsCommissionsRouteImport.update({
     id: '/commissions',
@@ -362,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/deals/new': typeof AppDealsNewRoute
   '/leads/unassigned': typeof AppLeadsUnassignedRoute
   '/operations/commissions': typeof AppOperationsCommissionsRoute
+  '/operations/dispatch': typeof AppOperationsDispatchRoute
   '/operations/expenses': typeof AppOperationsExpensesRoute
   '/operations/payroll': typeof AppOperationsPayrollRoute
   '/operations/performance': typeof AppOperationsPerformanceRoute
@@ -412,6 +419,7 @@ export interface FileRoutesByTo {
   '/deals/new': typeof AppDealsNewRoute
   '/leads/unassigned': typeof AppLeadsUnassignedRoute
   '/operations/commissions': typeof AppOperationsCommissionsRoute
+  '/operations/dispatch': typeof AppOperationsDispatchRoute
   '/operations/expenses': typeof AppOperationsExpensesRoute
   '/operations/payroll': typeof AppOperationsPayrollRoute
   '/operations/performance': typeof AppOperationsPerformanceRoute
@@ -467,6 +475,7 @@ export interface FileRoutesById {
   '/_app/deals/new': typeof AppDealsNewRoute
   '/_app/leads/unassigned': typeof AppLeadsUnassignedRoute
   '/_app/operations/commissions': typeof AppOperationsCommissionsRoute
+  '/_app/operations/dispatch': typeof AppOperationsDispatchRoute
   '/_app/operations/expenses': typeof AppOperationsExpensesRoute
   '/_app/operations/payroll': typeof AppOperationsPayrollRoute
   '/_app/operations/performance': typeof AppOperationsPerformanceRoute
@@ -522,6 +531,7 @@ export interface FileRouteTypes {
     | '/deals/new'
     | '/leads/unassigned'
     | '/operations/commissions'
+    | '/operations/dispatch'
     | '/operations/expenses'
     | '/operations/payroll'
     | '/operations/performance'
@@ -572,6 +582,7 @@ export interface FileRouteTypes {
     | '/deals/new'
     | '/leads/unassigned'
     | '/operations/commissions'
+    | '/operations/dispatch'
     | '/operations/expenses'
     | '/operations/payroll'
     | '/operations/performance'
@@ -626,6 +637,7 @@ export interface FileRouteTypes {
     | '/_app/deals/new'
     | '/_app/leads/unassigned'
     | '/_app/operations/commissions'
+    | '/_app/operations/dispatch'
     | '/_app/operations/expenses'
     | '/_app/operations/payroll'
     | '/_app/operations/performance'
@@ -907,6 +919,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOperationsExpensesRouteImport
       parentRoute: typeof AppOperationsRoute
     }
+    '/_app/operations/dispatch': {
+      id: '/_app/operations/dispatch'
+      path: '/dispatch'
+      fullPath: '/operations/dispatch'
+      preLoaderRoute: typeof AppOperationsDispatchRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
     '/_app/operations/commissions': {
       id: '/_app/operations/commissions'
       path: '/commissions'
@@ -1054,6 +1073,7 @@ const AppAccountsRouteWithChildren = AppAccountsRoute._addFileChildren(
 
 interface AppOperationsRouteChildren {
   AppOperationsCommissionsRoute: typeof AppOperationsCommissionsRoute
+  AppOperationsDispatchRoute: typeof AppOperationsDispatchRoute
   AppOperationsExpensesRoute: typeof AppOperationsExpensesRoute
   AppOperationsPayrollRoute: typeof AppOperationsPayrollRoute
   AppOperationsPerformanceRoute: typeof AppOperationsPerformanceRoute
@@ -1067,6 +1087,7 @@ interface AppOperationsRouteChildren {
 
 const AppOperationsRouteChildren: AppOperationsRouteChildren = {
   AppOperationsCommissionsRoute: AppOperationsCommissionsRoute,
+  AppOperationsDispatchRoute: AppOperationsDispatchRoute,
   AppOperationsExpensesRoute: AppOperationsExpensesRoute,
   AppOperationsPayrollRoute: AppOperationsPayrollRoute,
   AppOperationsPerformanceRoute: AppOperationsPerformanceRoute,
