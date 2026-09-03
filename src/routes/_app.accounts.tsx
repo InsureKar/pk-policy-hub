@@ -6,9 +6,12 @@ export const Route = createFileRoute("/_app/accounts")({
   component: AccountsLayout,
 });
 
-const tabs = [
+const tabs: { to: string; label: string; exact?: boolean; adminOnly?: boolean }[] = [
   { to: "/accounts", label: "Dashboard", exact: true },
+
+  { to: "/accounts/chart", label: "Chart of Accounts", adminOnly: true },
   { to: "/accounts/receivables", label: "Premium Receivables" },
+
   { to: "/accounts/payables", label: "Payables" },
   { to: "/accounts/tax", label: "Tax" },
   { to: "/accounts/b2b", label: "B2B Commission" },
@@ -33,10 +36,11 @@ function AccountsLayout() {
         <p className="text-sm text-muted-foreground mt-1">Receivables, payables, invoices, installments and finance reports.</p>
       </div>
       <nav className="flex flex-wrap gap-1 border-b mb-6 overflow-x-auto">
-        {tabs.map((t) => {
+        {tabs.filter(t => !t.adminOnly || hasRole(["admin", "management"])).map((t) => {
           const active = t.exact ? pathname === t.to : pathname.startsWith(t.to);
+
           return (
-            <Link key={t.to} to={t.to}
+            <Link key={t.to} to={t.to as any}
               className={cn(
                 "px-3 py-2 text-sm rounded-t-md border-b-2 -mb-px whitespace-nowrap transition-colors",
                 active ? "border-primary text-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground",
