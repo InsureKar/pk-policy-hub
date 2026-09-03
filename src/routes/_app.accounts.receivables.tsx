@@ -223,6 +223,7 @@ function ReceivablesPage() {
           </TableBody>
         </Table>
       </CardContent></Card>
+      </>}
     </div>
   );
 }
