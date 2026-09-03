@@ -8,7 +8,9 @@ export const Route = createFileRoute("/_app/accounts")({
 
 const tabs = [
   { to: "/accounts", label: "Dashboard", exact: true },
+  { to: "/accounts/chart", label: "Chart of Accounts", adminOnly: true },
   { to: "/accounts/receivables", label: "Premium Receivables" },
+
   { to: "/accounts/payables", label: "Payables" },
   { to: "/accounts/tax", label: "Tax" },
   { to: "/accounts/b2b", label: "B2B Commission" },
