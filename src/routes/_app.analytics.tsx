@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fmtPKR } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
 
 export const Route = createFileRoute("/_app/analytics")({
@@ -15,6 +16,8 @@ const COLORS = ["var(--chart-1)","var(--chart-2)","var(--chart-3)","var(--chart-
 
 function AnalyticsPage() {
   const navigate = useNavigate();
+  const { hasRole } = useAuth();
+  const canSeeIncome = hasRole(["admin", "management"]);
   const { data } = useQuery({
     queryKey: ["analytics"],
     queryFn: async () => {
@@ -63,9 +66,9 @@ function AnalyticsPage() {
       <Tabs defaultValue="sales">
         <TabsList className="mb-4">
           <TabsTrigger value="sales">Sales</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
-          <TabsTrigger value="team">Team Performance</TabsTrigger>
-          <TabsTrigger value="company">Company Performance</TabsTrigger>
+          {canSeeIncome && <TabsTrigger value="revenue">Revenue</TabsTrigger>}
+          {canSeeIncome && <TabsTrigger value="team">Team Performance</TabsTrigger>}
+          {canSeeIncome && <TabsTrigger value="company">Company Performance</TabsTrigger>}
           <TabsTrigger value="renewals">Renewals</TabsTrigger>
         </TabsList>
 
@@ -74,15 +77,15 @@ function AnalyticsPage() {
           <div className="h-4"/>
           <ChartCard title="Deals per stage"><PieChartS data={byStage} onSelect={(s)=>openDeals(s?.id ? { stage: s.id } : {})}/></ChartCard>
         </TabsContent>
-        <TabsContent value="revenue">
+        {canSeeIncome && <TabsContent value="revenue">
           <ChartCard title="Revenue by insurance company"><BarChartH data={byRev} onSelect={()=>openDeals({})}/></ChartCard>
-        </TabsContent>
-        <TabsContent value="team">
+        </TabsContent>}
+        {canSeeIncome && <TabsContent value="team">
           <ChartCard title="Team commission earned"><BarChartH data={byTeam} onSelect={()=>openDeals({})}/></ChartCard>
-        </TabsContent>
-        <TabsContent value="company">
+        </TabsContent>}
+        {canSeeIncome && <TabsContent value="company">
           <ChartCard title="Company income share"><PieChartS data={byRev} onSelect={()=>openDeals({})}/></ChartCard>
-        </TabsContent>
+        </TabsContent>}
         <TabsContent value="renewals">
           <ChartCard title="Renewal status"><PieChartS data={Object.entries(renewalBuckets).map(([label,value])=>({label, value}))} onSelect={()=>navigate({ to: "/renewals" })}/></ChartCard>
         </TabsContent>
