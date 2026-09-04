@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtPKR } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/_app/income")({
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/_app/income")({
 });
 
 function IncomePage() {
+  const { hasRole, loading } = useAuth();
   const { data } = useQuery({
     queryKey: ["income"],
     queryFn: async () => {
@@ -26,6 +28,9 @@ function IncomePage() {
       };
     },
   });
+
+  if (loading) return null;
+  if (!hasRole(["admin", "management"])) return <Navigate to="/dashboard" replace />;
 
   // Exclude Lost deals from all financial aggregates
   const activeDeals = (data?.deals ?? []).filter(d => !d.stage_id || !data?.lostIds.has(d.stage_id));
