@@ -14,7 +14,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
+import { Route as AppTicketsRouteImport } from './routes/_app.tickets'
 import { Route as AppTeamsRouteImport } from './routes/_app.teams'
+import { Route as AppTasksRouteImport } from './routes/_app.tasks'
 import { Route as AppTargetsRouteImport } from './routes/_app.targets'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppReviewRouteImport } from './routes/_app.review'
@@ -28,19 +30,28 @@ import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app.clients'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppAccountsRouteImport } from './routes/_app.accounts'
+import { Route as AppTicketsIndexRouteImport } from './routes/_app.tickets.index'
 import { Route as AppOperationsIndexRouteImport } from './routes/_app.operations.index'
 import { Route as AppDealsIndexRouteImport } from './routes/_app.deals.index'
 import { Route as AppAccountsIndexRouteImport } from './routes/_app.accounts.index'
+import { Route as AppTicketsTeamRouteImport } from './routes/_app.tickets.team'
+import { Route as AppTicketsSlaRouteImport } from './routes/_app.tickets.sla'
+import { Route as AppTicketsReportsRouteImport } from './routes/_app.tickets.reports'
+import { Route as AppTicketsMineRouteImport } from './routes/_app.tickets.mine'
+import { Route as AppTicketsAllRouteImport } from './routes/_app.tickets.all'
+import { Route as AppTicketsIdRouteImport } from './routes/_app.tickets.$id'
 import { Route as AppOperationsReportsRouteImport } from './routes/_app.operations.reports'
 import { Route as AppOperationsReimbursementsRouteImport } from './routes/_app.operations.reimbursements'
 import { Route as AppOperationsPerformanceRouteImport } from './routes/_app.operations.performance'
 import { Route as AppOperationsPayrollRouteImport } from './routes/_app.operations.payroll'
 import { Route as AppOperationsExpensesRouteImport } from './routes/_app.operations.expenses'
+import { Route as AppOperationsDispatchRouteImport } from './routes/_app.operations.dispatch'
 import { Route as AppOperationsCommissionsRouteImport } from './routes/_app.operations.commissions'
 import { Route as AppLeadsUnassignedRouteImport } from './routes/_app.leads.unassigned'
 import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
 import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
 import { Route as AppAccountsTaxRouteImport } from './routes/_app.accounts.tax'
+import { Route as AppAccountsSalesRouteImport } from './routes/_app.accounts.sales'
 import { Route as AppAccountsReportsRouteImport } from './routes/_app.accounts.reports'
 import { Route as AppAccountsReceivablesRouteImport } from './routes/_app.accounts.receivables'
 import { Route as AppAccountsPaymentsRouteImport } from './routes/_app.accounts.payments'
@@ -49,6 +60,9 @@ import { Route as AppAccountsInvoicesRouteImport } from './routes/_app.accounts.
 import { Route as AppAccountsInstallmentsRouteImport } from './routes/_app.accounts.installments'
 import { Route as AppAccountsB2bRouteImport } from './routes/_app.accounts.b2b'
 import { Route as AppAccountsApprovalsRouteImport } from './routes/_app.accounts.approvals'
+import { Route as AppOperationsUnderwritingIndexRouteImport } from './routes/_app.operations.underwriting.index'
+import { Route as AppOperationsUnderwritingNewRouteImport } from './routes/_app.operations.underwriting.new'
+import { Route as AppOperationsUnderwritingIdRouteImport } from './routes/_app.operations.underwriting.$id'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -74,9 +88,19 @@ const AppUsersRoute = AppUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTicketsRoute = AppTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTeamsRoute = AppTeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksRoute = AppTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTargetsRoute = AppTargetsRouteImport.update({
@@ -144,6 +168,11 @@ const AppAccountsRoute = AppAccountsRouteImport.update({
   path: '/accounts',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTicketsIndexRoute = AppTicketsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
 const AppOperationsIndexRoute = AppOperationsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -158,6 +187,36 @@ const AppAccountsIndexRoute = AppAccountsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppAccountsRoute,
+} as any)
+const AppTicketsTeamRoute = AppTicketsTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsSlaRoute = AppTicketsSlaRouteImport.update({
+  id: '/sla',
+  path: '/sla',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsReportsRoute = AppTicketsReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsMineRoute = AppTicketsMineRouteImport.update({
+  id: '/mine',
+  path: '/mine',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsAllRoute = AppTicketsAllRouteImport.update({
+  id: '/all',
+  path: '/all',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsIdRoute = AppTicketsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppTicketsRoute,
 } as any)
 const AppOperationsReportsRoute = AppOperationsReportsRouteImport.update({
   id: '/reports',
@@ -186,6 +245,11 @@ const AppOperationsExpensesRoute = AppOperationsExpensesRouteImport.update({
   path: '/expenses',
   getParentRoute: () => AppOperationsRoute,
 } as any)
+const AppOperationsDispatchRoute = AppOperationsDispatchRouteImport.update({
+  id: '/dispatch',
+  path: '/dispatch',
+  getParentRoute: () => AppOperationsRoute,
+} as any)
 const AppOperationsCommissionsRoute =
   AppOperationsCommissionsRouteImport.update({
     id: '/commissions',
@@ -210,6 +274,11 @@ const AppDealsIdRoute = AppDealsIdRouteImport.update({
 const AppAccountsTaxRoute = AppAccountsTaxRouteImport.update({
   id: '/tax',
   path: '/tax',
+  getParentRoute: () => AppAccountsRoute,
+} as any)
+const AppAccountsSalesRoute = AppAccountsSalesRouteImport.update({
+  id: '/sales',
+  path: '/sales',
   getParentRoute: () => AppAccountsRoute,
 } as any)
 const AppAccountsReportsRoute = AppAccountsReportsRouteImport.update({
@@ -252,6 +321,24 @@ const AppAccountsApprovalsRoute = AppAccountsApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AppAccountsRoute,
 } as any)
+const AppOperationsUnderwritingIndexRoute =
+  AppOperationsUnderwritingIndexRouteImport.update({
+    id: '/underwriting/',
+    path: '/underwriting/',
+    getParentRoute: () => AppOperationsRoute,
+  } as any)
+const AppOperationsUnderwritingNewRoute =
+  AppOperationsUnderwritingNewRouteImport.update({
+    id: '/underwriting/new',
+    path: '/underwriting/new',
+    getParentRoute: () => AppOperationsRoute,
+  } as any)
+const AppOperationsUnderwritingIdRoute =
+  AppOperationsUnderwritingIdRouteImport.update({
+    id: '/underwriting/$id',
+    path: '/underwriting/$id',
+    getParentRoute: () => AppOperationsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -270,7 +357,9 @@ export interface FileRoutesByFullPath {
   '/review': typeof AppReviewRoute
   '/settings': typeof AppSettingsRoute
   '/targets': typeof AppTargetsRoute
+  '/tasks': typeof AppTasksRoute
   '/teams': typeof AppTeamsRoute
+  '/tickets': typeof AppTicketsRouteWithChildren
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/accounts/b2b': typeof AppAccountsB2bRoute
@@ -280,19 +369,31 @@ export interface FileRoutesByFullPath {
   '/accounts/payments': typeof AppAccountsPaymentsRoute
   '/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/accounts/reports': typeof AppAccountsReportsRoute
+  '/accounts/sales': typeof AppAccountsSalesRoute
   '/accounts/tax': typeof AppAccountsTaxRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
   '/leads/unassigned': typeof AppLeadsUnassignedRoute
   '/operations/commissions': typeof AppOperationsCommissionsRoute
+  '/operations/dispatch': typeof AppOperationsDispatchRoute
   '/operations/expenses': typeof AppOperationsExpensesRoute
   '/operations/payroll': typeof AppOperationsPayrollRoute
   '/operations/performance': typeof AppOperationsPerformanceRoute
   '/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/operations/reports': typeof AppOperationsReportsRoute
+  '/tickets/$id': typeof AppTicketsIdRoute
+  '/tickets/all': typeof AppTicketsAllRoute
+  '/tickets/mine': typeof AppTicketsMineRoute
+  '/tickets/reports': typeof AppTicketsReportsRoute
+  '/tickets/sla': typeof AppTicketsSlaRoute
+  '/tickets/team': typeof AppTicketsTeamRoute
   '/accounts/': typeof AppAccountsIndexRoute
   '/deals/': typeof AppDealsIndexRoute
   '/operations/': typeof AppOperationsIndexRoute
+  '/tickets/': typeof AppTicketsIndexRoute
+  '/operations/underwriting/$id': typeof AppOperationsUnderwritingIdRoute
+  '/operations/underwriting/new': typeof AppOperationsUnderwritingNewRoute
+  '/operations/underwriting/': typeof AppOperationsUnderwritingIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -309,6 +410,7 @@ export interface FileRoutesByTo {
   '/review': typeof AppReviewRoute
   '/settings': typeof AppSettingsRoute
   '/targets': typeof AppTargetsRoute
+  '/tasks': typeof AppTasksRoute
   '/teams': typeof AppTeamsRoute
   '/users': typeof AppUsersRoute
   '/accounts/approvals': typeof AppAccountsApprovalsRoute
@@ -319,19 +421,31 @@ export interface FileRoutesByTo {
   '/accounts/payments': typeof AppAccountsPaymentsRoute
   '/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/accounts/reports': typeof AppAccountsReportsRoute
+  '/accounts/sales': typeof AppAccountsSalesRoute
   '/accounts/tax': typeof AppAccountsTaxRoute
   '/deals/$id': typeof AppDealsIdRoute
   '/deals/new': typeof AppDealsNewRoute
   '/leads/unassigned': typeof AppLeadsUnassignedRoute
   '/operations/commissions': typeof AppOperationsCommissionsRoute
+  '/operations/dispatch': typeof AppOperationsDispatchRoute
   '/operations/expenses': typeof AppOperationsExpensesRoute
   '/operations/payroll': typeof AppOperationsPayrollRoute
   '/operations/performance': typeof AppOperationsPerformanceRoute
   '/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/operations/reports': typeof AppOperationsReportsRoute
+  '/tickets/$id': typeof AppTicketsIdRoute
+  '/tickets/all': typeof AppTicketsAllRoute
+  '/tickets/mine': typeof AppTicketsMineRoute
+  '/tickets/reports': typeof AppTicketsReportsRoute
+  '/tickets/sla': typeof AppTicketsSlaRoute
+  '/tickets/team': typeof AppTicketsTeamRoute
   '/accounts': typeof AppAccountsIndexRoute
   '/deals': typeof AppDealsIndexRoute
   '/operations': typeof AppOperationsIndexRoute
+  '/tickets': typeof AppTicketsIndexRoute
+  '/operations/underwriting/$id': typeof AppOperationsUnderwritingIdRoute
+  '/operations/underwriting/new': typeof AppOperationsUnderwritingNewRoute
+  '/operations/underwriting': typeof AppOperationsUnderwritingIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -352,7 +466,9 @@ export interface FileRoutesById {
   '/_app/review': typeof AppReviewRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/targets': typeof AppTargetsRoute
+  '/_app/tasks': typeof AppTasksRoute
   '/_app/teams': typeof AppTeamsRoute
+  '/_app/tickets': typeof AppTicketsRouteWithChildren
   '/_app/users': typeof AppUsersRoute
   '/_app/accounts/approvals': typeof AppAccountsApprovalsRoute
   '/_app/accounts/b2b': typeof AppAccountsB2bRoute
@@ -362,19 +478,31 @@ export interface FileRoutesById {
   '/_app/accounts/payments': typeof AppAccountsPaymentsRoute
   '/_app/accounts/receivables': typeof AppAccountsReceivablesRoute
   '/_app/accounts/reports': typeof AppAccountsReportsRoute
+  '/_app/accounts/sales': typeof AppAccountsSalesRoute
   '/_app/accounts/tax': typeof AppAccountsTaxRoute
   '/_app/deals/$id': typeof AppDealsIdRoute
   '/_app/deals/new': typeof AppDealsNewRoute
   '/_app/leads/unassigned': typeof AppLeadsUnassignedRoute
   '/_app/operations/commissions': typeof AppOperationsCommissionsRoute
+  '/_app/operations/dispatch': typeof AppOperationsDispatchRoute
   '/_app/operations/expenses': typeof AppOperationsExpensesRoute
   '/_app/operations/payroll': typeof AppOperationsPayrollRoute
   '/_app/operations/performance': typeof AppOperationsPerformanceRoute
   '/_app/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/_app/operations/reports': typeof AppOperationsReportsRoute
+  '/_app/tickets/$id': typeof AppTicketsIdRoute
+  '/_app/tickets/all': typeof AppTicketsAllRoute
+  '/_app/tickets/mine': typeof AppTicketsMineRoute
+  '/_app/tickets/reports': typeof AppTicketsReportsRoute
+  '/_app/tickets/sla': typeof AppTicketsSlaRoute
+  '/_app/tickets/team': typeof AppTicketsTeamRoute
   '/_app/accounts/': typeof AppAccountsIndexRoute
   '/_app/deals/': typeof AppDealsIndexRoute
   '/_app/operations/': typeof AppOperationsIndexRoute
+  '/_app/tickets/': typeof AppTicketsIndexRoute
+  '/_app/operations/underwriting/$id': typeof AppOperationsUnderwritingIdRoute
+  '/_app/operations/underwriting/new': typeof AppOperationsUnderwritingNewRoute
+  '/_app/operations/underwriting/': typeof AppOperationsUnderwritingIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -395,7 +523,9 @@ export interface FileRouteTypes {
     | '/review'
     | '/settings'
     | '/targets'
+    | '/tasks'
     | '/teams'
+    | '/tickets'
     | '/users'
     | '/accounts/approvals'
     | '/accounts/b2b'
@@ -405,19 +535,31 @@ export interface FileRouteTypes {
     | '/accounts/payments'
     | '/accounts/receivables'
     | '/accounts/reports'
+    | '/accounts/sales'
     | '/accounts/tax'
     | '/deals/$id'
     | '/deals/new'
     | '/leads/unassigned'
     | '/operations/commissions'
+    | '/operations/dispatch'
     | '/operations/expenses'
     | '/operations/payroll'
     | '/operations/performance'
     | '/operations/reimbursements'
     | '/operations/reports'
+    | '/tickets/$id'
+    | '/tickets/all'
+    | '/tickets/mine'
+    | '/tickets/reports'
+    | '/tickets/sla'
+    | '/tickets/team'
     | '/accounts/'
     | '/deals/'
     | '/operations/'
+    | '/tickets/'
+    | '/operations/underwriting/$id'
+    | '/operations/underwriting/new'
+    | '/operations/underwriting/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -434,6 +576,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/settings'
     | '/targets'
+    | '/tasks'
     | '/teams'
     | '/users'
     | '/accounts/approvals'
@@ -444,19 +587,31 @@ export interface FileRouteTypes {
     | '/accounts/payments'
     | '/accounts/receivables'
     | '/accounts/reports'
+    | '/accounts/sales'
     | '/accounts/tax'
     | '/deals/$id'
     | '/deals/new'
     | '/leads/unassigned'
     | '/operations/commissions'
+    | '/operations/dispatch'
     | '/operations/expenses'
     | '/operations/payroll'
     | '/operations/performance'
     | '/operations/reimbursements'
     | '/operations/reports'
+    | '/tickets/$id'
+    | '/tickets/all'
+    | '/tickets/mine'
+    | '/tickets/reports'
+    | '/tickets/sla'
+    | '/tickets/team'
     | '/accounts'
     | '/deals'
     | '/operations'
+    | '/tickets'
+    | '/operations/underwriting/$id'
+    | '/operations/underwriting/new'
+    | '/operations/underwriting'
   id:
     | '__root__'
     | '/'
@@ -476,7 +631,9 @@ export interface FileRouteTypes {
     | '/_app/review'
     | '/_app/settings'
     | '/_app/targets'
+    | '/_app/tasks'
     | '/_app/teams'
+    | '/_app/tickets'
     | '/_app/users'
     | '/_app/accounts/approvals'
     | '/_app/accounts/b2b'
@@ -486,19 +643,31 @@ export interface FileRouteTypes {
     | '/_app/accounts/payments'
     | '/_app/accounts/receivables'
     | '/_app/accounts/reports'
+    | '/_app/accounts/sales'
     | '/_app/accounts/tax'
     | '/_app/deals/$id'
     | '/_app/deals/new'
     | '/_app/leads/unassigned'
     | '/_app/operations/commissions'
+    | '/_app/operations/dispatch'
     | '/_app/operations/expenses'
     | '/_app/operations/payroll'
     | '/_app/operations/performance'
     | '/_app/operations/reimbursements'
     | '/_app/operations/reports'
+    | '/_app/tickets/$id'
+    | '/_app/tickets/all'
+    | '/_app/tickets/mine'
+    | '/_app/tickets/reports'
+    | '/_app/tickets/sla'
+    | '/_app/tickets/team'
     | '/_app/accounts/'
     | '/_app/deals/'
     | '/_app/operations/'
+    | '/_app/tickets/'
+    | '/_app/operations/underwriting/$id'
+    | '/_app/operations/underwriting/new'
+    | '/_app/operations/underwriting/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -545,11 +714,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/tickets': {
+      id: '/_app/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof AppTicketsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/teams': {
       id: '/_app/teams'
       path: '/teams'
       fullPath: '/teams'
       preLoaderRoute: typeof AppTeamsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tasks': {
+      id: '/_app/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AppTasksRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/targets': {
@@ -643,6 +826,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/tickets/': {
+      id: '/_app/tickets/'
+      path: '/'
+      fullPath: '/tickets/'
+      preLoaderRoute: typeof AppTicketsIndexRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
     '/_app/operations/': {
       id: '/_app/operations/'
       path: '/'
@@ -663,6 +853,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/accounts/'
       preLoaderRoute: typeof AppAccountsIndexRouteImport
       parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/tickets/team': {
+      id: '/_app/tickets/team'
+      path: '/team'
+      fullPath: '/tickets/team'
+      preLoaderRoute: typeof AppTicketsTeamRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/sla': {
+      id: '/_app/tickets/sla'
+      path: '/sla'
+      fullPath: '/tickets/sla'
+      preLoaderRoute: typeof AppTicketsSlaRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/reports': {
+      id: '/_app/tickets/reports'
+      path: '/reports'
+      fullPath: '/tickets/reports'
+      preLoaderRoute: typeof AppTicketsReportsRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/mine': {
+      id: '/_app/tickets/mine'
+      path: '/mine'
+      fullPath: '/tickets/mine'
+      preLoaderRoute: typeof AppTicketsMineRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/all': {
+      id: '/_app/tickets/all'
+      path: '/all'
+      fullPath: '/tickets/all'
+      preLoaderRoute: typeof AppTicketsAllRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/$id': {
+      id: '/_app/tickets/$id'
+      path: '/$id'
+      fullPath: '/tickets/$id'
+      preLoaderRoute: typeof AppTicketsIdRouteImport
+      parentRoute: typeof AppTicketsRoute
     }
     '/_app/operations/reports': {
       id: '/_app/operations/reports'
@@ -699,6 +931,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOperationsExpensesRouteImport
       parentRoute: typeof AppOperationsRoute
     }
+    '/_app/operations/dispatch': {
+      id: '/_app/operations/dispatch'
+      path: '/dispatch'
+      fullPath: '/operations/dispatch'
+      preLoaderRoute: typeof AppOperationsDispatchRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
     '/_app/operations/commissions': {
       id: '/_app/operations/commissions'
       path: '/commissions'
@@ -732,6 +971,13 @@ declare module '@tanstack/react-router' {
       path: '/tax'
       fullPath: '/accounts/tax'
       preLoaderRoute: typeof AppAccountsTaxRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/accounts/sales': {
+      id: '/_app/accounts/sales'
+      path: '/sales'
+      fullPath: '/accounts/sales'
+      preLoaderRoute: typeof AppAccountsSalesRouteImport
       parentRoute: typeof AppAccountsRoute
     }
     '/_app/accounts/reports': {
@@ -790,6 +1036,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsApprovalsRouteImport
       parentRoute: typeof AppAccountsRoute
     }
+    '/_app/operations/underwriting/': {
+      id: '/_app/operations/underwriting/'
+      path: '/underwriting'
+      fullPath: '/operations/underwriting/'
+      preLoaderRoute: typeof AppOperationsUnderwritingIndexRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/operations/underwriting/new': {
+      id: '/_app/operations/underwriting/new'
+      path: '/underwriting/new'
+      fullPath: '/operations/underwriting/new'
+      preLoaderRoute: typeof AppOperationsUnderwritingNewRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/operations/underwriting/$id': {
+      id: '/_app/operations/underwriting/$id'
+      path: '/underwriting/$id'
+      fullPath: '/operations/underwriting/$id'
+      preLoaderRoute: typeof AppOperationsUnderwritingIdRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
   }
 }
 
@@ -802,6 +1069,7 @@ interface AppAccountsRouteChildren {
   AppAccountsPaymentsRoute: typeof AppAccountsPaymentsRoute
   AppAccountsReceivablesRoute: typeof AppAccountsReceivablesRoute
   AppAccountsReportsRoute: typeof AppAccountsReportsRoute
+  AppAccountsSalesRoute: typeof AppAccountsSalesRoute
   AppAccountsTaxRoute: typeof AppAccountsTaxRoute
   AppAccountsIndexRoute: typeof AppAccountsIndexRoute
 }
@@ -815,6 +1083,7 @@ const AppAccountsRouteChildren: AppAccountsRouteChildren = {
   AppAccountsPaymentsRoute: AppAccountsPaymentsRoute,
   AppAccountsReceivablesRoute: AppAccountsReceivablesRoute,
   AppAccountsReportsRoute: AppAccountsReportsRoute,
+  AppAccountsSalesRoute: AppAccountsSalesRoute,
   AppAccountsTaxRoute: AppAccountsTaxRoute,
   AppAccountsIndexRoute: AppAccountsIndexRoute,
 }
@@ -825,26 +1094,58 @@ const AppAccountsRouteWithChildren = AppAccountsRoute._addFileChildren(
 
 interface AppOperationsRouteChildren {
   AppOperationsCommissionsRoute: typeof AppOperationsCommissionsRoute
+  AppOperationsDispatchRoute: typeof AppOperationsDispatchRoute
   AppOperationsExpensesRoute: typeof AppOperationsExpensesRoute
   AppOperationsPayrollRoute: typeof AppOperationsPayrollRoute
   AppOperationsPerformanceRoute: typeof AppOperationsPerformanceRoute
   AppOperationsReimbursementsRoute: typeof AppOperationsReimbursementsRoute
   AppOperationsReportsRoute: typeof AppOperationsReportsRoute
   AppOperationsIndexRoute: typeof AppOperationsIndexRoute
+  AppOperationsUnderwritingIdRoute: typeof AppOperationsUnderwritingIdRoute
+  AppOperationsUnderwritingNewRoute: typeof AppOperationsUnderwritingNewRoute
+  AppOperationsUnderwritingIndexRoute: typeof AppOperationsUnderwritingIndexRoute
 }
 
 const AppOperationsRouteChildren: AppOperationsRouteChildren = {
   AppOperationsCommissionsRoute: AppOperationsCommissionsRoute,
+  AppOperationsDispatchRoute: AppOperationsDispatchRoute,
   AppOperationsExpensesRoute: AppOperationsExpensesRoute,
   AppOperationsPayrollRoute: AppOperationsPayrollRoute,
   AppOperationsPerformanceRoute: AppOperationsPerformanceRoute,
   AppOperationsReimbursementsRoute: AppOperationsReimbursementsRoute,
   AppOperationsReportsRoute: AppOperationsReportsRoute,
   AppOperationsIndexRoute: AppOperationsIndexRoute,
+  AppOperationsUnderwritingIdRoute: AppOperationsUnderwritingIdRoute,
+  AppOperationsUnderwritingNewRoute: AppOperationsUnderwritingNewRoute,
+  AppOperationsUnderwritingIndexRoute: AppOperationsUnderwritingIndexRoute,
 }
 
 const AppOperationsRouteWithChildren = AppOperationsRoute._addFileChildren(
   AppOperationsRouteChildren,
+)
+
+interface AppTicketsRouteChildren {
+  AppTicketsIdRoute: typeof AppTicketsIdRoute
+  AppTicketsAllRoute: typeof AppTicketsAllRoute
+  AppTicketsMineRoute: typeof AppTicketsMineRoute
+  AppTicketsReportsRoute: typeof AppTicketsReportsRoute
+  AppTicketsSlaRoute: typeof AppTicketsSlaRoute
+  AppTicketsTeamRoute: typeof AppTicketsTeamRoute
+  AppTicketsIndexRoute: typeof AppTicketsIndexRoute
+}
+
+const AppTicketsRouteChildren: AppTicketsRouteChildren = {
+  AppTicketsIdRoute: AppTicketsIdRoute,
+  AppTicketsAllRoute: AppTicketsAllRoute,
+  AppTicketsMineRoute: AppTicketsMineRoute,
+  AppTicketsReportsRoute: AppTicketsReportsRoute,
+  AppTicketsSlaRoute: AppTicketsSlaRoute,
+  AppTicketsTeamRoute: AppTicketsTeamRoute,
+  AppTicketsIndexRoute: AppTicketsIndexRoute,
+}
+
+const AppTicketsRouteWithChildren = AppTicketsRoute._addFileChildren(
+  AppTicketsRouteChildren,
 )
 
 interface AppRouteChildren {
@@ -861,7 +1162,9 @@ interface AppRouteChildren {
   AppReviewRoute: typeof AppReviewRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTargetsRoute: typeof AppTargetsRoute
+  AppTasksRoute: typeof AppTasksRoute
   AppTeamsRoute: typeof AppTeamsRoute
+  AppTicketsRoute: typeof AppTicketsRouteWithChildren
   AppUsersRoute: typeof AppUsersRoute
   AppDealsIdRoute: typeof AppDealsIdRoute
   AppDealsNewRoute: typeof AppDealsNewRoute
@@ -883,7 +1186,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppReviewRoute: AppReviewRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTargetsRoute: AppTargetsRoute,
+  AppTasksRoute: AppTasksRoute,
   AppTeamsRoute: AppTeamsRoute,
+  AppTicketsRoute: AppTicketsRouteWithChildren,
   AppUsersRoute: AppUsersRoute,
   AppDealsIdRoute: AppDealsIdRoute,
   AppDealsNewRoute: AppDealsNewRoute,

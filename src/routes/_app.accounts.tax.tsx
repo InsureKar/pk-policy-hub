@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SubHeadTabs } from "@/components/SubHeadTabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { fmtPKR, fmtDate } from "@/lib/format";
@@ -21,11 +22,19 @@ export const Route = createFileRoute("/_app/accounts/tax")({
 
 const TAX_LABEL: Record<string, string> = {
   income_tax: "Income Tax",
-  sales_tax: "Sales Tax",
-  marketing_budget_tax: "Marketing Budget Tax",
+  sales_tax: "Sales Tax (5%)",
+  marketing_budget_tax: "Marketing Budget Tax (9%)",
   commission_taker_tax: "Commission Taker Tax",
   b2b_commission_tax: "B2B Commission Tax",
 };
+
+const SUBHEADS = [
+  { value: "all", label: "All Taxes" },
+  { value: "income_tax", label: "Income Tax" },
+  { value: "sales_tax", label: "Sales Tax (5%)" },
+  { value: "commission_taker_tax", label: "Commission Taker Tax" },
+  { value: "marketing_budget_tax", label: "Marketing Budget Tax (9%)" },
+];
 
 const sb = supabase as any;
 
@@ -126,6 +135,8 @@ function TaxPage() {
         <KPI label="Commission Taker Tax" value={fmtPKR((totals.byType["commission_taker_tax"] ?? 0) + (totals.byType["b2b_commission_tax"] ?? 0))} />
         <KPI label="Tax Payable (outstanding)" value={fmtPKR(totals.outstanding)} tone="danger" />
       </div>
+
+      <SubHeadTabs value={type} onChange={setType} items={SUBHEADS} />
 
       <Card><CardContent className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <F label="Tax type"><Sel value={type} onChange={setType} options={[["all", "All Taxes"], ...Object.entries(TAX_LABEL)]} /></F>

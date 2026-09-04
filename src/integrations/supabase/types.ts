@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -127,6 +127,8 @@ export type Database = {
           ntn: string | null
           phone: string | null
           poc_address: string | null
+          poc_department: string | null
+          poc_designation: string | null
           poc_email: string | null
           poc_name: string | null
           poc_number: string | null
@@ -154,6 +156,8 @@ export type Database = {
           ntn?: string | null
           phone?: string | null
           poc_address?: string | null
+          poc_department?: string | null
+          poc_designation?: string | null
           poc_email?: string | null
           poc_name?: string | null
           poc_number?: string | null
@@ -181,6 +185,8 @@ export type Database = {
           ntn?: string | null
           phone?: string | null
           poc_address?: string | null
+          poc_department?: string | null
+          poc_designation?: string | null
           poc_email?: string | null
           poc_name?: string | null
           poc_number?: string | null
@@ -549,9 +555,11 @@ export type Database = {
           notes: string | null
           payment_destination: string
           payment_mode: string | null
+          payment_proof_url: string | null
           payment_receive_date: string | null
           payment_remarks: string | null
           payment_schedule: string | null
+          payment_year: number | null
           policy_end_date: string | null
           policy_number: string | null
           policy_start_date: string | null
@@ -607,9 +615,11 @@ export type Database = {
           notes?: string | null
           payment_destination?: string
           payment_mode?: string | null
+          payment_proof_url?: string | null
           payment_receive_date?: string | null
           payment_remarks?: string | null
           payment_schedule?: string | null
+          payment_year?: number | null
           policy_end_date?: string | null
           policy_number?: string | null
           policy_start_date?: string | null
@@ -665,9 +675,11 @@ export type Database = {
           notes?: string | null
           payment_destination?: string
           payment_mode?: string | null
+          payment_proof_url?: string | null
           payment_receive_date?: string | null
           payment_remarks?: string | null
           payment_schedule?: string | null
+          payment_year?: number | null
           policy_end_date?: string | null
           policy_number?: string | null
           policy_start_date?: string | null
@@ -753,6 +765,101 @@ export type Database = {
             columns: ["team_lead_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dispatch_access: {
+        Row: {
+          created_at: string
+          level: Database["public"]["Enums"]["permission_level"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          level?: Database["public"]["Enums"]["permission_level"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          level?: Database["public"]["Enums"]["permission_level"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dispatch_records: {
+        Row: {
+          card_count: number | null
+          cheque_amount: number | null
+          cheque_number: string | null
+          cheque_payee: string | null
+          cheque_status: string | null
+          client_id: string | null
+          client_name: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          dispatch_date: string
+          dispatcher_name: string | null
+          document_status: string
+          document_type: string
+          id: string
+          receiver_name: string | null
+          record_kind: string
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          card_count?: number | null
+          cheque_amount?: number | null
+          cheque_number?: string | null
+          cheque_payee?: string | null
+          cheque_status?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          dispatch_date?: string
+          dispatcher_name?: string | null
+          document_status?: string
+          document_type: string
+          id?: string
+          receiver_name?: string | null
+          record_kind?: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          card_count?: number | null
+          cheque_amount?: number | null
+          cheque_number?: string | null
+          cheque_payee?: string | null
+          cheque_status?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          dispatch_date?: string
+          dispatcher_name?: string | null
+          document_status?: string
+          document_type?: string
+          id?: string
+          receiver_name?: string | null
+          record_kind?: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -2005,6 +2112,76 @@ export type Database = {
           },
         ]
       }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          deal_id: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          deal_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          deal_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_records: {
         Row: {
           amount: number
@@ -2130,6 +2307,356 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      ticket_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_activity_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          storage_path: string
+          ticket_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          storage_path: string
+          ticket_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          storage_path?: string
+          ticket_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_attachments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          department: Database["public"]["Enums"]["ticket_department"]
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          department: Database["public"]["Enums"]["ticket_department"]
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          department?: Database["public"]["Enums"]["ticket_department"]
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      ticket_comments: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          mentions: string[]
+          ticket_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_comments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_sla_settings: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          hours: number
+          id: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          hours?: number
+          id?: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          hours?: number
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_sla_settings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          assigned_department:
+            | Database["public"]["Enums"]["ticket_department"]
+            | null
+          assigned_team_id: string | null
+          assigned_to: string | null
+          assignee_kind:
+            | Database["public"]["Enums"]["ticket_assignee_kind"]
+            | null
+          category_id: string | null
+          client_id: string | null
+          closed_at: string | null
+          created_at: string
+          created_by: string
+          deal_id: string | null
+          department: Database["public"]["Enums"]["ticket_department"]
+          description: string | null
+          due_date: string | null
+          first_response_at: string | null
+          id: string
+          insurance_company_id: string | null
+          policy_id: string | null
+          policy_number: string | null
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          resolution_minutes: number | null
+          resolved_at: string | null
+          service_module: string | null
+          sla_breached: boolean
+          sla_due_at: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          ticket_number: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_department?:
+            | Database["public"]["Enums"]["ticket_department"]
+            | null
+          assigned_team_id?: string | null
+          assigned_to?: string | null
+          assignee_kind?:
+            | Database["public"]["Enums"]["ticket_assignee_kind"]
+            | null
+          category_id?: string | null
+          client_id?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by: string
+          deal_id?: string | null
+          department: Database["public"]["Enums"]["ticket_department"]
+          description?: string | null
+          due_date?: string | null
+          first_response_at?: string | null
+          id?: string
+          insurance_company_id?: string | null
+          policy_id?: string | null
+          policy_number?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolution_minutes?: number | null
+          resolved_at?: string | null
+          service_module?: string | null
+          sla_breached?: boolean
+          sla_due_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          ticket_number: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_department?:
+            | Database["public"]["Enums"]["ticket_department"]
+            | null
+          assigned_team_id?: string | null
+          assigned_to?: string | null
+          assignee_kind?:
+            | Database["public"]["Enums"]["ticket_assignee_kind"]
+            | null
+          category_id?: string | null
+          client_id?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string
+          deal_id?: string | null
+          department?: Database["public"]["Enums"]["ticket_department"]
+          description?: string | null
+          due_date?: string | null
+          first_response_at?: string | null
+          id?: string
+          insurance_company_id?: string | null
+          policy_id?: string | null
+          policy_number?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolution_minutes?: number | null
+          resolved_at?: string | null
+          service_module?: string | null
+          sla_breached?: boolean
+          sla_due_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          ticket_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_assigned_team_id_fkey"
+            columns: ["assigned_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_insurance_company_id_fkey"
+            columns: ["insurance_company_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "v_renewals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       travel_posting_rows: {
         Row: {
@@ -2287,6 +2814,286 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      underwriting_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          request_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          request_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_activity_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "underwriting_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      underwriting_documents: {
+        Row: {
+          created_at: string
+          doc_type: string | null
+          file_path: string | null
+          id: string
+          name: string
+          request_id: string
+          status: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type?: string | null
+          file_path?: string | null
+          id?: string
+          name: string
+          request_id: string
+          status?: string
+          uploaded_by?: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string | null
+          file_path?: string | null
+          id?: string
+          name?: string
+          request_id?: string
+          status?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_documents_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "underwriting_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      underwriting_request_requirements: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          mandatory: boolean
+          notes: string | null
+          request_id: string
+          status: Database["public"]["Enums"]["uw_req_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          mandatory?: boolean
+          notes?: string | null
+          request_id: string
+          status?: Database["public"]["Enums"]["uw_req_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          mandatory?: boolean
+          notes?: string | null
+          request_id?: string
+          status?: Database["public"]["Enums"]["uw_req_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_request_requirements_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "underwriting_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      underwriting_requests: {
+        Row: {
+          agent_id: string
+          business_type: string | null
+          client_contact: string | null
+          client_id: string | null
+          client_type: string | null
+          coverage_required: string | null
+          created_at: string
+          created_by: string
+          deal_id: string | null
+          details: Json
+          estimated_premium: number | null
+          existing_policy_number: string | null
+          guarantee_request_type: string | null
+          id: string
+          insurance_class: Database["public"]["Enums"]["uw_class"]
+          insurer_id: string | null
+          payment_date: string | null
+          payment_received: boolean
+          policy_number: string | null
+          premium: number | null
+          previous_insurer: string | null
+          product: string | null
+          remarks: string | null
+          request_date: string
+          request_no: string | null
+          required_from: string | null
+          required_until: string | null
+          requirement_details: string | null
+          status: Database["public"]["Enums"]["uw_status"]
+          sum_insured: number | null
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string
+          business_type?: string | null
+          client_contact?: string | null
+          client_id?: string | null
+          client_type?: string | null
+          coverage_required?: string | null
+          created_at?: string
+          created_by?: string
+          deal_id?: string | null
+          details?: Json
+          estimated_premium?: number | null
+          existing_policy_number?: string | null
+          guarantee_request_type?: string | null
+          id?: string
+          insurance_class?: Database["public"]["Enums"]["uw_class"]
+          insurer_id?: string | null
+          payment_date?: string | null
+          payment_received?: boolean
+          policy_number?: string | null
+          premium?: number | null
+          previous_insurer?: string | null
+          product?: string | null
+          remarks?: string | null
+          request_date?: string
+          request_no?: string | null
+          required_from?: string | null
+          required_until?: string | null
+          requirement_details?: string | null
+          status?: Database["public"]["Enums"]["uw_status"]
+          sum_insured?: number | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          business_type?: string | null
+          client_contact?: string | null
+          client_id?: string | null
+          client_type?: string | null
+          coverage_required?: string | null
+          created_at?: string
+          created_by?: string
+          deal_id?: string | null
+          details?: Json
+          estimated_premium?: number | null
+          existing_policy_number?: string | null
+          guarantee_request_type?: string | null
+          id?: string
+          insurance_class?: Database["public"]["Enums"]["uw_class"]
+          insurer_id?: string | null
+          payment_date?: string | null
+          payment_received?: boolean
+          policy_number?: string | null
+          premium?: number | null
+          previous_insurer?: string | null
+          product?: string | null
+          remarks?: string | null
+          request_date?: string
+          request_no?: string | null
+          required_from?: string | null
+          required_until?: string | null
+          requirement_details?: string | null
+          status?: Database["public"]["Enums"]["uw_status"]
+          sum_insured?: number | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "underwriting_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "underwriting_requests_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "underwriting_requests_insurer_id_fkey"
+            columns: ["insurer_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      underwriting_requirement_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          insurance_class: Database["public"]["Enums"]["uw_class"]
+          label: string
+          mandatory: boolean
+          sort_order: number
+          updated_at: string
+          variant: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          insurance_class: Database["public"]["Enums"]["uw_class"]
+          label: string
+          mandatory?: boolean
+          sort_order?: number
+          updated_at?: string
+          variant?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          insurance_class?: Database["public"]["Enums"]["uw_class"]
+          label?: string
+          mandatory?: boolean
+          sort_order?: number
+          updated_at?: string
+          variant?: string | null
+        }
+        Relationships: []
       }
       user_module_permissions: {
         Row: {
@@ -2474,10 +3281,19 @@ export type Database = {
       }
     }
     Functions: {
+      can_view_ticket: {
+        Args: { _t: Database["public"]["Tables"]["tickets"]["Row"] }
+        Returns: boolean
+      }
+      can_view_uw: { Args: { _req: string }; Returns: boolean }
       current_user_team: { Args: never; Returns: string }
       deal_policy_conflict: {
         Args: { _exclude_row?: string; _policy_number: string }
         Returns: Json
+      }
+      dispatch_allows: {
+        Args: { _min: Database["public"]["Enums"]["permission_level"] }
+        Returns: boolean
       }
       has_role: {
         Args: {
@@ -2562,6 +3378,53 @@ export type Database = {
         | "marketing_budget_tax"
         | "commission_taker_tax"
         | "b2b_commission_tax"
+      ticket_assignee_kind: "employee" | "team" | "department"
+      ticket_department: "operations" | "accounts" | "technology" | "sales"
+      ticket_priority: "critical" | "high" | "medium" | "low"
+      ticket_status:
+        | "new"
+        | "assigned"
+        | "in_progress"
+        | "on_hold"
+        | "resolved"
+        | "closed"
+        | "reopened"
+      uw_class:
+        | "motor"
+        | "health"
+        | "life"
+        | "fire"
+        | "marine"
+        | "engineering"
+        | "liability"
+        | "guarantee"
+        | "misc"
+        | "other"
+      uw_req_status:
+        | "pending"
+        | "received"
+        | "not_applicable"
+        | "rejected"
+        | "expired"
+      uw_status:
+        | "draft"
+        | "submitted"
+        | "underwriting_review"
+        | "information_required"
+        | "quotation_requested"
+        | "quotation_received"
+        | "quotation_shared"
+        | "customer_accepted"
+        | "proposal_requested"
+        | "proposal_received"
+        | "covernote_requested"
+        | "covernote_issued"
+        | "payment_pending"
+        | "payment_received"
+        | "policy_requested"
+        | "policy_issued"
+        | "completed"
+        | "won"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2577,12 +3440,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2606,11 +3469,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2631,11 +3494,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2656,11 +3519,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2673,11 +3536,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2745,6 +3608,57 @@ export const Constants = {
         "marketing_budget_tax",
         "commission_taker_tax",
         "b2b_commission_tax",
+      ],
+      ticket_assignee_kind: ["employee", "team", "department"],
+      ticket_department: ["operations", "accounts", "technology", "sales"],
+      ticket_priority: ["critical", "high", "medium", "low"],
+      ticket_status: [
+        "new",
+        "assigned",
+        "in_progress",
+        "on_hold",
+        "resolved",
+        "closed",
+        "reopened",
+      ],
+      uw_class: [
+        "motor",
+        "health",
+        "life",
+        "fire",
+        "marine",
+        "engineering",
+        "liability",
+        "guarantee",
+        "misc",
+        "other",
+      ],
+      uw_req_status: [
+        "pending",
+        "received",
+        "not_applicable",
+        "rejected",
+        "expired",
+      ],
+      uw_status: [
+        "draft",
+        "submitted",
+        "underwriting_review",
+        "information_required",
+        "quotation_requested",
+        "quotation_received",
+        "quotation_shared",
+        "customer_accepted",
+        "proposal_requested",
+        "proposal_received",
+        "covernote_requested",
+        "covernote_issued",
+        "payment_pending",
+        "payment_received",
+        "policy_requested",
+        "policy_issued",
+        "completed",
+        "won",
       ],
     },
   },

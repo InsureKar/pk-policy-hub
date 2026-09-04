@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Briefcase, Users, Building2, UsersRound, Settings2, Database, LogOut,
   Shield, RefreshCw, BarChart3, KanbanSquare, DollarSign, UserCog, ChevronDown,
   ChevronRight, Sun, Moon, Plus, Inbox, Target, UserSearch, Wallet, Receipt, FileText, CreditCard, CalendarClock,
-  Wallet2, Landmark, TrendingUp, Award, HandCoins, ReceiptText,
+  Wallet2, Landmark, TrendingUp, Award, HandCoins, ReceiptText, LifeBuoy, Ticket, FileSearch, PackageCheck,
 } from "lucide-react";
 
 import { useAuth, type AppRole, type AppModule } from "@/lib/auth";
@@ -47,6 +47,7 @@ const groups: NavGroup[] = [
       { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
       { to: "/clients", label: "Clients", icon: Building2, module: "clients" },
       { to: "/leads/unassigned", label: "Unassigned Leads", icon: Inbox, module: "leads", roles: ["admin"] },
+      { to: "/tasks", label: "Tasks", icon: CalendarClock },
     ],
   },
   {
@@ -72,6 +73,7 @@ const groups: NavGroup[] = [
       { to: "/accounts", label: "Dashboard", icon: LayoutDashboard },
       { to: "/accounts/receivables", label: "Receivables", icon: Receipt },
       { to: "/accounts/payables", label: "Payables", icon: Wallet, roles: ["admin", "management"] },
+      { to: "/accounts/sales", label: "Sales", icon: TrendingUp, roles: ["admin", "management"] },
       { to: "/accounts/tax", label: "Tax", icon: Landmark, roles: ["admin", "management"] },
       { to: "/accounts/b2b", label: "B2B Commission", icon: HandCoins, roles: ["admin", "management"] },
       { to: "/accounts/installments", label: "Installments", icon: CalendarClock },
@@ -84,15 +86,29 @@ const groups: NavGroup[] = [
     label: "Operations", icon: Landmark, module: "operations", roles: ["admin", "management", "team_lead", "do"],
     items: [
       { to: "/operations", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "management"] },
+      { to: "/operations/underwriting", label: "Underwriting", icon: FileSearch },
       { to: "/operations/payroll", label: "Payroll", icon: Wallet2, roles: ["admin", "management"] },
       { to: "/operations/commissions", label: "Commissions", icon: HandCoins, roles: ["admin", "management"] },
       { to: "/operations/performance", label: "Employee Performance", icon: Award, roles: ["admin", "management"] },
       { to: "/operations/expenses", label: "Expenses", icon: ReceiptText, roles: ["admin", "management"] },
       { to: "/operations/reimbursements", label: "Reimbursements", icon: HandCoins },
+      { to: "/operations/dispatch", label: "Dispatch Record", icon: PackageCheck },
       { to: "/operations/reports", label: "Ops Reports", icon: BarChart3, roles: ["admin", "management"] },
     ],
   },
   {
+    label: "Service Desk", icon: LifeBuoy,
+    items: [
+      { to: "/tickets", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/tickets/all", label: "Tickets", icon: Ticket },
+      { to: "/tickets/mine", label: "My Tickets", icon: Inbox },
+      { to: "/tickets/team", label: "Team Tickets", icon: UsersRound },
+      { to: "/tickets/sla", label: "SLA", icon: CalendarClock, roles: ["admin", "management", "team_lead"] },
+      { to: "/tickets/reports", label: "Reports", icon: BarChart3 },
+    ],
+  },
+  {
+
     label: "Master Data", icon: Database, module: "admin", roles: ["admin"], expandable: true,
     items: [
       { to: "/master", label: "Insurance Companies", icon: Building2, roles: ["admin"], search: { tab: "companies" } },

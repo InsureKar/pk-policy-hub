@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SubHeadTabs } from "@/components/SubHeadTabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,13 @@ const CATEGORY_LABEL: Record<string, string> = {
   other: "Other Payable",
 };
 
+const SUBHEADS = [
+  { value: "all", label: "All Payables" },
+  { value: "expense", label: "Expenses" },
+  { value: "tax", label: "Tax Payable" },
+  { value: "b2b_commission", label: "B2B Commission Payable" },
+];
+
 function PayablesPage() {
   const { hasRole } = useAuth();
   const isAdmin = hasRole(["admin", "management"]);
@@ -45,12 +53,13 @@ function PayablesPage() {
       const [p, profiles, deals] = await Promise.all([
         sb.from("payables").select("*").order("created_at", { ascending: false }),
         sb.from("profiles").select("id,full_name"),
-        sb.from("deals").select("id,deal_number"),
+        sb.from("deals").select("id,deal_number,b2b_commission,b2b_taker_id"),
       ]);
       return {
         rows: (p.data ?? []) as any[],
         profs: new Map(((profiles.data ?? []) as any[]).map(pr => [pr.id, pr.full_name])),
         deals: new Map(((deals.data ?? []) as any[]).map(d => [d.id, d.deal_number])),
+        dealB2b: new Map(((deals.data ?? []) as any[]).map(d => [d.id, Number(d.b2b_commission || 0)])),
       };
     },
   });
@@ -104,6 +113,8 @@ function PayablesPage() {
         <KPI label="Total Outstanding" value={fmtPKR(totals.outstanding)} tone="danger" />
       </div>
 
+      <SubHeadTabs value={category} onChange={setCategory} items={SUBHEADS} />
+
       <Card><CardContent className="p-4 grid grid-cols-1 md:grid-cols-5 gap-3">
         <Input placeholder="Search payee / deal / description" value={search} onChange={e => setSearch(e.target.value)} />
         <Select value={category} onValueChange={setCategory}>
@@ -134,6 +145,7 @@ function PayablesPage() {
             <TableHead>Payee</TableHead>
             <TableHead>Deal / Transaction</TableHead>
             <TableHead>Description</TableHead>
+            {category === "b2b_commission" && <TableHead className="text-right">Actual Gross Amount of Net Commission</TableHead>}
             <TableHead className="text-right">Original</TableHead>
             <TableHead className="text-right">Paid</TableHead>
             <TableHead className="text-right">Outstanding</TableHead>
@@ -150,6 +162,7 @@ function PayablesPage() {
                 <TableCell>{payeeOf(r)}</TableCell>
                 <TableCell className="font-mono text-xs">{data?.deals.get(r.deal_id) ?? "—"}</TableCell>
                 <TableCell className="max-w-[260px] truncate">{r.description ?? "—"}</TableCell>
+                {category === "b2b_commission" && <TableCell className="text-right tabular-nums">{fmtPKR(data?.dealB2b.get(r.deal_id) ?? 0)}</TableCell>}
                 <TableCell className="text-right tabular-nums">{fmtPKR(r.original_amount)}</TableCell>
                 <TableCell className="text-right tabular-nums text-emerald-600">{fmtPKR(r.paid_amount)}</TableCell>
                 <TableCell className="text-right tabular-nums font-medium">{fmtPKR(r.outstanding_amount ?? 0)}</TableCell>

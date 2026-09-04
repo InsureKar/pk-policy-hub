@@ -25,6 +25,7 @@ const EMPTY = {
   client_type: "corporate" as "individual" | "corporate",
   // corporate
   company_name: "", industry: "", ntn: "",
+  poc_name: "", poc_designation: "", poc_department: "",
   // individual
   full_name: "", date_of_birth: "", cnic: "",
   // shared
@@ -85,7 +86,9 @@ function ClientsPage() {
       date_of_birth: form.client_type === "individual" ? form.date_of_birth : null,
       cnic: form.client_type === "individual" ? (form.cnic.trim() || null) : null,
       // POC mirrors (back-compat)
-      poc_name: form.client_type === "individual" ? form.full_name.trim() : null,
+      poc_name: form.client_type === "individual" ? form.full_name.trim() : (form.poc_name.trim() || null),
+      poc_designation: form.poc_designation.trim() || null,
+      poc_department: form.poc_department.trim() || null,
       poc_number: form.phone.trim(),
       poc_email: form.email.trim() || null,
       poc_address: form.address.trim() || null,
@@ -140,6 +143,9 @@ function ClientsPage() {
                   <>
                     <F label="Company Name *"><Input value={form.company_name} onChange={(e)=>set("company_name", e.target.value)}/></F>
                     <F label="Industry"><Input value={form.industry} onChange={(e)=>set("industry", e.target.value)}/></F>
+                    <F label="POC Name"><Input value={form.poc_name} onChange={(e)=>set("poc_name", e.target.value)}/></F>
+                    <F label="POC Designation"><Input value={form.poc_designation} onChange={(e)=>set("poc_designation", e.target.value)}/></F>
+                    <F label="POC Department"><Input value={form.poc_department} onChange={(e)=>set("poc_department", e.target.value)}/></F>
                     <F label="City *"><Input value={form.city} onChange={(e)=>set("city", e.target.value)}/></F>
                     <F label="Phone *"><Input value={form.phone} onChange={(e)=>set("phone", e.target.value)} placeholder="+92 3XX XXXXXXX"/></F>
                     <F label="Email"><Input type="email" value={form.email} onChange={(e)=>set("email", e.target.value)}/></F>
