@@ -67,6 +67,15 @@ function DealsList() {
     });
   }, []);
 
+  // Last 24 months, newest first — used for the month filter.
+  const monthOptions = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 24 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleString("en-US", { month: "long", year: "numeric" }) };
+    });
+  }, []);
+
   const filtered = (data?.deals ?? []).filter((d: any) => {
     if (stage !== "all" && d.stage_id !== stage) return false;
     if (dealType !== "all" && d.deal_type !== dealType) return false;
