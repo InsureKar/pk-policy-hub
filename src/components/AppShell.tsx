@@ -54,7 +54,7 @@ const groups: NavGroup[] = [
     label: "Operations", icon: RefreshCw, module: "renewals",
     items: [
       { to: "/renewals", label: "Renewals", icon: RefreshCw },
-      { to: "/income", label: "Income", icon: DollarSign, roles: ["admin", "management", "team_lead"] },
+      { to: "/income", label: "Income", icon: DollarSign, roles: ["admin", "management"] },
     ],
   },
   {
