@@ -9,6 +9,7 @@ import { fmtPKR } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/targets")({
   component: TargetsPage,
@@ -147,7 +148,7 @@ function TargetRow({ user, role, existing, achieved, periodMonth, onSaved }: any
       </td>
       <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(achieved)}</td>
       <td className={`px-4 py-2.5 text-right tabular-nums ${pct >= 100 ? "text-emerald-500" : pct >= 50 ? "" : "text-destructive"}`}>{pct}%</td>
-      <td className="px-4 py-2.5"><Button size="sm" disabled={saving} onClick={save}>Save</Button></td>
+      <td className="px-4 py-2.5 flex items-center gap-1"><Button size="sm" disabled={saving} onClick={save}>Save</Button>{existing && <DeleteButton table="user_targets" id={existing.id} label="target" onDeleted={onSaved} />}</td>
     </tr>
   );
 }
