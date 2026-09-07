@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, APP_MODULES, MODULE_LABELS, type AppModule, type PermissionLevel, type AppRole } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { SubHeadTabs } from "@/components/SubHeadTabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -29,10 +30,17 @@ const PRESETS: Record<string, Partial<Record<AppModule, PermissionLevel>>> = {
   "Sales / DO": { dashboard: "view", leads: "add", clients: "add", deals: "add", renewals: "edit", accounts: "none", operations: "none", reports: "view", admin: "none", settings: "view" },
 };
 
+const SUB_HEADS = [
+  { value: "matrix", label: "Permission Matrix" },
+  { value: "templates", label: "Access Templates" },
+  { value: "audit", label: "Audit Log" },
+];
+
 function PermissionsPage() {
   const { hasRole, loading, user } = useAuth();
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string>("");
+  const [head, setHead] = useState<string>("matrix");
 
   const { data } = useQuery({
     queryKey: ["permissions-admin"],
@@ -87,6 +95,10 @@ function PermissionsPage() {
     <div className="p-6 max-w-[1200px] mx-auto">
       <PageHeader title="User Access & Permissions" subtitle="Management-only control of module access. Enforced in the database, not just the interface." />
 
+      <div className="mb-4">
+        <SubHeadTabs value={head} onChange={setHead} items={SUB_HEADS} />
+      </div>
+
       <Card className="mb-4">
         <CardContent className="p-4 flex flex-wrap items-end gap-3">
           <div className="min-w-[260px]">
@@ -100,12 +112,14 @@ function PermissionsPage() {
               </SelectContent>
             </Select>
           </div>
+          {head === "templates" && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Templates:</span>
             {Object.keys(PRESETS).map(name => (
               <Button key={name} size="sm" variant="outline" onClick={() => applyPreset(name)}>{name}</Button>
             ))}
           </div>
+          )}
           <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="w-4 h-4" />
             Role: {data?.roles.filter(r => r.user_id === userId).map(r => r.role).join(", ") || "do"}
@@ -113,6 +127,7 @@ function PermissionsPage() {
         </CardContent>
       </Card>
 
+      {head === "matrix" && (
       <Card>
         <CardHeader><CardTitle className="text-base">Permission Matrix — {nameOf(userId)}</CardTitle></CardHeader>
         <CardContent>
@@ -153,7 +168,9 @@ function PermissionsPage() {
           </p>
         </CardContent>
       </Card>
+      )}
 
+      {head === "audit" && (
       <Card className="mt-4">
         <CardHeader><CardTitle className="text-base">Permission Audit Log</CardTitle></CardHeader>
         <CardContent>
@@ -189,6 +206,7 @@ function PermissionsPage() {
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
