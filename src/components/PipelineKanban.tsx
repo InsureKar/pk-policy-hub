@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtPKR } from "@/lib/format";
 import { toast } from "sonner";
 import { GripVertical } from "lucide-react";
+import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 
 const STAGE_COLORS: Record<string, string> = {
   created: "#c8d34a",
@@ -21,6 +22,7 @@ type Props = { lockUserId?: string };
 
 export function PipelineKanban({ lockUserId }: Props) {
   const qc = useQueryClient();
+  const scope = useVisibilityScope();
   const [userId, setUserId] = useState<string>(lockUserId ?? "all");
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
 
@@ -48,10 +50,11 @@ export function PipelineKanban({ lockUserId }: Props) {
 
   const deals = useMemo(() => {
     return (data?.deals ?? []).filter((d: any) => {
+      if (!isVisibleRow(d, scope)) return false;
       if (userId !== "all" && d.assigned_do_id !== userId && d.team_lead_id !== userId) return false;
       return true;
     });
-  }, [data, userId]);
+  }, [data, userId, scope]);
 
   const moveDeal = async (dealId: string, stageId: string) => {
     const { error } = await supabase.from("deals").update({ stage_id: stageId }).eq("id", dealId);
@@ -71,7 +74,7 @@ export function PipelineKanban({ lockUserId }: Props) {
           disabled={!!lockUserId}
         >
           <option value="all">All users</option>
-          {(data?.profiles ?? []).map((p: any) => (
+          {(data?.profiles ?? []).filter((p: any) => scope.all || scope.ids.includes(p.id)).map((p: any) => (
             <option key={p.id} value={p.id}>{p.full_name}</option>
           ))}
         </select>
