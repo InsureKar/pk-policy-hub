@@ -2,11 +2,10 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtPKR } from "@/lib/format";
-import { DateField } from "@/components/DateField";
+import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 
 type Props = {
   defaultFrom?: string;
@@ -28,22 +27,52 @@ const STAGE_COLORS: Record<string, string> = {
 const stageColor = (name: string) =>
   STAGE_COLORS[name.trim().toLowerCase()] ?? "hsl(var(--muted-foreground))";
 
-function firstOfYear() {
-  const d = new Date();
-  return new Date(d.getFullYear(), 0, 1).toISOString().slice(0, 10);
-}
-function lastOfYear() {
-  const d = new Date();
-  return new Date(d.getFullYear(), 11, 31).toISOString().slice(0, 10);
+type Mode = "month" | "quarter" | "year";
+
+const MONTHS = Array.from({ length: 12 }, (_, i) => ({
+  value: String(i),
+  label: new Date(2000, i, 1).toLocaleString("en-US", { month: "long" }),
+}));
+
+const QUARTERS = [
+  { value: "1", label: "Q1 (Jan – Mar)", start: 0, end: 2 },
+  { value: "2", label: "Q2 (Apr – Jun)", start: 3, end: 5 },
+  { value: "3", label: "Q3 (Jul – Sep)", start: 6, end: 8 },
+  { value: "4", label: "Q4 (Oct – Dec)", start: 9, end: 11 },
+];
+
+function rangeFor(mode: Mode, year: number, month: number, quarter: string) {
+  let startM = 0;
+  let endM = 11;
+  if (mode === "month") { startM = month; endM = month; }
+  else if (mode === "quarter") {
+    const q = QUARTERS.find((x) => x.value === quarter)!;
+    startM = q.start; endM = q.end;
+  } else if (mode === "year" && month >= 0) { startM = month; endM = month; }
+  const start = new Date(year, startM, 1);
+  const end = new Date(year, endM + 1, 0, 23, 59, 59, 999);
+  return { start, end };
 }
 
-export function PipelineFunnel({ defaultFrom, defaultTo, lockUserId, title }: Props) {
-  const [fromDraft, setFromDraft] = useState(defaultFrom ?? firstOfYear());
-  const [toDraft, setToDraft] = useState(defaultTo ?? lastOfYear());
+export function PipelineFunnel({ lockUserId, title }: Props) {
+  const scope = useVisibilityScope();
+  const now = new Date();
+  const years = Array.from({ length: 7 }, (_, i) => now.getFullYear() - 4 + i);
+
+  const [modeDraft, setModeDraft] = useState<Mode>("year");
+  const [yearDraft, setYearDraft] = useState<number>(now.getFullYear());
+  const [monthDraft, setMonthDraft] = useState<number>(now.getMonth());
+  const [yearMonthDraft, setYearMonthDraft] = useState<string>("all"); // month picker inside year mode
+  const [quarterDraft, setQuarterDraft] = useState<string>(String(Math.floor(now.getMonth() / 3) + 1));
   const [userDraft, setUserDraft] = useState<string>(lockUserId ?? "all");
-  const [from, setFrom] = useState(fromDraft);
-  const [to, setTo] = useState(toDraft);
-  const [userId, setUserId] = useState<string>(userDraft);
+
+  const [applied, setApplied] = useState({
+    mode: "year" as Mode,
+    year: now.getFullYear(),
+    month: -1,
+    quarter: String(Math.floor(now.getMonth() / 3) + 1),
+    userId: lockUserId ?? "all",
+  });
 
   const { data } = useQuery({
     queryKey: ["pipeline-funnel"],
@@ -61,20 +90,24 @@ export function PipelineFunnel({ defaultFrom, defaultTo, lockUserId, title }: Pr
     },
   });
 
+  const visibleProfiles = useMemo(
+    () => (data?.profiles ?? []).filter((p: any) => scope.all || scope.ids.includes(p.id)),
+    [data, scope.all, scope.ids],
+  );
+
   const filteredDeals = useMemo(() => {
-    const start = new Date(from);
-    const end = new Date(to);
-    end.setHours(23, 59, 59, 999);
+    const { start, end } = rangeFor(applied.mode, applied.year, applied.month, applied.quarter);
     return (data?.deals ?? []).filter((d: any) => {
+      if (!isVisibleRow(d, scope)) return false;
       const dt = new Date(d.created_at);
-      if (isNaN(+start) || isNaN(+end)) return true;
       if (dt < start || dt > end) return false;
-      if (userId !== "all") {
-        if (d.assigned_do_id !== userId && d.team_lead_id !== userId) return false;
+      if (applied.userId !== "all") {
+        if (!scope.all && !scope.ids.includes(applied.userId)) return false;
+        if (d.assigned_do_id !== applied.userId && d.team_lead_id !== applied.userId) return false;
       }
       return true;
     });
-  }, [data, from, to, userId]);
+  }, [data, applied, scope]);
 
   const stages = data?.stages ?? [];
   const wonIds = new Set(stages.filter((s: any) => s.is_won).map((s: any) => s.id));
@@ -83,10 +116,20 @@ export function PipelineFunnel({ defaultFrom, defaultTo, lockUserId, title }: Pr
   const overallTotal = filteredDeals.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
 
   const apply = () => {
-    setFrom(fromDraft);
-    setTo(toDraft);
-    setUserId(userDraft);
+    setApplied({
+      mode: modeDraft,
+      year: yearDraft,
+      month: modeDraft === "month" ? monthDraft : modeDraft === "year" ? (yearMonthDraft === "all" ? -1 : Number(yearMonthDraft)) : -1,
+      quarter: quarterDraft,
+      userId: userDraft,
+    });
   };
+
+  const periodLabel = (() => {
+    if (applied.mode === "month") return `${MONTHS[applied.month]?.label} ${applied.year}`;
+    if (applied.mode === "quarter") return `${QUARTERS.find((q) => q.value === applied.quarter)?.label} ${applied.year}`;
+    return applied.month >= 0 ? `${MONTHS[applied.month].label} ${applied.year}` : `Year ${applied.year}`;
+  })();
 
   const sections: { key: string; label: string; deals: any[] }[] = [
     {
@@ -110,26 +153,68 @@ export function PipelineFunnel({ defaultFrom, defaultTo, lockUserId, title }: Pr
     <div className="rounded-lg border bg-card">
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3 p-3 border-b">
-        <label className="text-sm text-muted-foreground">Date</label>
-        <DateField value={fromDraft} onChange={(v) => setFromDraft(v)} className="w-[150px]"/>
-        <span className="text-muted-foreground">–</span>
-        <DateField value={toDraft} onChange={(v) => setToDraft(v)} className="w-[150px]"/>
-        {!lockUserId && (
+        <Select value={modeDraft} onValueChange={(v) => setModeDraft(v as Mode)}>
+          <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="month">Month Wise</SelectItem>
+            <SelectItem value="quarter">Quarter Wise</SelectItem>
+            <SelectItem value="year">Year Wise</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={String(yearDraft)} onValueChange={(v) => setYearDraft(Number(v))}>
+          <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        {modeDraft === "month" && (
+          <Select value={String(monthDraft)} onValueChange={(v) => setMonthDraft(Number(v))}>
+            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+
+        {modeDraft === "quarter" && (
+          <Select value={quarterDraft} onValueChange={setQuarterDraft}>
+            <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {QUARTERS.map((q) => <SelectItem key={q.value} value={q.value}>{q.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+
+        {modeDraft === "year" && (
+          <Select value={yearMonthDraft} onValueChange={setYearMonthDraft}>
+            <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All 12 months</SelectItem>
+              {MONTHS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label} {yearDraft}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+
+        {!lockUserId && (scope.all || scope.ids.length > 1) && (
           <Select value={userDraft} onValueChange={setUserDraft}>
             <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All users</SelectItem>
-              {(data?.profiles ?? []).map((p: any) => (
+              {visibleProfiles.map((p: any) => (
                 <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         )}
         <Button variant="outline" onClick={apply}>Apply</Button>
+        <span className="text-sm text-muted-foreground">{periodLabel}</span>
         <Link to="/master" search={{ tab: "pipeline" }} className="ml-auto">
           <Button variant="outline" size="sm">Setup pipelines</Button>
         </Link>
       </div>
+
 
       {title && <div className="px-4 pt-3 text-sm font-medium">{title}</div>}
 
