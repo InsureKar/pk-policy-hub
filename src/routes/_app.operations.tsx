@@ -7,19 +7,19 @@ export const Route = createFileRoute("/_app/operations")({
 });
 
 const tabs = [
-  { to: "/operations", label: "Dashboard", exact: true, adminOnly: true },
+  { to: "/operations", label: "Dashboard", exact: true, adminOnly: true, perm: "operations.dashboard" },
   { to: "/operations/underwriting", label: "Underwriting", adminOnly: false },
-  { to: "/operations/payroll", label: "Payroll", adminOnly: true },
+  { to: "/operations/payroll", label: "Payroll", adminOnly: true, perm: "admin.payroll" },
   { to: "/operations/commissions", label: "Commissions", adminOnly: true },
   { to: "/operations/performance", label: "Performance", adminOnly: true },
-  { to: "/operations/expenses", label: "Expenses", adminOnly: true },
+  { to: "/operations/expenses", label: "Expenses", adminOnly: true, perm: "operations.expenses" },
   { to: "/operations/reimbursements", label: "Reimbursements", adminOnly: false },
-  { to: "/operations/dispatch", label: "Dispatch Record", adminOnly: false },
+  { to: "/operations/dispatch", label: "Dispatch Record", adminOnly: false, perm: "operations.dispatch" },
   { to: "/operations/reports", label: "Reports", adminOnly: true },
 ];
 
 function OperationsLayout() {
-  const { hasRole, loading } = useAuth();
+  const { hasRole, loading, allow } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   if (loading) return null;
   if (!hasRole(["admin", "management", "team_lead", "do"])) {
@@ -33,7 +33,7 @@ function OperationsLayout() {
         <p className="text-sm text-muted-foreground mt-1">Payroll, expenses, reimbursements, and workforce analytics.</p>
       </div>
       <nav className="flex flex-wrap gap-1 border-b mb-6 overflow-x-auto">
-        {tabs.filter(t => !t.adminOnly || isAdmin).map((t) => {
+        {tabs.filter(t => (!t.adminOnly || isAdmin) && (!(t as any).perm || allow((t as any).perm))).map((t) => {
           const active = t.exact ? pathname === t.to : pathname.startsWith(t.to);
           return (
             <Link key={t.to} to={t.to}

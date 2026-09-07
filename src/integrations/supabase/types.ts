@@ -3122,6 +3122,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          level: string
+          perm_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level: string
+          perm_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: string
+          perm_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3317,6 +3344,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["permission_level"]
       }
       normalize_policy_number: { Args: { _v: string }; Returns: string }
+      perm_key_level: { Args: { _key: string; _user: string }; Returns: string }
       perm_rank: {
         Args: { _l: Database["public"]["Enums"]["permission_level"] }
         Returns: number
