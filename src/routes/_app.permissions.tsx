@@ -94,6 +94,10 @@ function PermissionsPage() {
     <div className="p-6 max-w-[1200px] mx-auto">
       <PageHeader title="User Access & Permissions" subtitle="Management-only control of module access. Enforced in the database, not just the interface." />
 
+      <div className="mb-4">
+        <SubHeadTabs value={head} onChange={setHead} items={SUB_HEADS} />
+      </div>
+
       <Card className="mb-4">
         <CardContent className="p-4 flex flex-wrap items-end gap-3">
           <div className="min-w-[260px]">
@@ -107,12 +111,14 @@ function PermissionsPage() {
               </SelectContent>
             </Select>
           </div>
+          {head === "templates" && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Templates:</span>
             {Object.keys(PRESETS).map(name => (
               <Button key={name} size="sm" variant="outline" onClick={() => applyPreset(name)}>{name}</Button>
             ))}
           </div>
+          )}
           <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="w-4 h-4" />
             Role: {data?.roles.filter(r => r.user_id === userId).map(r => r.role).join(", ") || "do"}
