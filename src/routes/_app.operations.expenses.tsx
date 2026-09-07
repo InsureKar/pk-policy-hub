@@ -15,6 +15,7 @@ import { Plus, Upload } from "lucide-react";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { DateField } from "@/components/DateField";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/operations/expenses")({
   component: ExpensesPage,
@@ -143,6 +144,7 @@ function ExpensesPage() {
             <TableHead className="text-right">Amount</TableHead>
             <TableHead className="text-right">Tax</TableHead>
             <TableHead className="text-right">Total</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow></TableHeader>
           <TableBody>
             {filtered.map((e: any) => {
@@ -158,10 +160,11 @@ function ExpensesPage() {
                   <TableCell className="text-right tabular-nums">{fmtPKR(e.amount)}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmtPKR(e.tax_amount)}</TableCell>
                   <TableCell className="text-right tabular-nums font-medium">{fmtPKR(Number(e.amount) + Number(e.tax_amount))}</TableCell>
+                  <TableCell className="text-right"><DeleteButton table="expenses" id={e.id} label="expense" invalidate={["expenses"]} /></TableCell>
                 </TableRow>
               );
             })}
-            {filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No expenses</TableCell></TableRow>}
+            {filtered.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No expenses</TableCell></TableRow>}
           </TableBody>
         </Table>
       </CardContent></Card>

@@ -17,6 +17,7 @@ import { Download } from "lucide-react";
 import { DateField } from "@/components/DateField";
 import { SubHeadTabs } from "@/components/SubHeadTabs";
 import { DealAmountTable } from "@/components/DealAmountTable";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/accounts/receivables")({
   component: ReceivablesPage,
@@ -217,6 +218,7 @@ function ReceivablesPage() {
                       {r.status !== "paid" && r.status !== "cancelled" && (
                         <RecordPaymentDialog receivable={r}/>
                       )}
+                      <DeleteButton table="receivables" id={r.id} label="receivable" invalidate={["accounts-receivables"]} />
                     </TableCell>
                   )}
                 </TableRow>

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { useAuth } from "@/lib/auth";
 import { Progress } from "@/components/ui/progress";
 import { PipelineFunnel } from "@/components/PipelineFunnel";
+import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -18,8 +20,10 @@ export const Route = createFileRoute("/_app/dashboard")({
 
 function DashboardPage() {
   const { hasRole, user } = useAuth();
+  const scope = useVisibilityScope();
   const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
-  const { data, isLoading } = useQuery({
+  const canSeeIncome = hasRole(["admin", "management"]);
+  const { data: raw, isLoading } = useQuery({
     queryKey: ["dashboard", user?.id],
     queryFn: async () => {
       const [{ data: deals }, { data: stages }, { data: companies }, { data: settings }, { data: targets }] = await Promise.all([
@@ -33,9 +37,19 @@ function DashboardPage() {
     },
   });
 
-  if (isLoading || !data) {
+  const data = useMemo(() => {
+    if (!raw) return null;
+    return {
+      ...raw,
+      deals: raw.deals.filter((d) => isVisibleRow(d, scope)),
+      targets: raw.targets.filter((t: any) => scope.all || scope.ids.includes(t.user_id)),
+    };
+  }, [raw, scope]);
+
+  if (isLoading || !data || scope.loading) {
     return <div className="p-6"><PageHeader title="Dashboard" /><div className="text-muted-foreground">Loading…</div></div>;
   }
+
 
   const wonStageIds = new Set(data.stages.filter((s) => s.is_won).map((s) => s.id));
   const lostStageIds = new Set(data.stages.filter((s) => s.is_lost).map((s) => s.id));
@@ -123,12 +137,12 @@ function DashboardPage() {
   const ytdPct = myYtdTarget > 0 ? Math.round((myWonYtd / myYtdTarget) * 100) : 0;
   const monthOverMonth = monthPct - lastMonthPct;
 
-  const financialKpis = [
+  const financialKpis: { label: string; value: string; icon: any }[] = [
     { label: "Gross Premium", value: fmtPKR(totalGross), icon: Wallet },
     { label: "Net Premium", value: fmtPKR(totalNet), icon: Coins },
     { label: "Tagged Premium", value: fmtPKR(tagged), icon: BadgePercent },
-    { label: "Total Income", value: fmtPKR(totalIncome), icon: TrendingUp },
   ];
+  if (canSeeIncome) financialKpis.push({ label: "Total Income", value: fmtPKR(totalIncome), icon: TrendingUp });
   const activityKpis = [
     { label: "Total Deals", value: total.toString(), icon: Briefcase },
     { label: "Won", value: won.toString(), icon: CheckCircle2 },
@@ -203,7 +217,7 @@ function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle className="text-base">{canSeeFinancials ? "Monthly Premium & Income (excl. Lost)" : "Monthly Gross Premium (excl. Lost)"}</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">{canSeeIncome ? "Monthly Premium & Income (excl. Lost)" : "Monthly Gross Premium (excl. Lost)"}</CardTitle></CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={months}>
@@ -212,7 +226,7 @@ function DashboardPage() {
                 <YAxis fontSize={12} tickFormatter={(v)=> v>=1e6?`${(v/1e6).toFixed(1)}M`: v>=1e3?`${(v/1e3).toFixed(0)}k`:String(v)}/>
                 <Tooltip formatter={(v: number) => fmtPKR(v)} />
                 <Bar dataKey="gross" fill="oklch(0.55 0.18 252)" name="Gross Premium" radius={[4,4,0,0]}/>
-                {canSeeFinancials && <Bar dataKey="income" fill="oklch(0.62 0.16 155)" name="Income" radius={[4,4,0,0]}/>}
+                {canSeeIncome && <Bar dataKey="income" fill="oklch(0.62 0.16 155)" name="Income" radius={[4,4,0,0]}/>}
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

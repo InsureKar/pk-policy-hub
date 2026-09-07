@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { Download } from "lucide-react";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/accounts/tax")({
   component: TaxPage,
@@ -184,7 +185,7 @@ function TaxPage() {
                 <TableCell className="text-right tabular-nums text-amber-600">{fmtPKR(Math.max(0, Number(r.amount) - Number(r.paid_amount)))}</TableCell>
                 <TableCell>{fmtDate(r.period_date)}</TableCell>
                 <TableCell><StatusBadge status={statusOf(r)} /></TableCell>
-                <TableCell className="text-right">{statusOf(r) !== "paid" && <PayTaxDialog record={r} />}</TableCell>
+                <TableCell className="text-right whitespace-nowrap">{statusOf(r) !== "paid" && <PayTaxDialog record={r} />}<DeleteButton table="tax_records" id={r.id} label="tax record" invalidate={["accounts-tax"]} /></TableCell>
               </TableRow>
             ))}
           </TableBody>

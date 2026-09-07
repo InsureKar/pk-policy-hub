@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { fmtPKR } from "@/lib/format";
 import { toast } from "sonner";
 import { DateField } from "@/components/DateField";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/operations/payroll")({
   component: PayrollPage,
@@ -146,6 +147,7 @@ function PayrollPage() {
                     {!r.run && <Button size="sm" variant="outline" onClick={() => runPayroll(r)}>Generate</Button>}
                     {r.run && r.run.status !== "paid" && <Button size="sm" onClick={() => setPayDialog({ ...r.run })}>Mark Paid</Button>}
                     {r.run && <Button size="sm" variant="ghost" onClick={() => printPayslip(r, r.run, year, month)}>Payslip</Button>}
+                    {r.run && <DeleteButton table="payroll_runs" id={r.run.id} label="payroll run" invalidate={["payroll"]} />}
                   </TableCell>
                 </TableRow>
               );

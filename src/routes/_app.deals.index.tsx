@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { Plus, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { DeleteButton } from "@/components/DeleteButton";
+import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 
 export type DealsSearch = { stage?: string; dealType?: string; category?: string };
 
@@ -25,7 +27,9 @@ export const Route = createFileRoute("/_app/deals/")({
 
 function DealsList() {
   const { hasRole } = useAuth();
+  const scope = useVisibilityScope();
   const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
+  const canSeeIncome = hasRole(["admin", "management"]);
   const search = Route.useSearch();
   const [q, setQ] = useState("");
   const [stage, setStage] = useState<string>(search.stage ?? "all");
@@ -68,6 +72,7 @@ function DealsList() {
   }, []);
 
   const filtered = (data?.deals ?? []).filter((d: any) => {
+    if (!isVisibleRow(d, scope)) return false;
     if (stage !== "all" && d.stage_id !== stage) return false;
     if (dealType !== "all" && d.deal_type !== dealType) return false;
     if (category !== "all" && d.insurance_type_id !== category) return false;
@@ -135,8 +140,9 @@ function DealsList() {
                 <th className="text-left px-4 py-2.5">Stage</th>
                 <th className="text-left px-4 py-2.5">DO</th>
                 <th className="text-right px-4 py-2.5">Gross Premium</th>
-                {canSeeFinancials && <th className="text-right px-4 py-2.5">Total Income</th>}
+                {canSeeIncome && <th className="text-right px-4 py-2.5">Total Income</th>}
                 <th className="text-left px-4 py-2.5">Created</th>
+                <th className="text-right px-4 py-2.5">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -153,13 +159,14 @@ function DealsList() {
                     </td>
                     <td className="px-4 py-2.5">{d.assigned_do_id ? profileMap.get(d.assigned_do_id) ?? "—" : <span className="text-muted-foreground italic">Unassigned</span>}</td>
                     <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(Number(d.gross_premium))}</td>
-                    {canSeeFinancials && <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(Number(d.total_income))}</td>}
+                    {canSeeIncome && <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(Number(d.total_income))}</td>}
                     <td className="px-4 py-2.5 text-muted-foreground">{fmtDate(d.created_at)}</td>
+                    <td className="px-4 py-2.5 text-right"><DeleteButton table="deals" id={d.id} label="deal" invalidate={["deals"]} /></td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={canSeeFinancials ? 9 : 8} className="text-center py-12 text-muted-foreground">No deals found. <Link to="/deals/new" className="text-primary hover:underline">Create your first deal</Link>.</td></tr>
+                <tr><td colSpan={9 + (canSeeIncome ? 1 : 0)} className="text-center py-12 text-muted-foreground">No deals found. <Link to="/deals/new" className="text-primary hover:underline">Create your first deal</Link>.</td></tr>
               )}
             </tbody>
           </table>

@@ -242,18 +242,36 @@ function NewDealPage() {
     if (hitPolicy) setCnError("Cover note already used on an existing bulk policy row");
   };
 
-  // ── Payment proof upload (mandatory before a deal can be saved) ──
+  // ── Payment receipts upload (at least one required before a deal can be saved) ──
   const [uploading, setUploading] = useState(false);
-  const uploadProof = async (file: File) => {
-    if (!user) return;
+  const [proofs, setProofs] = useState<{ path: string; name: string }[]>([]);
+  const uploadProofs = async (fileList: File[]) => {
+    if (!user || fileList.length === 0) return;
     setUploading(true);
-    const path = `payment-proofs/${user.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
-    const { error } = await supabase.storage.from("crm-documents").upload(path, file, { upsert: false });
+    const done: { path: string; name: string }[] = [];
+    for (const file of fileList) {
+      const path = `payment-proofs/${user.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+      const { error } = await supabase.storage.from("crm-documents").upload(path, file, { upsert: false });
+      if (error) toast.error(`${file.name}: ${error.message}`);
+      else done.push({ path, name: file.name });
+    }
     setUploading(false);
-    if (error) return toast.error(error.message);
-    set("payment_proof_url", path);
-    toast.success("Payment proof uploaded");
+    if (!done.length) return;
+    setProofs((prev) => {
+      const next = [...prev, ...done];
+      set("payment_proof_url", next[0].path);
+      return next;
+    });
+    toast.success(`${done.length} receipt(s) uploaded`);
   };
+  const removeProof = (path: string) => {
+    setProofs((prev) => {
+      const next = prev.filter((p) => p.path !== path);
+      set("payment_proof_url", next[0]?.path ?? "");
+      return next;
+    });
+  };
+
 
 
   const submit = async () => {
@@ -333,6 +351,17 @@ function NewDealPage() {
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
+    if (data && proofs.length) {
+      const { error: dErr } = await supabase.from("deal_documents").insert(
+        proofs.map((p) => ({
+          deal_id: data.id, client_id: form.client_id || null,
+          doc_type: "payment_receipt", file_name: p.name,
+          storage_path: p.path, uploaded_by: user.id,
+        })),
+      );
+      if (dErr) toast.error("Deal created, but receipts failed to attach: " + dErr.message);
+    }
+
     if (form.policy_type === "bulk" && data && isTravel) {
       const payable = travelRows.reduce((a, r) => a + payableOf(r), 0);
       const transferred = travelTransfers.reduce((a, t) => a + Number(t.amount || 0), 0);
@@ -671,13 +700,24 @@ function NewDealPage() {
                   </Field>
                 </div>
                 <div className="sm:col-span-3 space-y-1.5">
-                  <Label className="text-xs">Payment Proof * (required to save the deal)</Label>
-                  <Input type="file" accept="image/*,application/pdf" disabled={uploading}
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadProof(f); }} />
-                  <p className={`text-xs ${form.payment_proof_url ? "text-emerald-600" : "text-muted-foreground"}`}>
-                    {uploading ? "Uploading…" : form.payment_proof_url ? `Attached: ${form.payment_proof_url.split("/").pop()}` : "Attach the receipt / deposit slip / transfer screenshot."}
+                  <Label className="text-xs">Payment Receipts * (attach one or more)</Label>
+                  <Input type="file" multiple accept="image/*,application/pdf" disabled={uploading}
+                    onChange={(e) => { const fs = Array.from(e.target.files ?? []); if (fs.length) uploadProofs(fs); e.currentTarget.value = ""; }} />
+                  {proofs.length > 0 && (
+                    <ul className="space-y-1">
+                      {proofs.map((p) => (
+                        <li key={p.path} className="flex items-center justify-between rounded border px-2 py-1 text-xs">
+                          <span className="truncate">{p.name}</span>
+                          <button type="button" className="text-destructive ml-2" onClick={() => removeProof(p.path)}>Remove</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className={`text-xs ${proofs.length ? "text-emerald-600" : "text-muted-foreground"}`}>
+                    {uploading ? "Uploading…" : proofs.length ? `${proofs.length} receipt(s) attached` : "Attach receipts / deposit slips / transfer screenshots."}
                   </p>
                 </div>
+
                 <p className="sm:col-span-3 text-xs text-muted-foreground">
                   {form.payment_destination === "company"
                     ? "Payments collected by the company post to Accounts as a premium receivable, and the amount payable onward to the insurance company appears under the Payables / expense head."

@@ -67,7 +67,7 @@ function PerformancePage() {
           <TableHead className="text-right">Lost</TableHead>
           <TableHead className="text-right">Pipeline</TableHead>
           <TableHead className="text-right">Gross Premium</TableHead>
-          <TableHead className="text-right">Revenue</TableHead>
+          {isPrivileged && <TableHead className="text-right">Revenue</TableHead>}
           <TableHead className="text-right">Salary Paid</TableHead>
           <TableHead className="text-right">Commission</TableHead>
           <TableHead className="text-right">Compensation</TableHead>
@@ -81,13 +81,13 @@ function PerformancePage() {
               <TableCell className="text-right text-red-600">{r.lost}</TableCell>
               <TableCell className="text-right tabular-nums">{fmtPKR(r.pipelineValue)}</TableCell>
               <TableCell className="text-right tabular-nums">{fmtPKR(r.gross)}</TableCell>
-              <TableCell className="text-right tabular-nums font-medium">{fmtPKR(r.revenue)}</TableCell>
+              {isPrivileged && <TableCell className="text-right tabular-nums font-medium">{fmtPKR(r.revenue)}</TableCell>}
               <TableCell className="text-right tabular-nums">{fmtPKR(r.salary)}</TableCell>
               <TableCell className="text-right tabular-nums">{fmtPKR(r.commission)}</TableCell>
               <TableCell className="text-right tabular-nums">{fmtPKR(r.compensation)}</TableCell>
             </TableRow>
           ))}
-          {(!data || data.length === 0) && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">No data</TableCell></TableRow>}
+          {(!data || data.length === 0) && <TableRow><TableCell colSpan={isPrivileged ? 10 : 9} className="text-center text-muted-foreground py-8">No data</TableCell></TableRow>}
         </TableBody>
       </Table>
     </CardContent></Card>

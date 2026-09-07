@@ -106,6 +106,71 @@ export type Database = {
         }
         Relationships: []
       }
+      assets: {
+        Row: {
+          assigned_to: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          depreciation_method: string
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          purchase_cost: number
+          purchase_date: string
+          salvage_value: number
+          serial_number: string | null
+          status: string
+          updated_at: string
+          useful_life_years: number
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          depreciation_method?: string
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          purchase_cost?: number
+          purchase_date?: string
+          salvage_value?: number
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+          useful_life_years?: number
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          depreciation_method?: string
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          purchase_cost?: number
+          purchase_date?: string
+          salvage_value?: number
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+          useful_life_years?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -3122,6 +3187,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          level: string
+          perm_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level: string
+          perm_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: string
+          perm_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3317,6 +3409,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["permission_level"]
       }
       normalize_policy_number: { Args: { _v: string }; Returns: string }
+      perm_key_level: { Args: { _key: string; _user: string }; Returns: string }
       perm_rank: {
         Args: { _l: Database["public"]["Enums"]["permission_level"] }
         Returns: number

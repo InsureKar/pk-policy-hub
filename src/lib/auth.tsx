@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { levelAllows, PERM_DEFS, type AccessLevel, type PermAction } from "@/lib/permissions";
+
 
 export type AppRole = "admin" | "management" | "team_lead" | "do";
 
@@ -33,6 +35,12 @@ interface AuthCtx {
   roles: AppRole[];
   profile: Profile | null;
   permissions: Record<AppModule, PermissionLevel>;
+  /** Granular per-screen access levels (empty when nothing assigned). */
+  access: Record<string, AccessLevel>;
+  /** Resolved level for a granular permission key (falls back to the module level). */
+  levelOf: (key: string) => AccessLevel;
+  /** Whether the user may perform an action on a granular permission key. */
+  allow: (key: string, action?: PermAction) => boolean;
   can: (m: AppModule, min?: PermissionLevel) => boolean;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -45,25 +53,38 @@ const Ctx = createContext<AuthCtx | null>(null);
 const defaultPermissions = () =>
   Object.fromEntries(APP_MODULES.map((m) => [m, "add" as PermissionLevel])) as Record<AppModule, PermissionLevel>;
 
+const MODULE_TO_ACCESS: Record<PermissionLevel, AccessLevel> = {
+  none: "none",
+  view: "view",
+  edit: "edit",
+  add: "full",
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [permissions, setPermissions] = useState<Record<AppModule, PermissionLevel>>(defaultPermissions);
+  const [access, setAccess] = useState<Record<string, AccessLevel>>({});
   const [loading, setLoading] = useState(true);
 
   const loadRolesAndProfile = async (uid: string) => {
-    const [{ data: roleRows }, { data: prof }, { data: perms }] = await Promise.all([
+    const [{ data: roleRows }, { data: prof }, { data: perms }, { data: gran }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("user_module_permissions" as any).select("module, level").eq("user_id", uid),
+      supabase.from("user_permissions" as any).select("perm_key, level").eq("user_id", uid),
     ]);
     setRoles((roleRows ?? []).map((r: { role: AppRole }) => r.role));
     setProfile(prof as Profile | null);
     const map = defaultPermissions();
     ((perms ?? []) as any[]).forEach((p) => { map[p.module as AppModule] = p.level as PermissionLevel; });
     setPermissions(map);
+    const gmap: Record<string, AccessLevel> = {};
+    ((gran ?? []) as any[]).forEach((g) => { gmap[g.perm_key as string] = g.level as AccessLevel; });
+    setAccess(gmap);
   };
+
 
 
   useEffect(() => {
@@ -104,8 +125,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const can = (m: AppModule, min: PermissionLevel = "view") =>
     PERMISSION_RANK[permissions[m] ?? "add"] >= PERMISSION_RANK[min];
 
+  const levelOf = (key: string): AccessLevel => {
+    // Admin & Management keep unrestricted access.
+    if (roles.includes("admin") || roles.includes("management")) return "full";
+    const assigned = access[key];
+    if (assigned) return assigned;
+    const mod = PERM_DEFS[key]?.module;
+    const fallback = mod ? (permissions[mod] ?? "add") : "add";
+    return MODULE_TO_ACCESS[fallback];
+  };
+
+  const allow = (key: string, action: PermAction = "view") => levelAllows(levelOf(key), action);
+
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, session, roles, profile, permissions, can, loading, refresh, signOut, hasRole }}>
+    <Ctx.Provider value={{ user: session?.user ?? null, session, roles, profile, permissions, access, levelOf, allow, can, loading, refresh, signOut, hasRole }}>
+
 
       {children}
     </Ctx.Provider>

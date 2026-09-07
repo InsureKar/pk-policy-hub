@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { fmtPKR, fmtDate } from "@/lib/format";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/accounts/installments")({
   component: InstallmentsPage,
@@ -69,9 +70,10 @@ function InstallmentsPage() {
             <TableHead className="text-right">Paid</TableHead>
             <TableHead className="text-right">Remaining</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow></TableHeader>
           <TableBody>
-            {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No installments</TableCell></TableRow>}
+            {filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No installments</TableCell></TableRow>}
             {filtered.map(i => {
               const overdue = i.status === "pending" && i.due_date < today;
               const eff = overdue ? "overdue" : i.status;
@@ -84,6 +86,7 @@ function InstallmentsPage() {
                   <TableCell className="text-right tabular-nums">{fmtPKR(i.paid_amount)}</TableCell>
                   <TableCell className="text-right tabular-nums font-medium">{fmtPKR(i.remaining_amount)}</TableCell>
                   <TableCell><StatusBadge status={eff}/></TableCell>
+                  <TableCell className="text-right"><DeleteButton table="installments" id={i.id} label="installment" invalidate={["accounts-installments"]} /></TableCell>
                 </TableRow>
               );
             })}

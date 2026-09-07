@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Briefcase, Users, Building2, UsersRound, Settings2, Database, LogOut,
   Shield, RefreshCw, BarChart3, KanbanSquare, DollarSign, UserCog, ChevronDown,
   ChevronRight, Sun, Moon, Plus, Inbox, Target, UserSearch, Wallet, Receipt, FileText, CreditCard, CalendarClock,
-  Wallet2, Landmark, TrendingUp, Award, HandCoins, ReceiptText, LifeBuoy, Ticket, FileSearch, PackageCheck,
+  Wallet2, Landmark, TrendingUp, Award, HandCoins, ReceiptText, LifeBuoy, Ticket, FileSearch, PackageCheck, Boxes,
 } from "lucide-react";
 
 import { useAuth, type AppRole, type AppModule } from "@/lib/auth";
@@ -18,6 +18,7 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
   roles?: AppRole[];
   module?: AppModule;
+  perm?: string;
   search?: Record<string, string>;
 };
 
@@ -27,13 +28,14 @@ type NavGroup = {
   items: NavItem[];
   roles?: AppRole[];
   module?: AppModule;
+  perm?: string;
   expandable?: boolean; // "+" style
 };
 
 const groups: NavGroup[] = [
   {
     label: "Dashboard", icon: LayoutDashboard, module: "dashboard",
-    items: [{ to: "/dashboard", label: "Overview", icon: LayoutDashboard }],
+    items: [{ to: "/dashboard", label: "Overview", icon: LayoutDashboard, perm: "dashboard.access" }],
   },
   {
     label: "Analytics", icon: BarChart3, module: "reports",
@@ -42,10 +44,10 @@ const groups: NavGroup[] = [
   {
     label: "Sales", icon: Briefcase, module: "deals",
     items: [
-      { to: "/deals", label: "Deals", icon: Briefcase },
-      { to: "/deals/new", label: "New Deal", icon: Plus },
+      { to: "/deals", label: "Deals", icon: Briefcase, perm: "deals.view" },
+      { to: "/deals/new", label: "New Deal", icon: Plus, perm: "deals.add" },
       { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
-      { to: "/clients", label: "Clients", icon: Building2, module: "clients" },
+      { to: "/clients", label: "Clients", icon: Building2, module: "clients", perm: "clients.list" },
       { to: "/leads/unassigned", label: "Unassigned Leads", icon: Inbox, module: "leads", roles: ["admin"] },
       { to: "/tasks", label: "Tasks", icon: CalendarClock },
     ],
@@ -54,14 +56,15 @@ const groups: NavGroup[] = [
     label: "Operations", icon: RefreshCw, module: "renewals",
     items: [
       { to: "/renewals", label: "Renewals", icon: RefreshCw },
-      { to: "/income", label: "Income", icon: DollarSign, roles: ["admin", "management", "team_lead"] },
+      { to: "/income", label: "Income", icon: DollarSign, roles: ["admin", "management"] },
     ],
   },
   {
     label: "Admin", icon: UserCog, roles: ["admin", "management"], module: "admin",
     items: [
       { to: "/teams", label: "Teams", icon: UsersRound, roles: ["admin", "management"] },
-      { to: "/users", label: "User Management", icon: Users, roles: ["admin"] },
+      { to: "/users", label: "User Management", icon: Users, roles: ["admin"], perm: "admin.users_roles" },
+      { to: "/assets", label: "Assets", icon: Boxes, roles: ["admin", "management"], perm: "admin.assets" },
       { to: "/permissions", label: "Access & Permissions", icon: Shield, roles: ["admin", "management"] },
       { to: "/review", label: "Review User", icon: UserSearch, roles: ["admin", "management"] },
       { to: "/targets", label: "Monthly Targets", icon: Target, roles: ["admin", "management"] },
@@ -70,34 +73,34 @@ const groups: NavGroup[] = [
   {
     label: "Accounts", icon: Wallet, module: "accounts", roles: ["admin", "management", "team_lead", "do"],
     items: [
-      { to: "/accounts", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/accounts/receivables", label: "Receivables", icon: Receipt },
-      { to: "/accounts/payables", label: "Payables", icon: Wallet, roles: ["admin", "management"] },
-      { to: "/accounts/sales", label: "Sales", icon: TrendingUp, roles: ["admin", "management"] },
-      { to: "/accounts/tax", label: "Tax", icon: Landmark, roles: ["admin", "management"] },
-      { to: "/accounts/b2b", label: "B2B Commission", icon: HandCoins, roles: ["admin", "management"] },
-      { to: "/accounts/installments", label: "Installments", icon: CalendarClock },
-      { to: "/accounts/invoices", label: "Invoices", icon: FileText },
-      { to: "/accounts/payments", label: "Payments", icon: CreditCard },
+      { to: "/accounts", label: "Dashboard", icon: LayoutDashboard, perm: "accounts.dashboard" },
+      { to: "/accounts/receivables", label: "Receivables", icon: Receipt, perm: "accounts.receivables" },
+      { to: "/accounts/payables", label: "Payables", icon: Wallet, roles: ["admin", "management"], perm: "accounts.payables" },
+      { to: "/accounts/sales", label: "Sales", icon: TrendingUp, roles: ["admin", "management"], perm: "accounts.sales" },
+      { to: "/accounts/tax", label: "Tax", icon: Landmark, roles: ["admin", "management"], perm: "accounts.taxes" },
+      { to: "/accounts/b2b", label: "B2B Commission", icon: HandCoins, roles: ["admin", "management"], perm: "accounts.b2b" },
+      { to: "/accounts/installments", label: "Installments", icon: CalendarClock, perm: "accounts.installments" },
+      { to: "/accounts/invoices", label: "Invoices", icon: FileText, perm: "operations.invoice_issue" },
+      { to: "/accounts/payments", label: "Payments", icon: CreditCard, perm: "operations.payments" },
       { to: "/accounts/reports", label: "Finance Reports", icon: BarChart3, roles: ["admin", "management", "team_lead"] },
     ],
   },
   {
     label: "Operations", icon: Landmark, module: "operations", roles: ["admin", "management", "team_lead", "do"],
     items: [
-      { to: "/operations", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "management"] },
+      { to: "/operations", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "management"], perm: "operations.dashboard" },
       { to: "/operations/underwriting", label: "Underwriting", icon: FileSearch },
-      { to: "/operations/payroll", label: "Payroll", icon: Wallet2, roles: ["admin", "management"] },
+      { to: "/operations/payroll", label: "Payroll", icon: Wallet2, roles: ["admin", "management"], perm: "admin.payroll" },
       { to: "/operations/commissions", label: "Commissions", icon: HandCoins, roles: ["admin", "management"] },
       { to: "/operations/performance", label: "Employee Performance", icon: Award, roles: ["admin", "management"] },
-      { to: "/operations/expenses", label: "Expenses", icon: ReceiptText, roles: ["admin", "management"] },
+      { to: "/operations/expenses", label: "Expenses", icon: ReceiptText, roles: ["admin", "management"], perm: "operations.expenses" },
       { to: "/operations/reimbursements", label: "Reimbursements", icon: HandCoins },
-      { to: "/operations/dispatch", label: "Dispatch Record", icon: PackageCheck },
+      { to: "/operations/dispatch", label: "Dispatch Record", icon: PackageCheck, perm: "operations.dispatch" },
       { to: "/operations/reports", label: "Ops Reports", icon: BarChart3, roles: ["admin", "management"] },
     ],
   },
   {
-    label: "Service Desk", icon: LifeBuoy,
+    label: "Service Desk", icon: LifeBuoy, perm: "operations.tickets",
     items: [
       { to: "/tickets", label: "Dashboard", icon: LayoutDashboard },
       { to: "/tickets/all", label: "Tickets", icon: Ticket },
@@ -118,12 +121,12 @@ const groups: NavGroup[] = [
   },
   {
     label: "Settings", icon: Settings2, module: "settings",
-    items: [{ to: "/settings", label: "Settings", icon: Settings2 }],
+    items: [{ to: "/settings", label: "Settings", icon: Settings2, perm: "admin.settings" }],
   },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { profile, roles, signOut, hasRole, can } = useAuth();
+  const { profile, roles, signOut, hasRole, can, allow } = useAuth();
   const { theme, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const primaryRole = roles[0] ?? "do";
@@ -144,7 +147,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           {groups.map((g) => {
             if (g.roles && !hasRole(g.roles)) return null;
             if (g.module && !can(g.module)) return null;
-            const visibleItems = g.items.filter(i => (!i.roles || hasRole(i.roles)) && (!i.module || can(i.module)));
+            if (g.perm && !allow(g.perm)) return null;
+            const visibleItems = g.items.filter(i => (!i.roles || hasRole(i.roles)) && (!i.module || can(i.module)) && (!i.perm || allow(i.perm)));
             if (visibleItems.length === 0) return null;
             // Single-item groups render flat (no collapsible header)
             if (visibleItems.length === 1 && !g.expandable) {
