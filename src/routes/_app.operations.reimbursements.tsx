@@ -16,6 +16,7 @@ import { Plus } from "lucide-react";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { DateField } from "@/components/DateField";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/operations/reimbursements")({
   component: ReimbursementsPage,
@@ -138,6 +139,7 @@ function ReimbursementsPage() {
                   {isAdmin && r.status === "approved" && (
                     <Button size="sm" onClick={() => setStatus(r.id, { status: "paid", paid_at: new Date().toISOString(), paid_by: user?.id })}>Mark Paid</Button>
                   )}
+                  <DeleteButton table="reimbursements" id={r.id} label="request" invalidate={["reimbursements"]} />
                 </TableCell>
               </TableRow>
             ))}
