@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { useAuth } from "@/lib/auth";
 import { Progress } from "@/components/ui/progress";
 import { PipelineFunnel } from "@/components/PipelineFunnel";
+import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 
 
 export const Route = createFileRoute("/_app/dashboard")({
