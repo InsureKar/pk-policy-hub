@@ -33,16 +33,7 @@ export function DeleteButton({ table, id, invalidate = [], label = "record", idC
     setBusy(true);
     const { error } = await (supabase as any).from(table).delete().eq(idColumn, id);
     setBusy(false);
-    if (error) {
-      const linked = (error as any).code === "23503";
-      const other = linked ? String((error as any).details ?? "").match(/table "([^"]+)"/)?.[1]?.replace(/_/g, " ") : null;
-      toast.error(
-        linked
-          ? `This ${label} can't be deleted while it is still linked to ${other ? `existing ${other}` : "other records"}. Remove those first.`
-          : error.message,
-      );
-      return;
-    }
+    if (error) { toast.error(error.message); return; }
     toast.success(`Deleted ${label}`);
     setOpen(false);
     if (invalidate.length === 0) {
