@@ -2,7 +2,7 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, APP_MODULES, MODULE_LABELS, type AppModule, type PermissionLevel, type AppRole } from "@/lib/auth";
-import { PERMISSION_GROUPS, ACCESS_LEVELS, type AccessLevel } from "@/lib/permissions";
+import { PERMISSION_GROUPS, ACCESS_LEVELS, PERM_DEFS, type AccessLevel } from "@/lib/permissions";
 
 import { PageHeader } from "@/components/PageHeader";
 import { SubHeadTabs } from "@/components/SubHeadTabs";
