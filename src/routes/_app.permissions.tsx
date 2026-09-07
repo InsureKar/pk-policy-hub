@@ -197,6 +197,7 @@ function PermissionsPage() {
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
