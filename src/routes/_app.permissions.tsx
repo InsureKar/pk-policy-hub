@@ -130,6 +130,56 @@ function PermissionsPage() {
       {head === "matrix" && (
       <Card>
         <CardHeader><CardTitle className="text-base">Permission Matrix — {nameOf(userId)}</CardTitle></CardHeader>
+        <CardContent className="space-y-6">
+          {PERMISSION_GROUPS.map(group => (
+            <div key={group.label}>
+              <div className="text-sm font-semibold mb-2">{group.label}</div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-muted-foreground">
+                    <tr>
+                      <th className="text-left p-2 w-[40%]">Permission</th>
+                      {ACCESS_LEVELS.map(l => <th key={l.value} className="p-2 text-center whitespace-nowrap">{l.label}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.items.map(item => {
+                      const current = granLevelFor(item.key);
+                      return (
+                        <tr key={item.key} className="border-t">
+                          <td className="p-2 font-medium">{item.label}</td>
+                          {ACCESS_LEVELS.map(l => (
+                            <td key={l.value} className="p-2 text-center">
+                              <input
+                                type="radio"
+                                name={`gperm-${item.key}`}
+                                className="h-4 w-4 accent-primary cursor-pointer"
+                                checked={current === l.value}
+                                onChange={() => setGranLevel(item.key, item.label, l.value)}
+                                aria-label={`${item.label} ${l.label}`}
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+          <p className="text-xs text-muted-foreground">
+            No Access hides the screen entirely. View Only allows reading but no changes. Add allows creating new records.
+            Edit allows changing existing records. Full Access allows everything including delete.
+            Admin and Management always keep unrestricted access.
+          </p>
+        </CardContent>
+      </Card>
+      )}
+
+      {head === "modules" && (
+      <Card>
+        <CardHeader><CardTitle className="text-base">Module Access (legacy) — {nameOf(userId)}</CardTitle></CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -164,11 +214,12 @@ function PermissionsPage() {
             </table>
           </div>
           <p className="text-xs text-muted-foreground mt-3">
-            Add includes Edit and View. Edit includes View. No Access blocks the module for both the interface and the API.
+            Module access is the fallback used for any screen that has no granular setting above.
           </p>
         </CardContent>
       </Card>
       )}
+
 
       {head === "audit" && (
       <Card className="mt-4">
