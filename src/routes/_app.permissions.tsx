@@ -73,8 +73,13 @@ function PermissionsPage() {
   const levelFor = (m: AppModule): PermissionLevel =>
     (data?.perms.find(p => p.user_id === userId && p.module === m)?.level as PermissionLevel) ?? "add";
 
-  const granLevelFor = (key: string): AccessLevel =>
-    (data?.gran.find(g => g.user_id === userId && g.perm_key === key)?.level as AccessLevel) ?? "full";
+  const granLevelFor = (key: string): AccessLevel => {
+    const row = data?.gran.find(g => g.user_id === userId && g.perm_key === key);
+    if (row) return row.level as AccessLevel;
+    const mod = PERM_DEFS[key]?.module;
+    const m = mod ? levelFor(mod) : "add";
+    return m === "none" ? "none" : m === "view" ? "view" : m === "edit" ? "edit" : "full";
+  };
 
   const setGranLevel = async (key: string, label: string, level: AccessLevel) => {
     if (!userId) return;
