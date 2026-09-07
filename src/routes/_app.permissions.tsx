@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, APP_MODULES, MODULE_LABELS, type AppModule, type PermissionLevel, type AppRole } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { SubHeadTabs } from "@/components/SubHeadTabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
