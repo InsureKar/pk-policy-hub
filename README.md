@@ -322,7 +322,9 @@ Database changes belong in `supabase/migrations/`. Prefer additive, reviewable m
 
 This repository has **two-way sync enabled with Lovable** on the `lovable_bot` branch.
 
-**Preferred release path:** feature branch → **`lovable_bot` (staging)** → test on Lovable preview → PR **`lovable_bot` → `main`** (production release) → tag the release on `main`.
+**Preferred production path (Lovable work):** test on `lovable_bot` → cut **`release/vX.Y.Z`** from `lovable_bot` → **merge `main` into that release branch** → PR **`release/vX.Y.Z` → `main`** (squash) → tag on `main` → **sync `main` back into `lovable_bot`**.
+
+Do **not** open a PR from raw `lovable_bot` into `main`. Lovable history is hundreds of “Changes” commits; GitHub’s commit list will look huge even when only a few dozen files actually differ. The `release/vX.Y.Z` branch plus merging `main` first is what keeps the PR to the real file delta (see v2.0.0, v2.1.0, v2.2.0).
 
 ### Branches
 
@@ -330,21 +332,27 @@ This repository has **two-way sync enabled with Lovable** on the `lovable_bot` b
 
 - Reserved exclusively for Lovable.
 - Continuously synced with the Lovable editor.
-- **Do not develop directly on this branch.**
+- **Do not develop directly on this branch** for Cursor/local work — merge *into* it instead.
 - The Lovable preview environment is **staging**:  
   https://pk-policy-hub.lovable.app/
 
 #### `main`
 
 - Production branch — keep it clean and release-ready.
-- Production app (e.g. Vercel) should track intentional merges here.
-- Changes that originated in Lovable should be **merged or cherry-picked intentionally**, not assumed to be production-ready by default.
+- Vercel deploys from **`main`** only (do not connect Vercel to `lovable_bot`).
+- Squash-merges from `release/vX.Y.Z` land here as one commit per ship.
+
+#### `release/vX.Y.Z`
+
+- Short-lived **PR branch** for a production ship. Not a substitute for the Git tag.
+- Created from current `lovable_bot`, then `main` is merged into it so the PR against `main` is a small file diff.
+- Delete it after the production PR is merged (optional). Never force-push `lovable_bot` to “clean up” history.
 
 ### Syncing local work into Lovable (staging)
 
 1. Create a feature branch from an up-to-date base (`main` preferred, or `lovable_bot` if you must match staging).
 2. Commit your work on that feature branch.
-3. Merge (or open a PR into) **`lovable_bot`**.
+3. Merge (or open a PR into) **`lovable_bot`**. If GitHub branch rules require PRs, do not push `lovable_bot` directly.
 4. Lovable syncs `lovable_bot`; verify on the staging URL.
 5. If you added a migration, apply it to the **staging** Supabase project (`npx supabase db push` linked to staging) before relying on new schema in preview.
 
@@ -354,18 +362,42 @@ git checkout -b feature/your-change
 git checkout lovable_bot
 git pull origin lovable_bot
 git merge feature/your-change
-git push origin lovable_bot
+git push origin lovable_bot   # or open a PR into lovable_bot if the branch is protected
 ```
+
+### After a production release: sync `lovable_bot` from `main`
+
+`main` accumulates squash commits (and hotfixes like lockfile fixes) that `lovable_bot` does not have as the same commits. Merge **`main` into `lovable_bot`** so staging matches production and Lovable does not keep shipping an old lockfile.
+
+This is a **merge**, not a rebase or force-push. You usually **do need a pull request** into `lovable_bot` when repository rules say “changes must be made through a pull request” (direct `git push origin lovable_bot` will be rejected). If rules allow a direct push, a merge commit is still fine — never `--force`.
+
+```sh
+git checkout lovable_bot
+git pull origin lovable_bot
+git merge origin/main
+# resolve conflicts if any; keep lovable_bot feature files, keep main's package-lock.json
+# if the merge succeeded locally:
+git push origin lovable_bot
+# if push is declined (GH013 / PR required):
+#   git checkout -b sync/lovable-from-main
+#   git push -u origin sync/lovable-from-main
+#   GitHub: base = lovable_bot  ←  compare = sync/lovable-from-main
+#   Merge (merge commit is OK here; squash is OK too if rules allow)
+```
+
+Expect a small diff (often just `package-lock.json` or README) when `lovable_bot` already contains the feature files that were squash-merged to `main`.
 
 ### Releasing to production
 
-After staging looks good on Lovable preview (when applicable):
+After staging looks good on Lovable preview:
 
-1. Open a **pull request into `main`** on GitHub (from your feature/fix branch, or from `lovable_bot` after staging validation). Use the GitHub web UI — see **[Release Process](#release-process)**.
-2. Review for production readiness (migrations, RLS, role behavior, secrets).
-3. Prefer **Squash and merge** into `main`.
-4. If there are new migrations, apply them to the **production** Supabase project before/with the deploy that needs them.
-5. Create the Git tag and GitHub Release on `main` as described in **[Release Process](#release-process)**.
+1. Choose the next SemVer (`vMAJOR.MINOR.PATCH`) — see **[Release Process](#release-process)**.
+2. Cut `release/vX.Y.Z` from `lovable_bot`, merge `origin/main` into it, push, open a PR **into `main`**. Details in **[Release Process](#release-process)**.
+3. Review for production readiness (migrations, RLS, role behavior, secrets). Confirm `npm ci && npm run build` on the release branch after merging `main`.
+4. **Squash and merge** into `main`. Do not merge all Lovable commits as-is.
+5. If there are new migrations, apply them to the **production** Supabase project **before** (or with) the app deploy. Vercel does not run `db push`.
+6. Tag and publish the GitHub Release on `main`.
+7. **Sync `lovable_bot` from `main`** (section above) so Lovable stays aligned.
 
 ### Generated files: `src/routeTree.gen.ts`
 
@@ -390,19 +422,20 @@ This section covers how we ship to production using **standard Git commands** an
 
 ### Important: tags are not branches
 
-Version numbers such as `v1.0.0`, `v1.0.1`, or `v1.1.0` are **Git tags** (and later **GitHub Releases**). They are **not**:
+Version numbers such as `v1.0.0`, `v2.2.0`, or `v2.2.1` are **Git tags** (and later **GitHub Releases**). They are **not**:
 
-- Branch names (do **not** create a branch called `v1.0.0`)
-- PR titles (a PR can mention the version in its description, but the version itself is the tag)
+- A branch named `v2.2.0` (do **not** create that)
+- The same thing as `release/v2.2.0` — that is only a **PR branch** used to ship; the version is still the tag on `main`
 
-Everyday work stays on normal branches like `feature/…` or `fix/…`.
+Everyday work stays on `feature/…`, `fix/…`, `hotfix/…`, or Lovable’s `lovable_bot`.
 
 ### Concepts (quick glossary)
 
 | Concept | What it is |
 | --- | --- |
 | **Feature / fix branch** | A short-lived branch where you commit work (`feature/add-invoices`, `fix/login-redirect`). |
-| **Pull Request (PR)** | A GitHub review request to merge your branch into `main`. Created and merged in the browser. |
+| **`release/vX.Y.Z`** | PR branch cut from `lovable_bot` (after merging `main` into it) so production PRs stay small. Not the version tag. |
+| **Pull Request (PR)** | A GitHub review request. Production ships: base `main` ← compare `release/vX.Y.Z`. Sync staging: base `lovable_bot` ← compare a sync branch if `lovable_bot` is protected. |
 | **Git tag** | A named pointer to an exact commit on `main` (e.g. `v1.0.0`). Created with `git tag`, then pushed. |
 | **GitHub Release** | A GitHub UI page attached to a tag, with title and release notes for humans. Optional but recommended. |
 
@@ -420,84 +453,90 @@ Start production at `v1.0.0`. Do not move or reuse an existing tag.
 
 ### Step-by-step release workflow
 
-#### 1. Develop on a feature or fix branch
+Use this when shipping **Lovable / `lovable_bot` work** to production (v2.0.0 onward). For a tiny hotfix that only exists on `main`, skip to a `hotfix/…` branch from `main` instead.
+
+#### 1. Inspect `lovable_bot` vs `main`
+
+On an up-to-date `lovable_bot`, compare **content** (`git diff main lovable_bot`), not the 200+ Lovable commits. Decide SemVer: patch / minor / major. List new `supabase/migrations/` files.
+
+#### 2. Cut a release branch from `lovable_bot` and merge `main`
+
+```sh
+git checkout lovable_bot
+git pull origin lovable_bot
+git checkout -b release/v2.2.0
+git push -u origin release/v2.2.0
+git merge origin/main
+# resolve conflicts: keep release-branch feature files; keep main's package-lock.json
+git push origin release/v2.2.0
+```
+
+Replace `v2.2.0` with the version you chose. Merging `main` is required so the GitHub PR is the real file list (not the entire Lovable history) and so you keep production lockfile fixes (e.g. `xlsx` in `package-lock.json`).
+
+#### 3. Open a Pull Request targeting `main` (GitHub web UI)
+
+1. **New pull request**.
+2. **Base** = `main`, **compare** = `release/v2.2.0` (not `lovable_bot`).
+3. Title/description: what shipped, migrations, how to test.
+4. Create the pull request.
+
+#### 4. Review and test
+
+- Confirm staging/manual testing on the Lovable preview.
+- Call out DB migrations and env vars.
+- Run `npm ci && npm run build` on the release branch **after** merging `main` (catches duplicate symbols and missing lockfile packages).
+
+#### 5. Squash and merge into `main`
+
+On the PR page:
+
+1. Prefer **Squash and merge** so `main` stays one commit per ship.
+2. Confirm the squash message is readable.
+3. Merge. You may delete `release/v2.2.0`. **Do not delete `lovable_bot`.**
+
+#### 6. Tag the release on `main` (Git)
 
 ```sh
 git checkout main
 git pull origin main
-git checkout -b feature/your-change
-# …commit your work…
-git push -u origin feature/your-change
+git tag -a v2.2.0 -m "v2.2.0: short summary"
+git push origin v2.2.0
 ```
 
-(Optional for this project: also merge into `lovable_bot` first and verify on the Lovable staging preview — see [Git Workflow](#git-workflow).)
+Run this from a clean checkout of the latest `main`. Do not move or reuse an existing tag.
 
-#### 2. Open a Pull Request targeting `main` (GitHub web UI)
+#### 7. Create the GitHub Release (GitHub web UI)
 
-1. Open the repository on GitHub.
-2. You should see a banner to open a PR for your recently pushed branch, or go to **Pull requests → New pull request**.
-3. Set **base** = `main` and **compare** = your feature/fix branch (or `lovable_bot` if releasing from staging).
-4. Add a clear title and description (what changed, how to test, migrations if any).
-5. Create the pull request.
+1. **Releases → Draft a new release**.
+2. **Choose an existing tag** → the tag you just pushed.
+3. Title (often the same as the tag) + notes (features, migrations, breaking behaviour).
+4. **Publish release**.
 
-#### 3. Review and test
+#### 8. Deploy and sync staging
 
-- Get review as required by the team.
-- Confirm staging/manual testing is done.
-- Call out DB migrations and any env var needs in the PR.
+- Vercel deploys `main`. Confirm the production build is green.
+- Apply production migrations with `npx supabase db push` when the release includes schema changes — tags do not run migrations.
+- Merge `main` back into `lovable_bot` ([After a production release](#after-a-production-release-sync-lovable_bot-from-main)). Use a PR into `lovable_bot` if the branch is protected.
 
-#### 4. Squash and merge into `main`
+### Example (end-to-end, Lovable → production)
 
-On the PR page in GitHub:
-
-1. Prefer **Squash and merge** so `main` stays a clean, linear history (one commit per PR), unless there is a strong reason to use **Create a merge commit** or **Rebase and merge**.
-2. Confirm the squash commit message is readable.
-3. Merge, then delete the feature branch if prompted.
-
-#### 5. Tag the release on `main` (Git)
-
-After the PR is merged, tag the commit that is now on `main`:
-
-```sh
-git checkout main
-git pull
-git tag -a v1.0.0 -m "v1.0.0"
-git push origin v1.0.0
-```
-
-Replace `v1.0.0` with the correct next SemVer. Run these from a clean checkout of the latest `main` so the tag points at the intended release commit.
-
-#### 6. Create the GitHub Release (GitHub web UI)
-
-1. On GitHub: **Repository → Releases → Draft a new release** (or **Releases → New release**).
-2. **Choose an existing tag** → select `v1.0.0` (the tag you just pushed). Do not create a new branch.
-3. Set a **Release title** (often the same as the tag, e.g. `v1.0.0`).
-4. Write **Release notes** (what shipped, migrations, breaking changes).
-5. Click **Publish release**.
-
-#### 7. Deploy
-
-Whatever hosts production (e.g. Vercel on `main`) should pick up the merged commit. Apply any **production** Supabase migrations separately if this release includes schema changes — git tags do not run migrations.
-
-### Example (end-to-end)
-
-1. `git checkout -b feature/renewals-filter` → commit → `git push -u origin feature/renewals-filter`
-2. (Optional) Merge to `lovable_bot`, test on https://pk-policy-hub.lovable.app/
-3. GitHub: New PR → base `main` ← compare `feature/renewals-filter`
-4. Review + testing
+1. Work lands on `lovable_bot`; verify https://pk-policy-hub.lovable.app/
+2. `git checkout lovable_bot && git pull` → `git checkout -b release/v2.2.0` → push → `git merge origin/main` → push
+3. GitHub: New PR → base `main` ← compare `release/v2.2.0`
+4. Review + `npm ci && npm run build` + production `db push` if needed
 5. GitHub: **Squash and merge** into `main`
-6. Locally: `git checkout main` → `git pull` → `git tag -a v1.1.0 -m "v1.1.0"` → `git push origin v1.1.0`
-7. GitHub: **Releases → Draft a new release** → choose tag `v1.1.0` → notes → **Publish release**
-8. Confirm production deploy; run production `db push` if migrations were included
+6. `git checkout main && git pull` → `git tag -a v2.2.0 -m "v2.2.0"` → `git push origin v2.2.0`
+7. GitHub: **Releases → Draft a new release** → choose tag → **Publish**
+8. Sync: `git checkout lovable_bot && git merge origin/main` → push or PR into `lovable_bot`
 
 ### Rules of thumb
 
-- PRs target **`main`**.
-- Prefer **Squash and merge**.
-- Versions live on **tags**, not release branches.
-- Tag **after** merge, on the latest intended `main` commit.
-- Use the GitHub **website** for PRs and Releases; use **git** only for tagging/pushing the tag.
-- One production ship → one new tag (do not retag).
+- Production PRs target **`main`** from **`release/vX.Y.Z`**, not from raw `lovable_bot`.
+- Prefer **Squash and merge** into `main`.
+- The **version is the Git tag** on `main`. `release/vX.Y.Z` is only the PR branch.
+- Tag **after** merge, on the intended `main` commit. One ship → one new tag (do not retag).
+- After every production ship, **merge `main` into `lovable_bot`** (PR if required). Never force-push `lovable_bot`.
+- Use the GitHub **website** for PRs and Releases; use **git** for the release branch, merge, and tag.
 
 ---
 
@@ -543,8 +582,9 @@ Whatever hosts production (e.g. Vercel on `main`) should pick up the merged comm
 ### Commits & PRs
 
 - Use clear, intentional commit messages (avoid opaque “Changes” dumps on shared branches).
-- PRs into `main` should call out migrations, RLS impact, and role-sensitive UI. Prefer **Squash and merge** (see [Release Process](#release-process)).
+- PRs into `main` should call out migrations, RLS impact, and role-sensitive UI. Prefer **Squash and merge** from a `release/vX.Y.Z` branch (see [Release Process](#release-process)).
 - Validate on staging (`lovable_bot` preview) before production merge when the change is user-facing.
+- After tagging a production release, sync `main` back into `lovable_bot`.
 - Keep the public `.env` tracked (required for Lovable). Never commit `.env.local`, the service-role key, or other secrets.
 
 ---
