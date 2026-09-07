@@ -29,10 +29,17 @@ const PRESETS: Record<string, Partial<Record<AppModule, PermissionLevel>>> = {
   "Sales / DO": { dashboard: "view", leads: "add", clients: "add", deals: "add", renewals: "edit", accounts: "none", operations: "none", reports: "view", admin: "none", settings: "view" },
 };
 
+const SUB_HEADS = [
+  { value: "matrix", label: "Permission Matrix" },
+  { value: "templates", label: "Access Templates" },
+  { value: "audit", label: "Audit Log" },
+];
+
 function PermissionsPage() {
   const { hasRole, loading, user } = useAuth();
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string>("");
+  const [head, setHead] = useState<string>("matrix");
 
   const { data } = useQuery({
     queryKey: ["permissions-admin"],
