@@ -125,8 +125,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const can = (m: AppModule, min: PermissionLevel = "view") =>
     PERMISSION_RANK[permissions[m] ?? "add"] >= PERMISSION_RANK[min];
 
+  const levelOf = (key: string): AccessLevel => {
+    // Admin & Management keep unrestricted access.
+    if (roles.includes("admin") || roles.includes("management")) return "full";
+    const assigned = access[key];
+    if (assigned) return assigned;
+    const mod = PERM_DEFS[key]?.module;
+    const fallback = mod ? (permissions[mod] ?? "add") : "add";
+    return MODULE_TO_ACCESS[fallback];
+  };
+
+  const allow = (key: string, action: PermAction = "view") => levelAllows(levelOf(key), action);
+
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, session, roles, profile, permissions, can, loading, refresh, signOut, hasRole }}>
+    <Ctx.Provider value={{ user: session?.user ?? null, session, roles, profile, permissions, access, levelOf, allow, can, loading, refresh, signOut, hasRole }}>
+
 
       {children}
     </Ctx.Provider>
