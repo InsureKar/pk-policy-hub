@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fmtPKR } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
+import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
 
 export const Route = createFileRoute("/_app/analytics")({
@@ -17,9 +18,11 @@ const COLORS = ["var(--chart-1)","var(--chart-2)","var(--chart-3)","var(--chart-
 function AnalyticsPage() {
   const navigate = useNavigate();
   const { hasRole } = useAuth();
+  const scope = useVisibilityScope();
   const canSeeIncome = hasRole(["admin", "management"]);
   const { data } = useQuery({
-    queryKey: ["analytics"],
+    queryKey: ["analytics", scope.all, scope.ids.join(",")],
+    enabled: !scope.loading,
     queryFn: async () => {
       const [deals, cos, profs, teams, stages, policies] = await Promise.all([
         supabase.from("deals").select("id, gross_premium, total_income, insurance_company_id, assigned_do_id, team_id, stage_id, created_at"),
@@ -29,10 +32,11 @@ function AnalyticsPage() {
         supabase.from("deal_stages").select("id, name, is_lost"),
         supabase.from("policies").select("id, end_date, premium"),
       ]);
+      const visible = (deals.data ?? []).filter((d: any) => isVisibleRow(d, scope));
       const lostIds = new Set((stages.data ?? []).filter((s: any) => s.is_lost).map(s => s.id));
       return {
-        deals: deals.data ?? [],
-        activeDeals: (deals.data ?? []).filter(d => !d.stage_id || !lostIds.has(d.stage_id)),
+        deals: visible,
+        activeDeals: visible.filter(d => !d.stage_id || !lostIds.has(d.stage_id)),
         coMap: new Map((cos.data ?? []).map(c=>[c.id, c.name])),
         profMap: new Map((profs.data ?? []).map(p=>[p.id, p.full_name])),
         teamMap: new Map((teams.data ?? []).map(t=>[t.id, t.name])),
