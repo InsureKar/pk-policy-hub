@@ -64,6 +64,7 @@ const groups: NavGroup[] = [
     items: [
       { to: "/teams", label: "Teams", icon: UsersRound, roles: ["admin", "management"] },
       { to: "/users", label: "User Management", icon: Users, roles: ["admin"], perm: "admin.users_roles" },
+      { to: "/assets", label: "Assets", icon: Boxes, roles: ["admin", "management"], perm: "admin.assets" },
       { to: "/permissions", label: "Access & Permissions", icon: Shield, roles: ["admin", "management"] },
       { to: "/review", label: "Review User", icon: UserSearch, roles: ["admin", "management"] },
       { to: "/targets", label: "Monthly Targets", icon: Target, roles: ["admin", "management"] },
