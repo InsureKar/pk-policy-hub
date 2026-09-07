@@ -161,6 +161,7 @@ function PermissionsPage() {
         </CardContent>
       </Card>
 
+      {head === "audit" && (
       <Card className="mt-4">
         <CardHeader><CardTitle className="text-base">Permission Audit Log</CardTitle></CardHeader>
         <CardContent>
