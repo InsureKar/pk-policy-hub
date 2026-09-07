@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { levelAllows, PERM_DEFS, type AccessLevel, type PermAction } from "@/lib/permissions";
+
 
 export type AppRole = "admin" | "management" | "team_lead" | "do";
 
