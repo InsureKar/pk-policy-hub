@@ -351,6 +351,17 @@ function NewDealPage() {
     };
     const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
+    if (data && proofs.length) {
+      const { error: dErr } = await supabase.from("deal_documents").insert(
+        proofs.map((p) => ({
+          deal_id: data.id, client_id: form.client_id || null,
+          doc_type: "payment_receipt", file_name: p.name,
+          storage_path: p.path, uploaded_by: user.id,
+        })),
+      );
+      if (dErr) toast.error("Deal created, but receipts failed to attach: " + dErr.message);
+    }
+
     if (form.policy_type === "bulk" && data && isTravel) {
       const payable = travelRows.reduce((a, r) => a + payableOf(r), 0);
       const transferred = travelTransfers.reduce((a, t) => a + Number(t.amount || 0), 0);
