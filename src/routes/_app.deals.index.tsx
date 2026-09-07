@@ -12,6 +12,7 @@ import { fmtPKR, fmtDate } from "@/lib/format";
 import { Plus, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { DeleteButton } from "@/components/DeleteButton";
+import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 
 export type DealsSearch = { stage?: string; dealType?: string; category?: string };
 
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/_app/deals/")({
 
 function DealsList() {
   const { hasRole } = useAuth();
+  const scope = useVisibilityScope();
   const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
   const canSeeIncome = hasRole(["admin", "management"]);
   const search = Route.useSearch();
@@ -70,6 +72,7 @@ function DealsList() {
   }, []);
 
   const filtered = (data?.deals ?? []).filter((d: any) => {
+    if (!isVisibleRow(d, scope)) return false;
     if (stage !== "all" && d.stage_id !== stage) return false;
     if (dealType !== "all" && d.deal_type !== dealType) return false;
     if (category !== "all" && d.insurance_type_id !== category) return false;

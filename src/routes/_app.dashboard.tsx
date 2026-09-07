@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { useAuth } from "@/lib/auth";
 import { Progress } from "@/components/ui/progress";
 import { PipelineFunnel } from "@/components/PipelineFunnel";
+import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -18,9 +20,10 @@ export const Route = createFileRoute("/_app/dashboard")({
 
 function DashboardPage() {
   const { hasRole, user } = useAuth();
+  const scope = useVisibilityScope();
   const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
   const canSeeIncome = hasRole(["admin", "management"]);
-  const { data, isLoading } = useQuery({
+  const { data: raw, isLoading } = useQuery({
     queryKey: ["dashboard", user?.id],
     queryFn: async () => {
       const [{ data: deals }, { data: stages }, { data: companies }, { data: settings }, { data: targets }] = await Promise.all([
@@ -34,9 +37,19 @@ function DashboardPage() {
     },
   });
 
-  if (isLoading || !data) {
+  const data = useMemo(() => {
+    if (!raw) return null;
+    return {
+      ...raw,
+      deals: raw.deals.filter((d) => isVisibleRow(d, scope)),
+      targets: raw.targets.filter((t: any) => scope.all || scope.ids.includes(t.user_id)),
+    };
+  }, [raw, scope]);
+
+  if (isLoading || !data || scope.loading) {
     return <div className="p-6"><PageHeader title="Dashboard" /><div className="text-muted-foreground">Loading…</div></div>;
   }
+
 
   const wonStageIds = new Set(data.stages.filter((s) => s.is_won).map((s) => s.id));
   const lostStageIds = new Set(data.stages.filter((s) => s.is_lost).map((s) => s.id));
