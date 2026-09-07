@@ -120,6 +120,7 @@ function PermissionsPage() {
         </CardContent>
       </Card>
 
+      {head === "matrix" && (
       <Card>
         <CardHeader><CardTitle className="text-base">Permission Matrix — {nameOf(userId)}</CardTitle></CardHeader>
         <CardContent>
