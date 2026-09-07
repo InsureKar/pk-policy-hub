@@ -54,12 +54,14 @@ function PermissionsPage() {
         supabase.from("user_roles").select("user_id, role"),
         supabase.from("user_module_permissions" as any).select("*"),
         supabase.from("permission_audit_log" as any).select("*").order("created_at", { ascending: false }).limit(50),
+        supabase.from("user_permissions" as any).select("*"),
       ]);
       return {
         profiles: profiles.data ?? [],
         roles: (roles.data ?? []) as { user_id: string; role: AppRole }[],
         perms: (perms.data ?? []) as any[],
         audit: (audit.data ?? []) as any[],
+        gran: (gran.data ?? []) as any[],
       };
     },
   });
@@ -71,6 +73,20 @@ function PermissionsPage() {
   const levelFor = (m: AppModule): PermissionLevel =>
     (data?.perms.find(p => p.user_id === userId && p.module === m)?.level as PermissionLevel) ?? "add";
 
+  const granLevelFor = (key: string): AccessLevel =>
+    (data?.gran.find(g => g.user_id === userId && g.perm_key === key)?.level as AccessLevel) ?? "full";
+
+  const setGranLevel = async (key: string, label: string, level: AccessLevel) => {
+    if (!userId) return;
+    if (userId === user?.id) return toast.error("You cannot change your own permissions");
+    const { error } = await supabase
+      .from("user_permissions" as any)
+      .upsert({ user_id: userId, perm_key: key, level }, { onConflict: "user_id,perm_key" });
+    if (error) return toast.error(error.message);
+    toast.success(`${label} → ${ACCESS_LEVELS.find(l => l.value === level)?.label}`);
+    qc.invalidateQueries({ queryKey: ["permissions-admin"] });
+  };
+
   const setLevel = async (m: AppModule, level: PermissionLevel) => {
     if (!userId) return;
     if (userId === user?.id) return toast.error("You cannot change your own permissions");
@@ -81,6 +97,7 @@ function PermissionsPage() {
     toast.success(`${MODULE_LABELS[m]} → ${LEVELS.find(l => l.value === level)?.label}`);
     qc.invalidateQueries({ queryKey: ["permissions-admin"] });
   };
+
 
   const applyPreset = async (name: string) => {
     if (!userId) return;
