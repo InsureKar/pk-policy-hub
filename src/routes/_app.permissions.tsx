@@ -49,7 +49,7 @@ function PermissionsPage() {
   const { data } = useQuery({
     queryKey: ["permissions-admin"],
     queryFn: async () => {
-      const [profiles, roles, perms, audit] = await Promise.all([
+      const [profiles, roles, perms, audit, gran] = await Promise.all([
         supabase.from("profiles").select("id, full_name, email").order("full_name"),
         supabase.from("user_roles").select("user_id, role"),
         supabase.from("user_module_permissions" as any).select("*"),
