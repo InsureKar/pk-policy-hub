@@ -689,13 +689,24 @@ function NewDealPage() {
                   </Field>
                 </div>
                 <div className="sm:col-span-3 space-y-1.5">
-                  <Label className="text-xs">Payment Proof * (required to save the deal)</Label>
-                  <Input type="file" accept="image/*,application/pdf" disabled={uploading}
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadProof(f); }} />
-                  <p className={`text-xs ${form.payment_proof_url ? "text-emerald-600" : "text-muted-foreground"}`}>
-                    {uploading ? "Uploading…" : form.payment_proof_url ? `Attached: ${form.payment_proof_url.split("/").pop()}` : "Attach the receipt / deposit slip / transfer screenshot."}
+                  <Label className="text-xs">Payment Receipts * (attach one or more)</Label>
+                  <Input type="file" multiple accept="image/*,application/pdf" disabled={uploading}
+                    onChange={(e) => { const fs = Array.from(e.target.files ?? []); if (fs.length) uploadProofs(fs); e.currentTarget.value = ""; }} />
+                  {proofs.length > 0 && (
+                    <ul className="space-y-1">
+                      {proofs.map((p) => (
+                        <li key={p.path} className="flex items-center justify-between rounded border px-2 py-1 text-xs">
+                          <span className="truncate">{p.name}</span>
+                          <button type="button" className="text-destructive ml-2" onClick={() => removeProof(p.path)}>Remove</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className={`text-xs ${proofs.length ? "text-emerald-600" : "text-muted-foreground"}`}>
+                    {uploading ? "Uploading…" : proofs.length ? `${proofs.length} receipt(s) attached` : "Attach receipts / deposit slips / transfer screenshots."}
                   </p>
                 </div>
+
                 <p className="sm:col-span-3 text-xs text-muted-foreground">
                   {form.payment_destination === "company"
                     ? "Payments collected by the company post to Accounts as a premium receivable, and the amount payable onward to the insurance company appears under the Payables / expense head."
