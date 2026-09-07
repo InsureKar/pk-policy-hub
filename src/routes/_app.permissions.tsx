@@ -32,9 +32,11 @@ const PRESETS: Record<string, Partial<Record<AppModule, PermissionLevel>>> = {
 
 const SUB_HEADS = [
   { value: "matrix", label: "Permission Matrix" },
+  { value: "modules", label: "Module Access" },
   { value: "templates", label: "Access Templates" },
   { value: "audit", label: "Audit Log" },
 ];
+
 
 function PermissionsPage() {
   const { hasRole, loading, user } = useAuth();
