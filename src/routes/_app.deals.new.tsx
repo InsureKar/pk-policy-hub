@@ -242,18 +242,36 @@ function NewDealPage() {
     if (hitPolicy) setCnError("Cover note already used on an existing bulk policy row");
   };
 
-  // ── Payment proof upload (mandatory before a deal can be saved) ──
+  // ── Payment receipts upload (at least one required before a deal can be saved) ──
   const [uploading, setUploading] = useState(false);
-  const uploadProof = async (file: File) => {
-    if (!user) return;
+  const [proofs, setProofs] = useState<{ path: string; name: string }[]>([]);
+  const uploadProofs = async (fileList: File[]) => {
+    if (!user || fileList.length === 0) return;
     setUploading(true);
-    const path = `payment-proofs/${user.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
-    const { error } = await supabase.storage.from("crm-documents").upload(path, file, { upsert: false });
+    const done: { path: string; name: string }[] = [];
+    for (const file of fileList) {
+      const path = `payment-proofs/${user.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+      const { error } = await supabase.storage.from("crm-documents").upload(path, file, { upsert: false });
+      if (error) toast.error(`${file.name}: ${error.message}`);
+      else done.push({ path, name: file.name });
+    }
     setUploading(false);
-    if (error) return toast.error(error.message);
-    set("payment_proof_url", path);
-    toast.success("Payment proof uploaded");
+    if (!done.length) return;
+    setProofs((prev) => {
+      const next = [...prev, ...done];
+      set("payment_proof_url", next[0].path);
+      return next;
+    });
+    toast.success(`${done.length} receipt(s) uploaded`);
   };
+  const removeProof = (path: string) => {
+    setProofs((prev) => {
+      const next = prev.filter((p) => p.path !== path);
+      set("payment_proof_url", next[0]?.path ?? "");
+      return next;
+    });
+  };
+
 
 
   const submit = async () => {
