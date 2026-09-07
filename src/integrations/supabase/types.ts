@@ -106,6 +106,71 @@ export type Database = {
         }
         Relationships: []
       }
+      assets: {
+        Row: {
+          assigned_to: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          depreciation_method: string
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          purchase_cost: number
+          purchase_date: string
+          salvage_value: number
+          serial_number: string | null
+          status: string
+          updated_at: string
+          useful_life_years: number
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          depreciation_method?: string
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          purchase_cost?: number
+          purchase_date?: string
+          salvage_value?: number
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+          useful_life_years?: number
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          depreciation_method?: string
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          purchase_cost?: number
+          purchase_date?: string
+          salvage_value?: number
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+          useful_life_years?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null

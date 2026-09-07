@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Briefcase, Users, Building2, UsersRound, Settings2, Database, LogOut,
   Shield, RefreshCw, BarChart3, KanbanSquare, DollarSign, UserCog, ChevronDown,
   ChevronRight, Sun, Moon, Plus, Inbox, Target, UserSearch, Wallet, Receipt, FileText, CreditCard, CalendarClock,
-  Wallet2, Landmark, TrendingUp, Award, HandCoins, ReceiptText, LifeBuoy, Ticket, FileSearch, PackageCheck,
+  Wallet2, Landmark, TrendingUp, Award, HandCoins, ReceiptText, LifeBuoy, Ticket, FileSearch, PackageCheck, Boxes,
 } from "lucide-react";
 
 import { useAuth, type AppRole, type AppModule } from "@/lib/auth";
@@ -64,6 +64,7 @@ const groups: NavGroup[] = [
     items: [
       { to: "/teams", label: "Teams", icon: UsersRound, roles: ["admin", "management"] },
       { to: "/users", label: "User Management", icon: Users, roles: ["admin"], perm: "admin.users_roles" },
+      { to: "/assets", label: "Assets", icon: Boxes, roles: ["admin", "management"], perm: "admin.assets" },
       { to: "/permissions", label: "Access & Permissions", icon: Shield, roles: ["admin", "management"] },
       { to: "/review", label: "Review User", icon: UserSearch, roles: ["admin", "management"] },
       { to: "/targets", label: "Monthly Targets", icon: Target, roles: ["admin", "management"] },
