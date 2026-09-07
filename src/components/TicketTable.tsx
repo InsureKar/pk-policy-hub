@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DeleteButton } from "@/components/DeleteButton";
 import { cn } from "@/lib/utils";
 import { fmtDate } from "@/lib/format";
 import {
@@ -82,11 +83,12 @@ export function TicketTable({ tickets, data, empty = "No tickets found." }: { ti
                 <TableHead>Assignee</TableHead>
                 <TableHead>Due</TableHead>
                 <TableHead>SLA</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.length === 0 && (
-                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">{empty}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{empty}</TableCell></TableRow>
               )}
               {rows.map((t) => {
                 const sla = slaText(t);
@@ -105,6 +107,7 @@ export function TicketTable({ tickets, data, empty = "No tickets found." }: { ti
                     <TableCell>{assignee(t)}</TableCell>
                     <TableCell>{t.due_date ? fmtDate(t.due_date) : "—"}</TableCell>
                     <TableCell className={cn("text-sm", sla.breached && "text-destructive font-medium")}>{sla.text}</TableCell>
+                    <TableCell className="text-right"><DeleteButton table="tickets" id={t.id} label="ticket" /></TableCell>
                   </TableRow>
                 );
               })}

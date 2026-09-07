@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/teams")({
   component: TeamsPage,
@@ -86,7 +87,10 @@ function TeamsPage() {
                     <div className="text-lg font-semibold">{t.name}</div>
                     <div className="text-xs text-muted-foreground">{t.location}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground">{members.length} {members.length===1?"member":"members"}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-muted-foreground">{members.length} {members.length===1?"member":"members"}</div>
+                    <DeleteButton table="teams" id={t.id} label="team" invalidate={["teams-full"]} />
+                  </div>
                 </div>
                 <div className="text-xs text-muted-foreground mb-1">Team Lead</div>
                 {canEdit ? (

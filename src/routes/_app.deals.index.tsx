@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { Plus, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export type DealsSearch = { stage?: string; dealType?: string; category?: string };
 
@@ -138,6 +139,7 @@ function DealsList() {
                 <th className="text-right px-4 py-2.5">Gross Premium</th>
                 {canSeeIncome && <th className="text-right px-4 py-2.5">Total Income</th>}
                 <th className="text-left px-4 py-2.5">Created</th>
+                <th className="text-right px-4 py-2.5">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -156,11 +158,12 @@ function DealsList() {
                     <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(Number(d.gross_premium))}</td>
                     {canSeeIncome && <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(Number(d.total_income))}</td>}
                     <td className="px-4 py-2.5 text-muted-foreground">{fmtDate(d.created_at)}</td>
+                    <td className="px-4 py-2.5 text-right"><DeleteButton table="deals" id={d.id} label="deal" invalidate={["deals"]} /></td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={8 + (canSeeIncome ? 1 : 0)} className="text-center py-12 text-muted-foreground">No deals found. <Link to="/deals/new" className="text-primary hover:underline">Create your first deal</Link>.</td></tr>
+                <tr><td colSpan={9 + (canSeeIncome ? 1 : 0)} className="text-center py-12 text-muted-foreground">No deals found. <Link to="/deals/new" className="text-primary hover:underline">Create your first deal</Link>.</td></tr>
               )}
             </tbody>
           </table>

@@ -16,6 +16,7 @@ import { Plus, Search, ShieldCheck, Pencil } from "lucide-react";
 import { fmtPKR } from "@/lib/format";
 import { toast } from "sonner";
 import { DateField } from "@/components/DateField";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/operations/dispatch")({
   component: DispatchPage,
@@ -239,6 +240,7 @@ function DispatchPage() {
                 <TableCell className="text-xs text-muted-foreground">{data?.profs.get(r.created_by)?.full_name || data?.profs.get(r.created_by)?.email || "—"}</TableCell>
                 <TableCell className="text-right">
                   {canEdit && <Button size="sm" variant="ghost" onClick={() => openEdit(r)}><Pencil className="w-3.5 h-3.5" /></Button>}
+                  <DeleteButton table="dispatch_records" id={r.id} label="record" invalidate={["dispatch-records"]} />
                 </TableCell>
               </TableRow>
             ))}
