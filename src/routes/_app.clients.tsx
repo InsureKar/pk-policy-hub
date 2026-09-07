@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { DateField } from "@/components/DateField";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/clients")({
   component: ClientsPage,
@@ -204,6 +205,7 @@ function ClientsPage() {
                 <th className="text-left px-4 py-2.5">City</th>
                 <th className="text-left px-4 py-2.5">Ref</th>
                 <th className="text-left px-4 py-2.5">Created</th>
+                <th className="text-right px-4 py-2.5">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -217,9 +219,10 @@ function ClientsPage() {
                   <td className="px-4 py-2.5">{c.city || "—"}</td>
                   <td className="px-4 py-2.5 text-muted-foreground">{c.cnic || c.ntn || "—"}</td>
                   <td className="px-4 py-2.5 text-muted-foreground">{fmtDate(c.created_at)}</td>
+                  <td className="px-4 py-2.5 text-right"><DeleteButton table="clients" id={c.id} label="client" invalidate={["clients"]} /></td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={8} className="text-center py-12 text-muted-foreground">No clients yet.</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={9} className="text-center py-12 text-muted-foreground">No clients yet.</td></tr>}
             </tbody>
           </table>
         </CardContent>

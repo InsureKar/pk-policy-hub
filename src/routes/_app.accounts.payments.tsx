@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { Download } from "lucide-react";
 import { DateField } from "@/components/DateField";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/accounts/payments")({
   component: PaymentsPage,
@@ -89,9 +90,10 @@ function PaymentsPage() {
             <TableHead>IBFT</TableHead>
             <TableHead>Cheque</TableHead>
             <TableHead>Bank</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow></TableHeader>
           <TableBody>
-            {filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No payments</TableCell></TableRow>}
+            {filtered.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No payments</TableCell></TableRow>}
             {filtered.map(p => (
               <TableRow key={p.id}>
                 <TableCell>{fmtDate(p.payment_date)}</TableCell>
@@ -102,6 +104,7 @@ function PaymentsPage() {
                 <TableCell className="text-xs">{p.ibft_reference ?? "—"}</TableCell>
                 <TableCell className="text-xs">{p.cheque_number ?? "—"}</TableCell>
                 <TableCell className="text-xs">{p.receiving_bank ?? "—"}</TableCell>
+                <TableCell className="text-right"><DeleteButton table="payments" id={p.id} label="payment" invalidate={["accounts-payments"]} /></TableCell>
               </TableRow>
             ))}
           </TableBody>

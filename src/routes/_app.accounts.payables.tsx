@@ -16,6 +16,7 @@ import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { Download, Plus } from "lucide-react";
 import { DateField } from "@/components/DateField";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export const Route = createFileRoute("/_app/accounts/payables")({
   component: PayablesPage,
@@ -169,7 +170,7 @@ function PayablesPage() {
                 <TableCell>{r.due_date ? fmtDate(r.due_date) : "—"}</TableCell>
                 <TableCell>{r.payment_date ? fmtDate(r.payment_date) : "—"}</TableCell>
                 <TableCell><StatusBadge status={r.status} /></TableCell>
-                {canManage && <TableCell className="text-right">{r.status !== "paid" && r.status !== "cancelled" && <PayDialog payable={r} />}</TableCell>}
+                {canManage && <TableCell className="text-right whitespace-nowrap">{r.status !== "paid" && r.status !== "cancelled" && <PayDialog payable={r} />}<DeleteButton table="payables" id={r.id} label="payable" invalidate={["accounts-payables-ledger"]} /></TableCell>}
               </TableRow>
             ))}
           </TableBody>
