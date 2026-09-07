@@ -160,6 +160,7 @@ function PermissionsPage() {
           </p>
         </CardContent>
       </Card>
+      )}
 
       {head === "audit" && (
       <Card className="mt-4">
