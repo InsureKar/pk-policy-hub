@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useAuth } from "@/lib/auth";
 import * as XLSX from "xlsx";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,14 @@ export const emptyTransferRow = (): TravelTransferRow => ({
 export const payableOf = (r: TravelPolicyRow) =>
   Number(r.premium || 0) - (Number(r.premium || 0) * Number(r.commission_percentage || 0)) / 100;
 
-const clampPct = (v: number) => Math.min(45, Math.max(0, Number(v) || 0));
+/** Payable to Insurance Co. = premium − 45% of premium. */
+export const payableToInsuranceCo = (r: TravelPolicyRow) =>
+  Number(r.premium || 0) - (Number(r.premium || 0) * 45) / 100;
+/** Loading = Payable to own company − Payable to Insurance Co. */
+export const loadingOf = (r: TravelPolicyRow) => payableOf(r) - payableToInsuranceCo(r);
+
+const clampPct = (v: number, unlimited = false) =>
+  unlimited ? Math.max(0, Number(v) || 0) : Math.min(45, Math.max(0, Number(v) || 0));
 
 const norm = (v: any) => String(v ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const num = (v: any) => {
@@ -67,10 +75,14 @@ export function TravelBulkPolicies({
   onCheckDuplicate?: (index: number, value: string) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const { hasRole } = useAuth();
+  const canExceed45 = hasRole(["admin", "management"]);
 
   const totalPremium = rows.reduce((a, r) => a + Number(r.premium || 0), 0);
   const totalCommission = rows.reduce((a, r) => a + (Number(r.premium || 0) * Number(r.commission_percentage || 0)) / 100, 0);
   const totalPayable = rows.reduce((a, r) => a + payableOf(r), 0);
+  const totalPayableInsCo = rows.reduce((a, r) => a + payableToInsuranceCo(r), 0);
+  const totalLoading = rows.reduce((a, r) => a + loadingOf(r), 0);
   const totalTransfers = transfers.reduce((a, t) => a + Number(t.amount || 0), 0);
   const diff = Number((totalTransfers - totalPayable).toFixed(2));
   const matchStatus = transfers.length === 0 ? "pending" : diff === 0 ? "matched" : diff > 0 ? "excess" : "short";
@@ -208,30 +220,31 @@ export function TravelBulkPolicies({
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full table-auto text-sm">
             <thead className="text-muted-foreground">
               <tr>
-                <th className="text-left p-3 whitespace-nowrap">Sr. No</th>
-                <th className="text-left p-3 whitespace-nowrap">Travel Agent</th>
-                <th className="text-left p-3 whitespace-nowrap">Date of Issued</th>
-                <th className="text-left p-3 whitespace-nowrap">Policy No.</th>
-                <th className="text-right p-3 whitespace-nowrap">Premium</th>
-                <th className="text-right p-3 whitespace-nowrap">Commission %</th>
-                <th className="text-right p-3 whitespace-nowrap">Payable to Insurance Co.</th>
-                <th className="text-left p-3 whitespace-nowrap">Agent Name</th>
-                <th className="text-left p-3 whitespace-nowrap">Remarks</th>
-                <th></th>
+                <th className="text-left p-3 whitespace-nowrap min-w-fit">Sr. No</th>
+                <th className="text-left p-3 whitespace-nowrap min-w-fit">Travel Agent</th>
+                <th className="text-left p-3 whitespace-nowrap min-w-fit">Date of Issued</th>
+                <th className="text-left p-3 whitespace-nowrap min-w-fit">Policy No.</th>
+                <th className="text-right p-3 whitespace-nowrap min-w-fit">Premium</th>
+                <th className="text-right p-3 whitespace-nowrap min-w-fit">Commission %</th>
+                <th className="text-right p-3 whitespace-nowrap min-w-fit">Payable to own company</th>
+                <th className="text-right p-3 whitespace-nowrap min-w-fit">Payable to Insurance Co.</th>
+                <th className="text-left p-3 whitespace-nowrap min-w-fit">Agent Name</th>
+                <th className="text-left p-3 whitespace-nowrap min-w-fit">Remarks</th>
+                <th className="min-w-fit"></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => (
                 <tr key={i} className="border-t align-top">
-                  <td className="p-3 pt-5 align-top">{i + 1}</td>
-                  <td className="p-3 align-top"><Input className="h-10" value={r.travel_agent} onChange={(e) => update(i, { travel_agent: e.target.value })}/></td>
-                  <td className="p-3 align-top"><Input type="date" className="h-10" value={r.date_issued} onChange={(e) => update(i, { date_issued: e.target.value })}/></td>
-                  <td className="p-3 align-top">
+                  <td className="p-3 pt-5 align-top whitespace-nowrap">{i + 1}</td>
+                  <td className="p-3 align-top min-w-fit"><Input className="h-10 min-w-[140px]" value={r.travel_agent} onChange={(e) => update(i, { travel_agent: e.target.value })}/></td>
+                  <td className="p-3 align-top min-w-fit"><Input type="date" className="h-10 min-w-[140px]" value={r.date_issued} onChange={(e) => update(i, { date_issued: e.target.value })}/></td>
+                  <td className="p-3 align-top min-w-fit">
                     <Input
-                      className={`h-10 ${dupErrors?.[i] ? "border-destructive" : ""}`}
+                      className={`h-10 min-w-[140px] ${dupErrors?.[i] ? "border-destructive" : ""}`}
                       aria-invalid={!!dupErrors?.[i]}
                       value={r.policy_number}
                       onChange={(e) => update(i, { policy_number: e.target.value })}
@@ -239,20 +252,24 @@ export function TravelBulkPolicies({
                     />
                     {dupErrors?.[i] && <p className="text-xs text-destructive mt-1.5">{dupErrors[i]}</p>}
                   </td>
-                  <td className="p-3 align-top"><Input type="number" step="0.01" min="0" className="h-10 text-right" value={r.premium} onChange={(e) => update(i, { premium: Number(e.target.value) || 0 })}/></td>
-                  <td className="p-3 align-top">
-                    <Input type="number" step="0.01" min="0" max="45" className="h-10 text-right" value={r.commission_percentage}
+                  <td className="p-3 align-top min-w-fit"><Input type="number" step="0.01" min="0" className="h-10 text-right min-w-[110px]" value={r.premium} onChange={(e) => update(i, { premium: Number(e.target.value) || 0 })}/></td>
+                  <td className="p-3 align-top min-w-fit">
+                    <Input type="number" step="0.01" min="0" max={canExceed45 ? undefined : 45} className="h-10 text-right min-w-[110px]" value={r.commission_percentage}
                       onChange={(e) => update(i, { commission_percentage: Number(e.target.value) || 0 })}
                       onBlur={(e) => {
                         const v = Number(e.target.value) || 0;
-                        if (v < 0 || v > 45) toast.error("Commission must be between 0% and 45%");
-                        update(i, { commission_percentage: clampPct(v) });
+                        if (!canExceed45 && (v < 0 || v > 45)) toast.error("Commission must be between 0% and 45%");
+                        update(i, { commission_percentage: clampPct(v, canExceed45) });
                       }}/>
                   </td>
-                  <td className="p-3 pt-5 text-right tabular-nums align-top">{fmtPKR(payableOf(r))}</td>
-                  <td className="p-3 align-top"><Input className="h-10" value={r.agent_name} onChange={(e) => update(i, { agent_name: e.target.value })}/></td>
-                  <td className="p-3 align-top"><Input className="h-10" value={r.remarks} onChange={(e) => update(i, { remarks: e.target.value })}/></td>
-                  <td className="p-3 pt-4 align-top"><Button size="sm" variant="ghost" disabled={rows.length === 1} onClick={() => setRows(rows.filter((_, idx) => idx !== i))}>×</Button></td>
+                  <td className="p-3 pt-5 text-right tabular-nums align-top whitespace-nowrap min-w-fit">{fmtPKR(payableOf(r))}</td>
+                  <td className="p-3 pt-5 text-right tabular-nums align-top whitespace-nowrap min-w-fit">
+                    {fmtPKR(payableToInsuranceCo(r))}
+                    <p className="text-xs text-muted-foreground mt-1 whitespace-nowrap">Loading: {fmtPKR(loadingOf(r))}</p>
+                  </td>
+                  <td className="p-3 align-top min-w-fit"><Input className="h-10 min-w-[120px]" value={r.agent_name} onChange={(e) => update(i, { agent_name: e.target.value })}/></td>
+                  <td className="p-3 align-top min-w-fit"><Input className="h-10 min-w-[140px]" value={r.remarks} onChange={(e) => update(i, { remarks: e.target.value })}/></td>
+                  <td className="p-3 pt-4 align-top min-w-fit"><Button size="sm" variant="ghost" disabled={rows.length === 1} onClick={() => setRows(rows.filter((_, idx) => idx !== i))}>×</Button></td>
                 </tr>
               ))}
             </tbody>
@@ -262,6 +279,10 @@ export function TravelBulkPolicies({
                 <td className="p-3 text-right tabular-nums">{fmtPKR(totalPremium)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtPKR(totalCommission)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtPKR(totalPayable)}</td>
+                <td className="p-3 text-right tabular-nums">
+                  {fmtPKR(totalPayableInsCo)}
+                  <p className="text-xs font-normal text-muted-foreground mt-1">Loading: {fmtPKR(totalLoading)}</p>
+                </td>
                 <td colSpan={3}></td>
               </tr>
             </tfoot>
@@ -275,28 +296,28 @@ export function TravelBulkPolicies({
             <Badge variant="outline" className={matchCls[matchStatus]}>{matchStatus.toUpperCase()}</Badge>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full table-auto text-sm">
               <thead className="text-muted-foreground">
                 <tr>
-                  <th className="text-left p-3 whitespace-nowrap">Sr. No</th>
-                  <th className="text-left p-3 whitespace-nowrap">Date</th>
-                  <th className="text-left p-3 whitespace-nowrap">Bank Name</th>
-                  <th className="text-right p-3 whitespace-nowrap">Amount</th>
-                  <th className="text-left p-3 whitespace-nowrap">TID</th>
-                  <th className="text-left p-3 whitespace-nowrap">Agent</th>
-                  <th></th>
+                  <th className="text-left p-3 whitespace-nowrap min-w-fit">Sr. No</th>
+                  <th className="text-left p-3 whitespace-nowrap min-w-fit">Date</th>
+                  <th className="text-left p-3 whitespace-nowrap min-w-fit">Bank Name</th>
+                  <th className="text-right p-3 whitespace-nowrap min-w-fit">Amount</th>
+                  <th className="text-left p-3 whitespace-nowrap min-w-fit">TID</th>
+                  <th className="text-left p-3 whitespace-nowrap min-w-fit">Agent</th>
+                  <th className="min-w-fit"></th>
                 </tr>
               </thead>
               <tbody>
                 {transfers.map((t, i) => (
                   <tr key={i} className="border-t">
-                    <td className="p-3">{i + 1}</td>
-                    <td className="p-3"><Input type="date" className="h-10" value={t.transfer_date} onChange={(e) => updateT(i, { transfer_date: e.target.value })}/></td>
-                    <td className="p-3"><Input className="h-10" value={t.bank_name} onChange={(e) => updateT(i, { bank_name: e.target.value })}/></td>
-                    <td className="p-3"><Input type="number" step="0.01" min="0" className="h-10 text-right" value={t.amount} onChange={(e) => updateT(i, { amount: Number(e.target.value) || 0 })}/></td>
-                    <td className="p-3"><Input className="h-10" value={t.tid} onChange={(e) => updateT(i, { tid: e.target.value })}/></td>
-                    <td className="p-3"><Input className="h-10" value={t.agent} onChange={(e) => updateT(i, { agent: e.target.value })}/></td>
-                    <td className="p-3"><Button size="sm" variant="ghost" onClick={() => setTransfers(transfers.filter((_, idx) => idx !== i))}>×</Button></td>
+                    <td className="p-3 whitespace-nowrap">{i + 1}</td>
+                    <td className="p-3 min-w-fit"><Input type="date" className="h-10 min-w-[140px]" value={t.transfer_date} onChange={(e) => updateT(i, { transfer_date: e.target.value })}/></td>
+                    <td className="p-3 min-w-fit"><Input className="h-10 min-w-[160px]" value={t.bank_name} onChange={(e) => updateT(i, { bank_name: e.target.value })}/></td>
+                    <td className="p-3 min-w-fit"><Input type="number" step="0.01" min="0" className="h-10 text-right min-w-[120px]" value={t.amount} onChange={(e) => updateT(i, { amount: Number(e.target.value) || 0 })}/></td>
+                    <td className="p-3 min-w-fit"><Input className="h-10 min-w-[140px]" value={t.tid} onChange={(e) => updateT(i, { tid: e.target.value })}/></td>
+                    <td className="p-3 min-w-fit"><Input className="h-10 min-w-[120px]" value={t.agent} onChange={(e) => updateT(i, { agent: e.target.value })}/></td>
+                    <td className="p-3 min-w-fit"><Button size="sm" variant="ghost" onClick={() => setTransfers(transfers.filter((_, idx) => idx !== i))}>×</Button></td>
                   </tr>
                 ))}
               </tbody>
@@ -312,7 +333,7 @@ export function TravelBulkPolicies({
           <div className="flex items-center justify-between">
             <Button variant="outline" onClick={() => setTransfers([...transfers, emptyTransferRow()])}>+ Add Transfer</Button>
             <p className="text-sm">
-              {matchStatus === "matched" && <span className="text-emerald-600">Transfers match Payable to Insurance Company ✓</span>}
+              {matchStatus === "matched" && <span className="text-emerald-600">Transfers match Payable to own company ✓</span>}
               {matchStatus === "excess" && <span className="text-red-600">Excess by {fmtPKR(diff)}</span>}
               {matchStatus === "short" && <span className="text-amber-600">Short by {fmtPKR(-diff)}</span>}
               {matchStatus === "pending" && <span className="text-muted-foreground">Add transfers totalling {fmtPKR(totalPayable)}</span>}
