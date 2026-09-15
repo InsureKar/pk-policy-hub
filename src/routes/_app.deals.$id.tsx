@@ -15,10 +15,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { DateField } from "@/components/DateField";
+import { DealInstalments } from "@/components/DealInstalments";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { ArrowLeft, Maximize2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
+import B2BTakerField from "@/components/B2BTakerField";
 
 export const Route = createFileRoute("/_app/deals/$id")({
   component: DealDetail,
@@ -183,6 +185,15 @@ function DealDetail() {
           </CardContent>
         </Card>
 
+        {!canSeeFinancials && calc && (
+          <Card>
+            <CardHeader><CardTitle className="text-base">Tagged Premium</CardTitle></CardHeader>
+            <CardContent className="text-sm">
+              <KV k="Tagged Premium (auto)" v={<span className="font-semibold">{fmtPKR(calc.tagged_premium)}</span>} />
+            </CardContent>
+          </Card>
+        )}
+
         {canSeeFinancials && (
           <Card>
             <CardHeader><CardTitle className="text-base">Premium & Income</CardTitle></CardHeader>
@@ -195,6 +206,7 @@ function DealDetail() {
                 <KV k="Marketing %" v={fmtPct(calc.marketing_budget_percentage)} />
                 <KV k="Loading" v={fmtPKR(calc.loading)} />
                 <KV k="B2B Commission" v={fmtPKR(calc.b2b_commission)} />
+                <KV k="Name of B2B Commission Taker" v={(d as any).b2b_taker_name || "—"} />
                 <hr/>
                 <KV k="Commission Before Tax" v={fmtPKR(calc.commission_before_tax)} />
                 <KV k="Commission Tax (17%)" v={fmtPKR(calc.commission_tax)} />
@@ -277,6 +289,15 @@ function DealDetail() {
         </Card>
       )}
 
+      <DealInstalments
+        dealId={id}
+        schedule={d.payment_schedule}
+        startDate={d.policy_start_date}
+        netPremium={Number(d.net_premium ?? 0)}
+        underwrittenPremium={(d as any).underwritten_premium ?? 0}
+        canEdit={canManageDeal}
+      />
+
       <DealInvoicesAndTravel dealId={id} stage={stage} isTravel={(type ?? "").toLowerCase() === "travel"} />
 
       <StageHistory dealId={id} stages={data.stages} profiles={data.profiles} />
@@ -320,6 +341,7 @@ function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSav
       marketing_budget_percentage: Number(f.marketing_budget_percentage) || 0,
       loading: Number(f.loading) || 0,
       b2b_commission: Number(f.b2b_commission) || 0,
+      b2b_taker_name: (f.b2b_taker_name ?? "").trim() || null,
       notes: f.notes ?? null,
     }).eq("id", deal.id);
     if (error) return toast.error(error.message);
@@ -396,6 +418,7 @@ function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSav
             <Field label="Marketing Budget %"><Input type="number" step="0.001" value={f.marketing_budget_percentage ?? 0} onChange={(e) => setNum("marketing_budget_percentage", e.target.value)}/></Field>
             <Field label="Loading (PKR)"><Input type="number" step="0.01" value={f.loading ?? 0} onChange={(e) => setNum("loading", e.target.value)}/></Field>
             <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={f.b2b_commission ?? 0} onChange={(e) => setNum("b2b_commission", e.target.value)}/></Field>
+            <Field label="Name of B2B Commission Taker"><B2BTakerField value={(f.b2b_taker_name as string) ?? ""} onChange={(v) => set("b2b_taker_name", v)}/></Field>
             <div className="sm:col-span-2 lg:col-span-3">
               <Field label="Notes"><Textarea rows={3} value={f.notes ?? ""} onChange={(e) => set("notes", e.target.value)}/></Field>
             </div>
