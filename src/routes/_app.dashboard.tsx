@@ -6,15 +6,27 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtPKR } from "@/lib/format";
 import { aggregateDealFinancials } from "@/lib/calc";
-import { Briefcase, TrendingUp, CheckCircle2, XCircle, Activity, Wallet, BadgePercent, Coins, Target as TargetIcon, RefreshCw, Sparkles } from "lucide-react";
+import { Briefcase, TrendingUp, CheckCircle2, XCircle, Activity, Wallet, BadgePercent, Coins, Target as TargetIcon, RefreshCw, Bell, Settings2, ChartNoAxesColumnIncreasing, CircleDollarSign } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
 import { useAuth } from "@/lib/auth";
 import { Progress } from "@/components/ui/progress";
 import { PipelineFunnel } from "@/components/PipelineFunnel";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
+import { Button } from "@/components/ui/button";
+import insureSLogo from "@/assets/logo.png";
 
 
 export const Route = createFileRoute("/_app/dashboard")({
+  head: () => ({
+    meta: [
+      { title: "Dashboard | InsureS CRM" },
+      { name: "description", content: "InsureS insurance brokerage business overview and pipeline dashboard." },
+      { property: "og:title", content: "Dashboard | InsureS CRM" },
+      { property: "og:description", content: "Insurance brokerage business overview and pipeline dashboard." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: DashboardPage,
 });
 
@@ -23,7 +35,7 @@ function DashboardPage() {
   const scope = useVisibilityScope();
   const canSeeFinancials = hasRole(["admin", "management", "team_lead"]);
   const canSeeIncome = hasRole(["admin", "management"]);
-  const { data: raw, isLoading } = useQuery({
+  const { data: raw, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["dashboard", user?.id],
     queryFn: async () => {
       const [{ data: deals }, { data: stages }, { data: companies }, { data: settings }, { data: targets }] = await Promise.all([
@@ -152,12 +164,32 @@ function DashboardPage() {
   const kpis = canSeeFinancials ? [...financialKpis, ...activityKpis.slice(0, 3)] : activityKpis;
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto">
-      <PageHeader title="Dashboard" subtitle={`Renewal pipeline (next 60 days): ${renewalPipeline} ${renewalPipeline === 1 ? "policy" : "policies"} · Lost deals excluded from financial totals`} />
+    <div className="mx-auto max-w-[1500px] p-4 sm:p-6">
+      <header className="mb-4 flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <img src={insureSLogo} alt="InsureS" className="h-10 w-auto object-contain" />
+          <div>
+            <h1 className="text-2xl font-semibold">Dashboard</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">Business overview across fresh business, renewals, and combined performance</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
+            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/master" search={{ tab: "pipeline" }}><Settings2 className="h-4 w-4" /> Setup pipelines</Link>
+          </Button>
+        </div>
+      </header>
+
+      <div className="mb-4 flex items-center gap-3 rounded-lg border border-primary/20 bg-brand-blue-soft px-4 py-3 text-sm text-primary">
+        <Bell className="h-4 w-4 shrink-0" />
+        <span><strong>Renewal pipeline (next 60 days):</strong> {renewalPipeline} {renewalPipeline === 1 ? "policy" : "policies"} <span className="text-muted-foreground">· Lost deals are excluded from all financial totals below</span></span>
+      </div>
 
       {/* Business Overview */}
-      <div className="mb-6">
-        <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Business Overview</div>
+      <div className="mb-5">
         <PipelineFunnel />
       </div>
 
@@ -194,18 +226,18 @@ function DashboardPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
         {kpis.map((k) => {
           const Icon = k.icon;
           return (
-            <Card key={k.label}>
+            <Card key={k.label} className="shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="text-xs text-muted-foreground uppercase tracking-wide">{k.label}</div>
-                    <div className="text-xl font-semibold mt-1">{k.value}</div>
+                    <div className={`mt-2 text-xl font-semibold ${k.label === "Won" ? "text-success" : k.label === "Lost" ? "text-destructive" : ""}`}>{k.value}</div>
                   </div>
-                  <div className="w-9 h-9 rounded-md bg-accent grid place-items-center text-accent-foreground">
+                  <div className={`grid h-9 w-9 place-items-center rounded-md ${k.label === "Won" ? "bg-success/10 text-success" : k.label === "Lost" ? "bg-destructive/10 text-destructive" : k.label === "Tagged Premium" ? "bg-brand-orange-soft text-brand-orange" : "bg-brand-blue-soft text-primary"}`}>
                     <Icon className="w-4 h-4" />
                   </div>
                 </div>
@@ -215,10 +247,15 @@ function DashboardPage() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
-        <Card className="lg:col-span-2">
-          <CardHeader><CardTitle className="text-base">{canSeeIncome ? "Monthly Premium & Income (excl. Lost)" : "Monthly Gross Premium (excl. Lost)"}</CardTitle></CardHeader>
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="shadow-sm lg:col-span-2">
+          <CardHeader><CardTitle className="text-base">{canSeeIncome ? "Monthly premium & income" : "Monthly gross premium"} <span className="ml-2 text-xs font-normal text-muted-foreground">Excludes lost deals</span></CardTitle></CardHeader>
           <CardContent className="h-72">
+            {months.every((m) => m.gross === 0 && m.income === 0) ? (
+              <div className="grid h-full place-items-center text-center">
+                <div><ChartNoAxesColumnIncreasing className="mx-auto h-7 w-7 text-muted-foreground" /><div className="mt-2 text-sm font-medium">No premium data yet</div><div className="mt-1 text-xs text-muted-foreground">Chart will populate once deals are recorded for this period</div></div>
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={months}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3}/>
@@ -229,13 +266,14 @@ function DashboardPage() {
                 {canSeeIncome && <Bar dataKey="income" fill="oklch(0.62 0.16 155)" name="Income" radius={[4,4,0,0]}/>}
               </BarChart>
             </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader><CardTitle className="text-base">Premium by Insurance Company</CardTitle></CardHeader>
           <CardContent className="h-72">
             {byCompany.length === 0 ? (
-              <div className="h-full grid place-items-center text-sm text-muted-foreground">No deals yet</div>
+              <div className="grid h-full place-items-center text-center"><div><CircleDollarSign className="mx-auto h-8 w-8 text-muted-foreground" /><div className="mt-2 text-sm font-medium">No deals yet</div><div className="mt-1 text-xs text-muted-foreground">Breakdown by insurer appears once premium is recorded</div></div></div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -250,7 +288,7 @@ function DashboardPage() {
         </Card>
       </div>
 
-      <Card className="mt-4">
+      <Card className="mt-5 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Pipeline by Stage</CardTitle>
           <Link to="/deals" className="text-sm text-primary hover:underline">View all deals →</Link>

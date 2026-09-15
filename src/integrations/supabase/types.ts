@@ -171,6 +171,30 @@ export type Database = {
           },
         ]
       }
+      b2b_commission_takers: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
@@ -451,6 +475,104 @@ export type Database = {
           },
         ]
       }
+      deal_installments: {
+        Row: {
+          amount: number
+          b2b_commission: number
+          b2b_taker_name: string | null
+          commission: number
+          commission_percentage: number
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          due_date: string | null
+          gross_premium: number
+          id: string
+          installment_number: number
+          label: string | null
+          loading: number
+          marketing_budget: number
+          net_premium: number
+          paid_amount: number
+          paid_date: string | null
+          payment_mode: string | null
+          payment_receive_date: string | null
+          payment_remarks: string | null
+          payment_status: string
+          tagged_month: number | null
+          tagged_year: number | null
+          transaction_reference: string | null
+          underwritten_amount: number
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          b2b_commission?: number
+          b2b_taker_name?: string | null
+          commission?: number
+          commission_percentage?: number
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          due_date?: string | null
+          gross_premium?: number
+          id?: string
+          installment_number: number
+          label?: string | null
+          loading?: number
+          marketing_budget?: number
+          net_premium?: number
+          paid_amount?: number
+          paid_date?: string | null
+          payment_mode?: string | null
+          payment_receive_date?: string | null
+          payment_remarks?: string | null
+          payment_status?: string
+          tagged_month?: number | null
+          tagged_year?: number | null
+          transaction_reference?: string | null
+          underwritten_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          b2b_commission?: number
+          b2b_taker_name?: string | null
+          commission?: number
+          commission_percentage?: number
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          due_date?: string | null
+          gross_premium?: number
+          id?: string
+          installment_number?: number
+          label?: string | null
+          loading?: number
+          marketing_budget?: number
+          net_premium?: number
+          paid_amount?: number
+          paid_date?: string | null
+          payment_mode?: string | null
+          payment_receive_date?: string | null
+          payment_remarks?: string | null
+          payment_status?: string
+          tagged_month?: number | null
+          tagged_year?: number | null
+          transaction_reference?: string | null
+          underwritten_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_installments_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_policies: {
         Row: {
           cover_note_number: string | null
@@ -588,6 +710,7 @@ export type Database = {
           b2b_commission_type: string
           b2b_net_amount: number
           b2b_taker_id: string | null
+          b2b_taker_name: string | null
           b2b_tax_amount: number
           b2b_tax_deduct: boolean
           b2b_tax_rate: number
@@ -639,6 +762,7 @@ export type Database = {
           team_lead_id: string | null
           total_income: number | null
           transaction_reference: string | null
+          underwritten_premium: number
           updated_at: string
         }
         Insert: {
@@ -648,6 +772,7 @@ export type Database = {
           b2b_commission_type?: string
           b2b_net_amount?: number
           b2b_taker_id?: string | null
+          b2b_taker_name?: string | null
           b2b_tax_amount?: number
           b2b_tax_deduct?: boolean
           b2b_tax_rate?: number
@@ -699,6 +824,7 @@ export type Database = {
           team_lead_id?: string | null
           total_income?: number | null
           transaction_reference?: string | null
+          underwritten_premium?: number
           updated_at?: string
         }
         Update: {
@@ -708,6 +834,7 @@ export type Database = {
           b2b_commission_type?: string
           b2b_net_amount?: number
           b2b_taker_id?: string | null
+          b2b_taker_name?: string | null
           b2b_tax_amount?: number
           b2b_tax_deduct?: boolean
           b2b_tax_rate?: number
@@ -759,6 +886,7 @@ export type Database = {
           team_lead_id?: string | null
           total_income?: number | null
           transaction_reference?: string | null
+          underwritten_premium?: number
           updated_at?: string
         }
         Relationships: [
