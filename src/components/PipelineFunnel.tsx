@@ -64,17 +64,20 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
   const { data } = useQuery({
     queryKey: ["pipeline-funnel"],
     queryFn: async () => {
-      const [deals, stages, profiles] = await Promise.all([
+      const [deals, stages, profiles, inst] = await Promise.all([
         supabase.from("deals").select("id, gross_premium, stage_id, assigned_do_id, team_lead_id, created_at, deal_type"),
         supabase.from("deal_stages").select("id, name, sort_order, is_won, is_lost").order("sort_order"),
         supabase.from("profiles").select("id, full_name"),
+        supabase.from("deal_installments" as any).select("deal_id, amount, gross_premium, paid_amount, payment_status"),
       ]);
       return {
         deals: deals.data ?? [],
         stages: stages.data ?? [],
         profiles: profiles.data ?? [],
+        installments: (inst.data ?? []) as any[],
       };
     },
+
   });
 
   const visibleProfiles = useMemo(
@@ -99,6 +102,28 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
   const stages = data?.stages ?? [];
   const wonIds = new Set(stages.filter((s: any) => s.is_won).map((s: any) => s.id));
   const lostIds = new Set(stages.filter((s: any) => s.is_lost).map((s: any) => s.id));
+
+  // Instalment-based deals: only the instalments actually marked paid count as won
+  // business; everything still due is reported as Outstanding Premium.
+  const insByDeal = useMemo(() => {
+    const m = new Map<string, { paid: number; due: number }>();
+    for (const r of (data?.installments ?? [])) {
+      const e = m.get(r.deal_id) ?? { paid: 0, due: 0 };
+      const isPaid = r.payment_status === "paid" || Number(r.paid_amount || 0) > 0;
+      const value = Number(r.gross_premium || 0) || Number(r.amount || 0);
+      if (isPaid) e.paid += Number(r.paid_amount || 0) || value;
+      else e.due += value;
+      m.set(r.deal_id, e);
+    }
+    return m;
+  }, [data?.installments]);
+
+  /** Won value of a deal — instalment deals count only their paid instalments. */
+  const wonValue = (d: any) => {
+    const e = insByDeal.get(d.id);
+    return e ? e.paid : Number(d.gross_premium || 0);
+  };
+  const dueValue = (d: any) => insByDeal.get(d.id)?.due ?? 0;
 
   const overallTotal = filteredDeals.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
 
@@ -227,7 +252,7 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
                 <div className="flex min-w-max">
                 {stages.map((s: any) => {
                   const list = sec.deals.filter((d: any) => d.stage_id === s.id);
-                  const total = list.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
+                  const total = list.reduce((a: number, d: any) => a + (s.is_won ? wonValue(d) : Number(d.gross_premium || 0)), 0);
                   return (
                     <div
                       key={s.id}
@@ -239,6 +264,17 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
                     </div>
                   );
                 })}
+                {(() => {
+                  const list = sec.deals.filter((d: any) => dueValue(d) > 0);
+                  const outstanding = list.reduce((a: number, d: any) => a + dueValue(d), 0);
+                  return (
+                    <div className="min-w-[150px] flex-1 border-l px-3 py-2 bg-warning/5">
+                      <div className="text-xs text-muted-foreground">Outstanding Premium</div>
+                      <div className="mt-2 text-base font-semibold tabular-nums text-brand-orange">{fmtPKR(outstanding)}</div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">{list.length} {list.length === 1 ? "deal" : "deals"} with due instalments</div>
+                    </div>
+                  );
+                })()}
                 </div>
               </div>
               <div className="mt-3 text-xs text-muted-foreground">{sec.key === "fresh" ? "New business currently moving through the pipeline" : sec.key === "renewal" ? "Renewal business currently moving through the pipeline" : "Combined fresh and renewal business"}</div>
