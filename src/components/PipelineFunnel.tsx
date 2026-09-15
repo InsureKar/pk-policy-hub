@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtPKR } from "@/lib/format";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
+import { Circle } from "lucide-react";
 
 type Props = {
   defaultFrom?: string;
@@ -13,19 +13,6 @@ type Props = {
   lockUserId?: string;
   title?: string;
 };
-
-const STAGE_COLORS: Record<string, string> = {
-  created: "#c8d34a",
-  "follow up": "#c76ac9",
-  qualified: "#f2c6de",
-  negotiation: "#e8a33d",
-  approval: "#8a7f78",
-  won: "#2dbf9a",
-  lost: "#9aa0a6",
-};
-
-const stageColor = (name: string) =>
-  STAGE_COLORS[name.trim().toLowerCase()] ?? "hsl(var(--muted-foreground))";
 
 type Mode = "month" | "quarter" | "year";
 
@@ -115,6 +102,15 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
 
   const overallTotal = filteredDeals.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
 
+  const reset = () => {
+    const currentYear = now.getFullYear();
+    setModeDraft("year");
+    setYearDraft(currentYear);
+    setYearMonthDraft("all");
+    setUserDraft(lockUserId ?? "all");
+    setApplied({ mode: "year", year: currentYear, month: -1, quarter: String(Math.floor(now.getMonth() / 3) + 1), userId: lockUserId ?? "all" });
+  };
+
   const apply = () => {
     setApplied({
       mode: modeDraft,
@@ -150,9 +146,9 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
   ];
 
   return (
-    <div className="rounded-lg border bg-card">
+    <div className="space-y-5">
       {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-3 p-3 border-b">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 shadow-sm">
         <Select value={modeDraft} onValueChange={(v) => setModeDraft(v as Mode)}>
           <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -208,60 +204,44 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
             </SelectContent>
           </Select>
         )}
-        <Button variant="outline" onClick={apply}>Apply</Button>
-        <span className="text-sm text-muted-foreground">{periodLabel}</span>
-        <Link to="/master" search={{ tab: "pipeline" }} className="ml-auto">
-          <Button variant="outline" size="sm">Setup pipelines</Button>
-        </Link>
-      </div>
-
-
-      {title && <div className="px-4 pt-3 text-sm font-medium">{title}</div>}
-
-      {/* Overall total */}
-      <div className="text-center pt-4">
-        <span className="text-xl font-semibold tabular-nums">{fmtPKR(overallTotal)}</span>
-        <span className="text-muted-foreground ml-2 text-sm">· {filteredDeals.length} deals</span>
+        <Button onClick={apply}>Apply</Button>
+        <Button variant="ghost" onClick={reset}>Reset</Button>
+        <span className="ml-auto text-xs font-medium text-muted-foreground">{periodLabel}</span>
       </div>
 
       {/* Sections */}
-      <div className="p-4 space-y-8 overflow-x-auto">
+      <div className="space-y-3">
+        {title && <div className="text-sm font-semibold">{title}</div>}
         {sections.map((sec) => {
           const inProgress = sec.deals.filter((d: any) => d.stage_id && !wonIds.has(d.stage_id) && !lostIds.has(d.stage_id));
           const inProgressTotal = inProgress.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
           return (
-            <div key={sec.key}>
-              <div className="text-center mb-2">
-                <span className="text-primary font-semibold">{sec.label}</span>
-                <span className="text-sm ml-3 tabular-nums font-medium">{fmtPKR(inProgressTotal)}</span>
-                <span className="text-sm text-muted-foreground ml-2">· {inProgress.length} deals in progress</span>
+            <div key={sec.key} className="rounded-lg border bg-card p-4 shadow-sm">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <Circle className={`h-2 w-2 fill-current ${sec.key === "fresh" ? "text-primary" : sec.key === "renewal" ? "text-brand-orange" : "text-success"}`} />
+                <span className="text-sm font-semibold">{sec.label}</span>
+                <span className="text-xs text-muted-foreground">{fmtPKR(inProgressTotal)} in progress · {inProgress.length} deals</span>
+                {sec.key === "total" && <span className="ml-auto text-xs font-medium text-muted-foreground">{fmtPKR(overallTotal)} · {filteredDeals.length} total deals</span>}
               </div>
-              <div className="flex gap-0 min-w-max">
-                {stages.map((s: any, idx: number) => {
+              <div className="overflow-x-auto">
+                <div className="flex min-w-max">
+                {stages.map((s: any) => {
                   const list = sec.deals.filter((d: any) => d.stage_id === s.id);
                   const total = list.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
-                  const color = stageColor(s.name);
-                  const isFirst = idx === 0;
-                  const isLast = idx === stages.length - 1;
-                  const clip = isFirst
-                    ? "polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%)"
-                    : isLast
-                    ? "polygon(0 0, 100% 0, 100% 100%, 0 100%, 14px 50%)"
-                    : "polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%)";
                   return (
                     <div
                       key={s.id}
-                      className="relative flex-1 min-w-[130px] px-4 py-3 bg-card"
-                      style={{ clipPath: clip, marginLeft: isFirst ? 0 : -12, boxShadow: "inset 0 0 0 1px var(--border)" }}
+                      className={`min-w-[130px] flex-1 border-r px-3 py-2 last:border-r-0 ${s.is_won ? "bg-success/10" : s.is_lost ? "bg-destructive/5" : ""}`}
                     >
-                      <div className="text-xs text-muted-foreground text-center">{s.name}</div>
-                      <div className="text-base font-semibold text-center tabular-nums mt-1">{fmtPKR(total)}</div>
-                      <div className="text-xs text-muted-foreground text-center mt-0.5">{list.length} deals</div>
-                      <div className="h-1 mt-2 rounded-full" style={{ background: color }} />
+                      <div className="text-xs text-muted-foreground">{s.name}</div>
+                      <div className={`mt-2 text-base font-semibold tabular-nums ${s.is_won ? "text-success" : s.is_lost ? "text-destructive" : ""}`}>{fmtPKR(total)}</div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">{list.length} deals</div>
                     </div>
                   );
                 })}
+                </div>
               </div>
+              <div className="mt-3 text-xs text-muted-foreground">{sec.key === "fresh" ? "New business currently moving through the pipeline" : sec.key === "renewal" ? "Renewal business currently moving through the pipeline" : "Combined fresh and renewal business"}</div>
             </div>
           );
         })}
