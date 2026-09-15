@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
 import { useState, type ReactNode } from "react";
-import insureSLogo from "@/assets/insures-logo.png.asset.json";
+import insureSLogo from "@/assets/logo.png";
 
 type NavItem = {
   to: string;
@@ -138,7 +138,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="px-5 py-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-md bg-sidebar-primary-foreground grid place-items-center overflow-hidden">
-              <img src={insureSLogo.url} alt="InsureS" className="w-9 h-auto" />
+              <img src={insureSLogo} alt="InsureS" className="w-9 h-auto" />
             </div>
             <div>
               <div className="font-semibold leading-tight">InsureS</div>

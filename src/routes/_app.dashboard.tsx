@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { PipelineFunnel } from "@/components/PipelineFunnel";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 import { Button } from "@/components/ui/button";
-import insureSLogo from "@/assets/insures-logo.png.asset.json";
+import insureSLogo from "@/assets/logo.png";
 
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -167,7 +167,7 @@ function DashboardPage() {
     <div className="mx-auto max-w-[1500px] p-4 sm:p-6">
       <header className="mb-4 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <img src={insureSLogo.url} alt="InsureS" className="h-10 w-auto object-contain" />
+          <img src={insureSLogo} alt="InsureS" className="h-10 w-auto object-contain" />
           <div>
             <h1 className="text-2xl font-semibold">Dashboard</h1>
             <p className="mt-0.5 text-sm text-muted-foreground">Business overview across fresh business, renewals, and combined performance</p>
