@@ -415,13 +415,11 @@ function NewDealPage() {
   const removeInsReceipt = (i: number, path: string) =>
     setInsReceipts((m) => ({ ...m, [i]: (m[i] ?? []).filter((p) => p.path !== path) }));
 
-  // ── Per-instalment payment status & collection details ──
-  type InsCollect = { status: "due" | "paid"; mode: string; date: string; ref: string; remarks: string };
-  const [insCollect, setInsCollect] = useState<Record<number, Partial<InsCollect>>>({});
+  // ── Per-instalment collection details (status lives above, next to dueOf) ──
   const collectOf = (i: number): InsCollect => {
     const o = insCollect[i] ?? {};
     return {
-      status: o.status ?? ((paidRows[i]?.paid_amount ?? 0) > 0 ? "paid" : "due"),
+      status: statusOf(i),
       mode: o.mode ?? "", date: o.date ?? "", ref: o.ref ?? "", remarks: o.remarks ?? "",
     };
   };
