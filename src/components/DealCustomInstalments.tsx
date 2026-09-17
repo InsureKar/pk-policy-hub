@@ -52,9 +52,10 @@ const blank = (n: number, prev?: Row): Row => ({
 
 /**
  * Custom ("set your own plan") instalment schedule on an existing deal.
- * The user can edit every saved instalment and append the next one. An
- * instalment only counts once its status is set to Paid, and it is tagged to
- * the month in which it was marked paid.
+ * Previously saved instalments are locked — the user can only mark them
+ * Paid/Due with collection details, and append one or more new instalments.
+ * An instalment only counts once its status is set to Paid, and it is tagged
+ * to the month in which it was marked paid.
  */
 export function DealCustomInstalments({
   dealId, basePercentage, canEdit = true,
@@ -250,12 +251,12 @@ export function DealCustomInstalments({
                       </button>
                     </td>
                     <td className="p-2 min-w-[170px]">
-                      {canEdit
+                      {canEdit && !r.id
                         ? <DateField value={r.due_date} onChange={(v) => setRow(i, { due_date: v })} placeholder="Due date" />
                         : (r.due_date || "—")}
                     </td>
                     <td className="p-2 text-right min-w-[150px]">
-                      {canEdit
+                      {canEdit && !r.id
                         ? <div className="max-w-[200px] ml-auto"><MoneyInput value={r.amount} onChange={(v) => setRow(i, { amount: v })} showWords={false} /></div>
                         : <span className="tabular-nums">{fmtPKR(r.amount)}</span>}
                     </td>
