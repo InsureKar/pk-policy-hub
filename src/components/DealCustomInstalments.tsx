@@ -358,6 +358,11 @@ export function DealCustomInstalments({
                         <div>
                           <div className="text-xs font-medium mb-2">Payment to Company — Collection Details</div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                            {r.status === "paid" && (
+                              <div><p className="mb-1 text-muted-foreground">Paid Date</p>
+                                <DateField value={r.paid_date} onChange={(v) => setRow(i, { paid_date: v })} disabled={!canEdit} placeholder="Paid date" />
+                                <p className="mt-1 text-[11px] text-muted-foreground">Tagged to this month</p></div>
+                            )}
                             <div><p className="mb-1 text-muted-foreground">Payment Method</p>
                               <Select value={r.mode} onValueChange={(v) => setRow(i, { mode: v })}>
                                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
