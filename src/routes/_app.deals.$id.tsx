@@ -186,16 +186,7 @@ function DealDetail() {
           </CardContent>
         </Card>
 
-        {!canSeeFinancials && calc && (
-          <Card>
-            <CardHeader><CardTitle className="text-base">Tagged Premium</CardTitle></CardHeader>
-            <CardContent className="text-sm">
-              <KV k="Tagged Premium (auto)" v={<span className="font-semibold">{fmtPKR(calc.tagged_premium)}</span>} />
-            </CardContent>
-          </Card>
-        )}
-
-        {canSeeFinancials && (
+        {(
           <Card>
             <CardHeader><CardTitle className="text-base">Premium & Income</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
