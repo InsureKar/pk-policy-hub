@@ -434,8 +434,6 @@ function NewDealPage() {
       mode: o.mode ?? "", date: o.date ?? "", ref: o.ref ?? "", remarks: o.remarks ?? "",
     };
   };
-  const setCollect = (i: number, patch: Partial<InsCollect>) =>
-    setInsCollect((m) => ({ ...m, [i]: { ...m[i], ...patch } }));
 
 
   // Combined totals of all hand-written periods (shown below the quarter section).
