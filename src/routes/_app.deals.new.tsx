@@ -291,10 +291,21 @@ function NewDealPage() {
     });
   }, [form.payment_schedule, form.policy_start_date, effGross, manualSchedule, underwritten, isCustom, customRows]);
 
-  // Once a paid amount is recorded the period is settled, so nothing is due.
+  // ── Per-instalment payment status & collection details ──
+  type InsCollect = { status: "due" | "paid"; mode: string; date: string; ref: string; remarks: string };
+  const [insCollect, setInsCollect] = useState<Record<number, Partial<InsCollect>>>({});
+  const setCollect = (i: number, patch: Partial<InsCollect>) =>
+    setInsCollect((m) => ({ ...m, [i]: { ...m[i], ...patch } }));
+  /** Paid / Due state of a period; defaults to paid once an amount is recorded. */
+  const statusOf = (i: number): "due" | "paid" =>
+    insCollect[i]?.status ?? ((paidRows[i]?.paid_amount ?? 0) > 0 ? "paid" : "due");
+
+  // Once a period is settled, nothing remains due.
   const dueOf = (i: number) => {
     const paidAmt = paidRows[i]?.paid_amount ?? 0;
     if (manualSchedule && paidAmt > 0) return 0;
+    // Custom plan: the instalment is settled when its status is set to Paid.
+    if (isCustom && statusOf(i) === "paid") return 0;
     return instalments[i]?.amount ?? 0;
   };
   const scheduleTotal = instalments.reduce((a, _, i) => a + dueOf(i), 0);
