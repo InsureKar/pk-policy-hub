@@ -179,54 +179,49 @@ export function DealCustomInstalments({
     qc.invalidateQueries({ queryKey: ["deal-installments", dealId] });
   };
 
-  const save = async () => {
-    setSaving(true);
+  const buildPayload = async (r: Row, i: number) => {
     const now = new Date();
     const { data: auth } = await supabase.auth.getUser();
-    const payload = rows.map((r, i) => {
-      const c = calcs[i];
-      // Paid instalments are tagged to the month of their paid date
-      // (falling back to any existing tag, then to the current month).
-      const pd = r.paid_date ? new Date(r.paid_date) : null;
-      const tagged = r.status === "paid"
-        ? pd && !isNaN(pd.getTime())
-          ? { m: pd.getMonth() + 1, y: pd.getFullYear() }
-          : { m: r.tagged_month ?? now.getMonth() + 1, y: r.tagged_year ?? now.getFullYear() }
-        : { m: null, y: null };
-      return {
-        ...(r.id ? { id: r.id } : {}),
-        deal_id: dealId,
-        installment_number: r.installment_number,
-        label: r.label,
-        due_date: r.due_date || null,
-        amount: r.amount,
-        paid_amount: r.status === "paid" ? r.amount : 0,
-        paid_date: r.status === "paid" ? (r.paid_date || r.receive_date || null) : null,
-        gross_premium: r.gross,
-        net_premium: r.net,
-        loading: r.loading,
-        commission_percentage: r.commission,
-        marketing_budget: c ? c.marketing_before_tax : 0,
-        commission: c ? c.commission_before_tax : 0,
-        b2b_commission: b2bOf(r),
-        b2b_taker_name: r.b2b_taker_name.trim() || null,
-        payment_status: r.status,
-        payment_mode: r.mode || null,
-        payment_receive_date: r.receive_date || null,
-        transaction_reference: r.reference.trim() || null,
-        payment_remarks: r.remarks.trim() || null,
-        tagged_month: tagged.m,
-        tagged_year: tagged.y,
-        created_by: auth.user?.id ?? null,
-      };
-    });
-    const { error } = await supabase
-      .from("deal_installments" as any)
-      .upsert(payload as any, { onConflict: "deal_id,installment_number" });
-    if (error) { setSaving(false); return toast.error(error.message); }
+    const c = calcs[i];
+    // Paid instalments are tagged to the month of their paid date
+    // (falling back to any existing tag, then to the current month).
+    const pd = r.paid_date ? new Date(r.paid_date) : null;
+    const tagged = r.status === "paid"
+      ? pd && !isNaN(pd.getTime())
+        ? { m: pd.getMonth() + 1, y: pd.getFullYear() }
+        : { m: r.tagged_month ?? now.getMonth() + 1, y: r.tagged_year ?? now.getFullYear() }
+      : { m: null, y: null };
+    return {
+      ...(r.id ? { id: r.id } : {}),
+      deal_id: dealId,
+      installment_number: r.installment_number,
+      label: r.label,
+      due_date: r.due_date || null,
+      amount: r.amount,
+      paid_amount: r.status === "paid" ? r.amount : 0,
+      paid_date: r.status === "paid" ? (r.paid_date || r.receive_date || null) : null,
+      gross_premium: r.gross,
+      net_premium: r.net,
+      loading: r.loading,
+      commission_percentage: r.commission,
+      marketing_budget: c ? c.marketing_before_tax : 0,
+      commission: c ? c.commission_before_tax : 0,
+      b2b_commission: b2bOf(r),
+      b2b_taker_name: r.b2b_taker_name.trim() || null,
+      payment_status: r.status,
+      payment_mode: r.mode || null,
+      payment_receive_date: r.receive_date || null,
+      transaction_reference: r.reference.trim() || null,
+      payment_remarks: r.remarks.trim() || null,
+      tagged_month: tagged.m,
+      tagged_year: tagged.y,
+      created_by: auth.user?.id ?? null,
+    };
+  };
 
-    // Roll the instalment breakdowns up to the deal, exactly like the new-deal
-    // screen does, so Tagged Premium and the deal totals stay in step.
+  // Roll the instalment breakdowns up to the deal, exactly like the new-deal
+  // screen does, so Tagged Premium and the deal totals stay in step.
+  const rollupDeal = async () => {
     const agg = calcs.reduce((a, c) => ({
       comm: a.comm + c.commission_before_tax, mkt: a.mkt + c.marketing_before_tax,
       loading: a.loading + c.loading, b2b: a.b2b + c.b2b_commission,
@@ -240,11 +235,78 @@ export function DealCustomInstalments({
       loading: agg.loading,
       b2b_commission: agg.b2b,
     } as any).eq("id", dealId);
+  };
+
+  const attachReceipts = async (i: number) => {
+    const files = pendingReceipts[i] ?? [];
+    if (!files.length) return;
+    const { data: auth } = await supabase.auth.getUser();
+    const label = rows[i]?.label ?? `Instalment ${i + 1}`;
+    const docs = files.map((p) => ({
+      deal_id: dealId,
+      doc_type: "b2b_commission_receipt",
+      file_name: `${label} — ${p.name}`,
+      storage_path: p.path,
+      uploaded_by: auth.user?.id ?? null,
+    }));
+    const { error } = await supabase.from("deal_documents").insert(docs as any);
+    if (error) toast.error("Instalment saved, but receipt failed to attach: " + error.message);
+    else setPendingReceipts((m) => ({ ...m, [i]: [] }));
+    qc.invalidateQueries({ queryKey: ["deal-installment-receipts", dealId] });
+  };
+
+  const uploadReceipts = async (i: number, fileList: File[]) => {
+    if (!fileList.length) return;
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return;
+    setUploadingIdx(i);
+    const done: { path: string; name: string }[] = [];
+    for (const file of fileList) {
+      const path = `b2b-receipts/${auth.user.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+      const { error } = await supabase.storage.from("crm-documents").upload(path, file, { upsert: false });
+      if (error) toast.error(`${file.name}: ${error.message}`);
+      else done.push({ path, name: file.name });
+    }
+    setUploadingIdx(null);
+    if (!done.length) return;
+    setPendingReceipts((m) => ({ ...m, [i]: [...(m[i] ?? []), ...done] }));
+    toast.success(`${done.length} receipt(s) uploaded`);
+  };
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["deal-installments", dealId] });
+    qc.invalidateQueries({ queryKey: ["deal", dealId] });
+  };
+
+  // Save a single instalment (its premium boxes, collection details, receipts).
+  const saveRow = async (i: number) => {
+    setSavingIdx(i);
+    const payload = await buildPayload(rows[i], i);
+    const { error } = await supabase
+      .from("deal_installments" as any)
+      .upsert([payload] as any, { onConflict: "deal_id,installment_number" });
+    if (error) { setSavingIdx(null); return toast.error(error.message); }
+    await attachReceipts(i);
+    await rollupDeal();
+    setSavingIdx(null);
+    toast.success(`${rows[i].label} saved`);
+    invalidate();
+  };
+
+  const save = async () => {
+    setSaving(true);
+    const payload = await Promise.all(rows.map((r, i) => buildPayload(r, i)));
+    const { error } = await supabase
+      .from("deal_installments" as any)
+      .upsert(payload as any, { onConflict: "deal_id,installment_number" });
+    if (error) { setSaving(false); return toast.error(error.message); }
+
+    for (let i = 0; i < rows.length; i++) await attachReceipts(i);
+    await rollupDeal();
 
     setSaving(false);
     toast.success("Instalment plan saved");
-    qc.invalidateQueries({ queryKey: ["deal-installments", dealId] });
-    qc.invalidateQueries({ queryKey: ["deal", dealId] });
+    invalidate();
   };
 
   return (
