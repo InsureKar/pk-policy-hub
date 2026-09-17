@@ -32,6 +32,7 @@ type Row = {
   b2b_pct: number;
   b2b_taker_name: string;
   status: "due" | "paid";
+  paid_date: string;
   mode: string;
   receive_date: string;
   reference: string;
@@ -47,7 +48,7 @@ const blank = (n: number, prev?: Row): Row => ({
   amount: 0,
   gross: 0, net: 0, loading: 0, commission: prev?.commission ?? 0, marketing: prev?.marketing ?? 0,
   b2b: 0, b2b_type: "fixed", b2b_pct: 0, b2b_taker_name: prev?.b2b_taker_name ?? "",
-  status: "due", mode: "", receive_date: "", reference: "", remarks: "",
+  status: "due", paid_date: "", mode: "", receive_date: "", reference: "", remarks: "",
   tagged_month: null, tagged_year: null,
 });
 
@@ -103,6 +104,7 @@ export function DealCustomInstalments({
       b2b_pct: 0,
       b2b_taker_name: s.b2b_taker_name ?? "",
       status: (s.payment_status === "paid" ? "paid" : "due") as "due" | "paid",
+      paid_date: s.paid_date ?? "",
       mode: s.payment_mode ?? "",
       receive_date: s.payment_receive_date ?? "",
       reference: s.transaction_reference ?? "",
@@ -164,9 +166,13 @@ export function DealCustomInstalments({
     const { data: auth } = await supabase.auth.getUser();
     const payload = rows.map((r, i) => {
       const c = calcs[i];
-      // Keep the original tag; stamp the current month the first time it is paid.
+      // Paid instalments are tagged to the month of their paid date
+      // (falling back to any existing tag, then to the current month).
+      const pd = r.paid_date ? new Date(r.paid_date) : null;
       const tagged = r.status === "paid"
-        ? { m: r.tagged_month ?? now.getMonth() + 1, y: r.tagged_year ?? now.getFullYear() }
+        ? pd && !isNaN(pd.getTime())
+          ? { m: pd.getMonth() + 1, y: pd.getFullYear() }
+          : { m: r.tagged_month ?? now.getMonth() + 1, y: r.tagged_year ?? now.getFullYear() }
         : { m: null, y: null };
       return {
         ...(r.id ? { id: r.id } : {}),
@@ -176,7 +182,7 @@ export function DealCustomInstalments({
         due_date: r.due_date || null,
         amount: r.amount,
         paid_amount: r.status === "paid" ? r.amount : 0,
-        paid_date: r.status === "paid" ? (r.receive_date || null) : null,
+        paid_date: r.status === "paid" ? (r.paid_date || r.receive_date || null) : null,
         gross_premium: r.gross,
         net_premium: r.net,
         loading: r.loading,
@@ -265,7 +271,21 @@ export function DealCustomInstalments({
                     </td>
                     <td className="p-2 min-w-[130px]">
                       {canEdit ? (
-                        <Select value={r.status} onValueChange={(v) => setRow(i, { status: v as "due" | "paid" })}>
+                        <Select
+                          value={r.status}
+                          onValueChange={(v) => {
+                            const status = v as "due" | "paid";
+                            if (status === "paid") {
+                              setRow(i, {
+                                status,
+                                paid_date: r.paid_date || new Date().toISOString().slice(0, 10),
+                              });
+                              setOpen(i);
+                            } else {
+                              setRow(i, { status, paid_date: "", tagged_month: null, tagged_year: null });
+                            }
+                          }}
+                        >
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="due">Due</SelectItem>
@@ -276,9 +296,12 @@ export function DealCustomInstalments({
                     </td>
                     <td className="p-2 whitespace-nowrap text-muted-foreground">
                       {r.status === "paid"
-                        ? (r.tagged_month
-                          ? `${MONTHS[r.tagged_month - 1]} ${r.tagged_year ?? ""}`
-                          : `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()} (on save)`)
+                        ? (() => {
+                          const pd = r.paid_date ? new Date(r.paid_date) : null;
+                          if (pd && !isNaN(pd.getTime())) return `${MONTHS[pd.getMonth()]} ${pd.getFullYear()}`;
+                          if (r.tagged_month) return `${MONTHS[r.tagged_month - 1]} ${r.tagged_year ?? ""}`;
+                          return `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()} (on save)`;
+                        })()
                         : "—"}
                     </td>
                     {canEdit && (
@@ -335,6 +358,11 @@ export function DealCustomInstalments({
                         <div>
                           <div className="text-xs font-medium mb-2">Payment to Company — Collection Details</div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                            {r.status === "paid" && (
+                              <div><p className="mb-1 text-muted-foreground">Paid Date</p>
+                                <DateField value={r.paid_date} onChange={(v) => setRow(i, { paid_date: v })} disabled={!canEdit} placeholder="Paid date" />
+                                <p className="mt-1 text-[11px] text-muted-foreground">Tagged to this month</p></div>
+                            )}
                             <div><p className="mb-1 text-muted-foreground">Payment Method</p>
                               <Select value={r.mode} onValueChange={(v) => setRow(i, { mode: v })}>
                                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
