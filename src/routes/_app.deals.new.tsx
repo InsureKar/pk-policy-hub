@@ -291,10 +291,21 @@ function NewDealPage() {
     });
   }, [form.payment_schedule, form.policy_start_date, effGross, manualSchedule, underwritten, isCustom, customRows]);
 
-  // Once a paid amount is recorded the period is settled, so nothing is due.
+  // ── Per-instalment payment status & collection details ──
+  type InsCollect = { status: "due" | "paid"; mode: string; date: string; ref: string; remarks: string };
+  const [insCollect, setInsCollect] = useState<Record<number, Partial<InsCollect>>>({});
+  const setCollect = (i: number, patch: Partial<InsCollect>) =>
+    setInsCollect((m) => ({ ...m, [i]: { ...m[i], ...patch } }));
+  /** Paid / Due state of a period; defaults to paid once an amount is recorded. */
+  const statusOf = (i: number): "due" | "paid" =>
+    insCollect[i]?.status ?? ((paidRows[i]?.paid_amount ?? 0) > 0 ? "paid" : "due");
+
+  // Once a period is settled, nothing remains due.
   const dueOf = (i: number) => {
     const paidAmt = paidRows[i]?.paid_amount ?? 0;
     if (manualSchedule && paidAmt > 0) return 0;
+    // Custom plan: the instalment is settled when its status is set to Paid.
+    if (isCustom && statusOf(i) === "paid") return 0;
     return instalments[i]?.amount ?? 0;
   };
   const scheduleTotal = instalments.reduce((a, _, i) => a + dueOf(i), 0);
@@ -415,18 +426,14 @@ function NewDealPage() {
   const removeInsReceipt = (i: number, path: string) =>
     setInsReceipts((m) => ({ ...m, [i]: (m[i] ?? []).filter((p) => p.path !== path) }));
 
-  // ── Per-instalment payment status & collection details ──
-  type InsCollect = { status: "due" | "paid"; mode: string; date: string; ref: string; remarks: string };
-  const [insCollect, setInsCollect] = useState<Record<number, Partial<InsCollect>>>({});
+  // ── Per-instalment collection details (status lives above, next to dueOf) ──
   const collectOf = (i: number): InsCollect => {
     const o = insCollect[i] ?? {};
     return {
-      status: o.status ?? ((paidRows[i]?.paid_amount ?? 0) > 0 ? "paid" : "due"),
+      status: statusOf(i),
       mode: o.mode ?? "", date: o.date ?? "", ref: o.ref ?? "", remarks: o.remarks ?? "",
     };
   };
-  const setCollect = (i: number, patch: Partial<InsCollect>) =>
-    setInsCollect((m) => ({ ...m, [i]: { ...m[i], ...patch } }));
 
 
   // Combined totals of all hand-written periods (shown below the quarter section).
@@ -591,8 +598,13 @@ function NewDealPage() {
             payment_receive_date: collectOf(i).date || null,
             transaction_reference: collectOf(i).ref.trim() || null,
             payment_remarks: collectOf(i).remarks.trim() || null,
-            tagged_month: paid ? paid.getMonth() + 1 : null,
-            tagged_year: paid ? paid.getFullYear() : null,
+            // A paid instalment is tagged to the month it was marked paid.
+            tagged_month: collectOf(i).status === "paid"
+              ? new Date().getMonth() + 1
+              : paid ? paid.getMonth() + 1 : null,
+            tagged_year: collectOf(i).status === "paid"
+              ? new Date().getFullYear()
+              : paid ? paid.getFullYear() : null,
             created_by: user.id,
 
           };

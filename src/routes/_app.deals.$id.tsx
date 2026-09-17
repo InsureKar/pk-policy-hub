@@ -16,6 +16,7 @@ import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { DateField } from "@/components/DateField";
 import { DealInstalments } from "@/components/DealInstalments";
+import { DealCustomInstalments } from "@/components/DealCustomInstalments";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { ArrowLeft, Maximize2, Pencil } from "lucide-react";
@@ -289,14 +290,22 @@ function DealDetail() {
         </Card>
       )}
 
-      <DealInstalments
-        dealId={id}
-        schedule={d.payment_schedule}
-        startDate={d.policy_start_date}
-        netPremium={Number(d.net_premium ?? 0)}
-        underwrittenPremium={(d as any).underwritten_premium ?? 0}
-        canEdit={canManageDeal}
-      />
+      {String(d.payment_schedule ?? "").toLowerCase().startsWith("custom") ? (
+        <DealCustomInstalments
+          dealId={id}
+          basePercentage={Number((d as any).base_percentage ?? 0) || undefined}
+          canEdit={canManageDeal}
+        />
+      ) : (
+        <DealInstalments
+          dealId={id}
+          schedule={d.payment_schedule}
+          startDate={d.policy_start_date}
+          netPremium={Number(d.net_premium ?? 0)}
+          underwrittenPremium={(d as any).underwritten_premium ?? 0}
+          canEdit={canManageDeal}
+        />
+      )}
 
       <DealInvoicesAndTravel dealId={id} stage={stage} isTravel={(type ?? "").toLowerCase() === "travel"} />
 
