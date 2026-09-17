@@ -289,14 +289,22 @@ function DealDetail() {
         </Card>
       )}
 
-      <DealInstalments
-        dealId={id}
-        schedule={d.payment_schedule}
-        startDate={d.policy_start_date}
-        netPremium={Number(d.net_premium ?? 0)}
-        underwrittenPremium={(d as any).underwritten_premium ?? 0}
-        canEdit={canManageDeal}
-      />
+      {String(d.payment_schedule ?? "").toLowerCase().startsWith("custom") ? (
+        <DealCustomInstalments
+          dealId={id}
+          basePercentage={Number((d as any).base_percentage ?? 0) || undefined}
+          canEdit={canManageDeal}
+        />
+      ) : (
+        <DealInstalments
+          dealId={id}
+          schedule={d.payment_schedule}
+          startDate={d.policy_start_date}
+          netPremium={Number(d.net_premium ?? 0)}
+          underwrittenPremium={(d as any).underwritten_premium ?? 0}
+          canEdit={canManageDeal}
+        />
+      )}
 
       <DealInvoicesAndTravel dealId={id} stage={stage} isTravel={(type ?? "").toLowerCase() === "travel"} />
 
