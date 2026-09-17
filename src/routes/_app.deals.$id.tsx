@@ -16,6 +16,7 @@ import { calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { DateField } from "@/components/DateField";
 import { DealInstalments } from "@/components/DealInstalments";
+import { DealCustomInstalments } from "@/components/DealCustomInstalments";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { ArrowLeft, Maximize2, Pencil } from "lucide-react";
