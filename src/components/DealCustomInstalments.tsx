@@ -194,8 +194,25 @@ export function DealCustomInstalments({
     const { error } = await supabase
       .from("deal_installments" as any)
       .upsert(payload as any, { onConflict: "deal_id,installment_number" });
+    if (error) { setSaving(false); return toast.error(error.message); }
+
+    // Roll the instalment breakdowns up to the deal, exactly like the new-deal
+    // screen does, so Tagged Premium and the deal totals stay in step.
+    const agg = calcs.reduce((a, c) => ({
+      comm: a.comm + c.commission_before_tax, mkt: a.mkt + c.marketing_before_tax,
+      loading: a.loading + c.loading, b2b: a.b2b + c.b2b_commission,
+      gross: a.gross + c.gross_premium, net: a.net + c.net_premium,
+    }), { comm: 0, mkt: 0, loading: 0, b2b: 0, gross: 0, net: 0 });
+    await supabase.from("deals").update({
+      gross_premium: agg.gross,
+      net_premium: agg.net,
+      commission_percentage: agg.gross > 0 ? (agg.comm / agg.gross) * 100 : 0,
+      marketing_budget_percentage: agg.gross > 0 ? (agg.mkt / agg.gross) * 100 : 0,
+      loading: agg.loading,
+      b2b_commission: agg.b2b,
+    } as any).eq("id", dealId);
+
     setSaving(false);
-    if (error) return toast.error(error.message);
     toast.success("Instalment plan saved");
     qc.invalidateQueries({ queryKey: ["deal-installments", dealId] });
     qc.invalidateQueries({ queryKey: ["deal", dealId] });
