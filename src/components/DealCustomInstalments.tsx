@@ -357,9 +357,14 @@ export function DealCustomInstalments({
         </div>
 
         {canEdit && (
-          <div className="flex flex-wrap gap-2 justify-between">
-            <Button type="button" variant="outline" onClick={addRow}>Add Instalment</Button>
-            <Button type="button" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save Instalment Plan"}</Button>
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2 justify-between">
+              <Button type="button" variant="outline" onClick={addRow}>Add Instalment</Button>
+              <Button type="button" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save Instalment Plan"}</Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Saved instalments are locked — you can mark them Paid/Due, and add one or more new instalments below them.
+            </p>
           </div>
         )}
 
