@@ -168,7 +168,7 @@ function DealDetail() {
       />
 
       <div className="grid lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2">
+        <Card className={canSeeFinancials ? "lg:col-span-2" : "lg:col-span-3"}>
           <CardHeader><CardTitle className="text-base">Deal Information</CardTitle></CardHeader>
           <CardContent className="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
             <KV k="Cover Note #" v={d.cover_note_number || "—"} />
@@ -186,7 +186,16 @@ function DealDetail() {
           </CardContent>
         </Card>
 
-        {calc && (
+        {!canSeeFinancials && calc && (
+          <Card>
+            <CardHeader><CardTitle className="text-base">Tagged Premium</CardTitle></CardHeader>
+            <CardContent className="text-sm">
+              <KV k="Tagged Premium (auto)" v={<span className="font-semibold">{fmtPKR(calc.tagged_premium)}</span>} />
+            </CardContent>
+          </Card>
+        )}
+
+        {canSeeFinancials && (
           <Card>
             <CardHeader><CardTitle className="text-base">Premium & Income</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
@@ -285,7 +294,7 @@ function DealDetail() {
         <DealCustomInstalments
           dealId={id}
           basePercentage={Number((d as any).base_percentage ?? 0) || undefined}
-          canEdit
+          canEdit={canManageDeal}
         />
       ) : (
         <DealInstalments
