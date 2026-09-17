@@ -394,7 +394,7 @@ export function DealCustomInstalments({
               <Button type="button" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save Instalment Plan"}</Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Saved instalments are locked — you can mark them Paid/Due, and add one or more new instalments below them.
+              Open any instalment to fill in its premium &amp; commission details or mark it Paid — you can also add one or more new instalments below.
             </p>
           </div>
         )}
