@@ -430,14 +430,18 @@ export function DealCustomInstalments({
                               <div><p className="mb-1 text-muted-foreground">B2B Commission</p>
                                 <MoneyInput value={r.b2b} onChange={(v) => setRow(i, { b2b: v })} disabled={!canEdit} showWords={false} /></div>
                             )}
-                            <div><p className="mb-1 text-muted-foreground">B2B Taker Name</p>
+                            <div className="col-span-2 md:col-span-6"><p className="mb-1 text-muted-foreground">Name of B2B Commission Taker</p>
                               {canEdit
                                 ? <B2BTakerField value={r.b2b_taker_name} onChange={(v) => setRow(i, { b2b_taker_name: v })} />
                                 : <span>{r.b2b_taker_name || "—"}</span>}</div>
                           </div>
+                          <div className="mt-3 rounded-md border p-3 max-w-xs">
+                            <p className="text-xs text-muted-foreground">Tagged Premium</p>
+                            <p className="font-medium tabular-nums">{fmtPKR(calcs[i]?.tagged_premium ?? 0)}</p>
+                          </div>
                         </div>
                         <div>
-                          <div className="text-xs font-medium mb-2">Payment to Company — Collection Details</div>
+                          <div className="text-xs font-medium mb-2">Payment to Company — Collection Details — {r.label}</div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                             {r.status === "paid" && (
                               <div><p className="mb-1 text-muted-foreground">Paid Date</p>
@@ -446,19 +450,53 @@ export function DealCustomInstalments({
                             )}
                             <div><p className="mb-1 text-muted-foreground">Payment Method</p>
                               <Select value={r.mode} onValueChange={(v) => setRow(i, { mode: v })}>
-                                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
                                 <SelectContent>
                                   {PAYMENT_MODES.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                                 </SelectContent>
                               </Select></div>
-                            <div><p className="mb-1 text-muted-foreground">Receive Date</p>
+                            <div><p className="mb-1 text-muted-foreground">Payment Receive Date</p>
                               <DateField value={r.receive_date} onChange={(v) => setRow(i, { receive_date: v })} disabled={!canEdit} placeholder="Receive date" /></div>
-                            <div><p className="mb-1 text-muted-foreground">Transaction / Cheque No.</p>
+                            <div><p className="mb-1 text-muted-foreground">Transaction / Cheque Reference</p>
                               <Input value={r.reference} disabled={!canEdit} onChange={(e) => setRow(i, { reference: e.target.value })} placeholder="TID / Cheque no." /></div>
-                            <div><p className="mb-1 text-muted-foreground">Remarks</p>
+                            <div><p className="mb-1 text-muted-foreground">Payment Remarks</p>
                               <Input value={r.remarks} disabled={!canEdit} onChange={(e) => setRow(i, { remarks: e.target.value })} /></div>
                           </div>
                         </div>
+                        <div className="space-y-1.5 max-w-md">
+                          <div className="text-xs font-medium">Payment Receipt — {r.label}</div>
+                          {canEdit && (
+                            <Input type="file" multiple accept="image/*,application/pdf"
+                              disabled={uploadingIdx === i}
+                              onChange={(e) => { const fs = Array.from(e.target.files ?? []); if (fs.length) uploadReceipts(i, fs); e.currentTarget.value = ""; }} />
+                          )}
+                          {(receiptsFor(r.label).length > 0 || (pendingReceipts[i] ?? []).length > 0) && (
+                            <ul className="space-y-1">
+                              {receiptsFor(r.label).map((d) => (
+                                <li key={d.id} className="rounded border px-2 py-1 text-xs truncate">{d.file_name.replace(`${r.label} — `, "")}</li>
+                              ))}
+                              {(pendingReceipts[i] ?? []).map((p) => (
+                                <li key={p.path} className="flex items-center justify-between rounded border px-2 py-1 text-xs">
+                                  <span className="truncate">{p.name}</span>
+                                  {canEdit && (
+                                    <button type="button" className="text-destructive ml-2"
+                                      onClick={() => setPendingReceipts((m) => ({ ...m, [i]: (m[i] ?? []).filter((x) => x.path !== p.path) }))}>Remove</button>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          <p className="text-[11px] text-muted-foreground">
+                            {uploadingIdx === i ? "Uploading…" : `Attach the payment receipt for ${r.label}.`}
+                          </p>
+                        </div>
+                        {canEdit && (
+                          <div className="flex justify-end">
+                            <Button type="button" size="sm" onClick={() => saveRow(i)} disabled={savingIdx === i}>
+                              {savingIdx === i ? "Saving…" : `Save ${r.label}`}
+                            </Button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )}
