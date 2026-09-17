@@ -166,9 +166,13 @@ export function DealCustomInstalments({
     const { data: auth } = await supabase.auth.getUser();
     const payload = rows.map((r, i) => {
       const c = calcs[i];
-      // Keep the original tag; stamp the current month the first time it is paid.
+      // Paid instalments are tagged to the month of their paid date
+      // (falling back to any existing tag, then to the current month).
+      const pd = r.paid_date ? new Date(r.paid_date) : null;
       const tagged = r.status === "paid"
-        ? { m: r.tagged_month ?? now.getMonth() + 1, y: r.tagged_year ?? now.getFullYear() }
+        ? pd && !isNaN(pd.getTime())
+          ? { m: pd.getMonth() + 1, y: pd.getFullYear() }
+          : { m: r.tagged_month ?? now.getMonth() + 1, y: r.tagged_year ?? now.getFullYear() }
         : { m: null, y: null };
       return {
         ...(r.id ? { id: r.id } : {}),
@@ -178,7 +182,7 @@ export function DealCustomInstalments({
         due_date: r.due_date || null,
         amount: r.amount,
         paid_amount: r.status === "paid" ? r.amount : 0,
-        paid_date: r.status === "paid" ? (r.receive_date || null) : null,
+        paid_date: r.status === "paid" ? (r.paid_date || r.receive_date || null) : null,
         gross_premium: r.gross,
         net_premium: r.net,
         loading: r.loading,
