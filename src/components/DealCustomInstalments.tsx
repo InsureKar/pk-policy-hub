@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/lib/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +66,8 @@ export function DealCustomInstalments({
   canEdit?: boolean;
 }) {
   const qc = useQueryClient();
+  const { hasRole } = useAuth();
+  const canSeeSensitive = hasRole(["admin", "management"]);
   const [rows, setRows] = useState<Row[]>([]);
   const [open, setOpen] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -373,16 +376,20 @@ export function DealCustomInstalments({
           <Box label="Outstanding Premium" value={fmtPKR(outstanding)} />
           <Box label="Gross Premium (all instalments)" value={fmtPKR(totals.gross)} />
           <Box label="Net Premium (all instalments)" value={fmtPKR(totals.net)} />
-          <Box label="Commission Before Tax" value={fmtPKR(totals.commBefore)} />
-          <Box label="Commission Tax (17%)" value={fmtPKR(totals.commTax)} />
-          <Box label="Commission After Tax" value={fmtPKR(totals.commAfter)} />
-          <Box label="Marketing Before Tax" value={fmtPKR(totals.mktBefore)} />
-          <Box label="Marketing Tax (9%)" value={fmtPKR(totals.mktTax)} />
-          <Box label="Marketing After Tax" value={fmtPKR(totals.mktAfter)} />
-          <Box label="Loading" value={fmtPKR(totals.loading)} />
           <Box label="B2B Commission" value={fmtPKR(totals.b2b)} />
-          <Box label="Total Income" value={fmtPKR(totals.income)} />
           <Box label="Tagged Premium" value={fmtPKR(totals.tagged)} />
+          {canSeeSensitive && (
+            <>
+              <Box label="Commission Before Tax" value={fmtPKR(totals.commBefore)} />
+              <Box label="Commission Tax (17%)" value={fmtPKR(totals.commTax)} />
+              <Box label="Commission After Tax" value={fmtPKR(totals.commAfter)} />
+              <Box label="Marketing Before Tax" value={fmtPKR(totals.mktBefore)} />
+              <Box label="Marketing Tax (9%)" value={fmtPKR(totals.mktTax)} />
+              <Box label="Marketing After Tax" value={fmtPKR(totals.mktAfter)} />
+              <Box label="Loading" value={fmtPKR(totals.loading)} />
+              <Box label="Total Income" value={fmtPKR(totals.income)} />
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
