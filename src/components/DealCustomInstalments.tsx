@@ -72,6 +72,25 @@ export function DealCustomInstalments({
   const [rows, setRows] = useState<Row[]>([]);
   const [open, setOpen] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savingIdx, setSavingIdx] = useState<number | null>(null);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [pendingReceipts, setPendingReceipts] = useState<Record<number, { path: string; name: string }[]>>({});
+
+  const { data: savedReceipts } = useQuery({
+    queryKey: ["deal-installment-receipts", dealId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("deal_documents" as any)
+        .select("id, file_name, storage_path")
+        .eq("deal_id", dealId)
+        .eq("doc_type", "b2b_commission_receipt");
+      return ((data ?? []) as any[]).map((d) => ({ id: d.id, file_name: d.file_name, storage_path: d.storage_path }));
+    },
+    enabled: !!dealId,
+  });
+
+  const receiptsFor = (label: string) =>
+    (savedReceipts ?? []).filter((d) => d.file_name.startsWith(`${label} — `));
 
   const { data: saved } = useQuery({
     queryKey: ["deal-installments", dealId],
@@ -160,54 +179,49 @@ export function DealCustomInstalments({
     qc.invalidateQueries({ queryKey: ["deal-installments", dealId] });
   };
 
-  const save = async () => {
-    setSaving(true);
+  const buildPayload = async (r: Row, i: number) => {
     const now = new Date();
     const { data: auth } = await supabase.auth.getUser();
-    const payload = rows.map((r, i) => {
-      const c = calcs[i];
-      // Paid instalments are tagged to the month of their paid date
-      // (falling back to any existing tag, then to the current month).
-      const pd = r.paid_date ? new Date(r.paid_date) : null;
-      const tagged = r.status === "paid"
-        ? pd && !isNaN(pd.getTime())
-          ? { m: pd.getMonth() + 1, y: pd.getFullYear() }
-          : { m: r.tagged_month ?? now.getMonth() + 1, y: r.tagged_year ?? now.getFullYear() }
-        : { m: null, y: null };
-      return {
-        ...(r.id ? { id: r.id } : {}),
-        deal_id: dealId,
-        installment_number: r.installment_number,
-        label: r.label,
-        due_date: r.due_date || null,
-        amount: r.amount,
-        paid_amount: r.status === "paid" ? r.amount : 0,
-        paid_date: r.status === "paid" ? (r.paid_date || r.receive_date || null) : null,
-        gross_premium: r.gross,
-        net_premium: r.net,
-        loading: r.loading,
-        commission_percentage: r.commission,
-        marketing_budget: c ? c.marketing_before_tax : 0,
-        commission: c ? c.commission_before_tax : 0,
-        b2b_commission: b2bOf(r),
-        b2b_taker_name: r.b2b_taker_name.trim() || null,
-        payment_status: r.status,
-        payment_mode: r.mode || null,
-        payment_receive_date: r.receive_date || null,
-        transaction_reference: r.reference.trim() || null,
-        payment_remarks: r.remarks.trim() || null,
-        tagged_month: tagged.m,
-        tagged_year: tagged.y,
-        created_by: auth.user?.id ?? null,
-      };
-    });
-    const { error } = await supabase
-      .from("deal_installments" as any)
-      .upsert(payload as any, { onConflict: "deal_id,installment_number" });
-    if (error) { setSaving(false); return toast.error(error.message); }
+    const c = calcs[i];
+    // Paid instalments are tagged to the month of their paid date
+    // (falling back to any existing tag, then to the current month).
+    const pd = r.paid_date ? new Date(r.paid_date) : null;
+    const tagged = r.status === "paid"
+      ? pd && !isNaN(pd.getTime())
+        ? { m: pd.getMonth() + 1, y: pd.getFullYear() }
+        : { m: r.tagged_month ?? now.getMonth() + 1, y: r.tagged_year ?? now.getFullYear() }
+      : { m: null, y: null };
+    return {
+      ...(r.id ? { id: r.id } : {}),
+      deal_id: dealId,
+      installment_number: r.installment_number,
+      label: r.label,
+      due_date: r.due_date || null,
+      amount: r.amount,
+      paid_amount: r.status === "paid" ? r.amount : 0,
+      paid_date: r.status === "paid" ? (r.paid_date || r.receive_date || null) : null,
+      gross_premium: r.gross,
+      net_premium: r.net,
+      loading: r.loading,
+      commission_percentage: r.commission,
+      marketing_budget: c ? c.marketing_before_tax : 0,
+      commission: c ? c.commission_before_tax : 0,
+      b2b_commission: b2bOf(r),
+      b2b_taker_name: r.b2b_taker_name.trim() || null,
+      payment_status: r.status,
+      payment_mode: r.mode || null,
+      payment_receive_date: r.receive_date || null,
+      transaction_reference: r.reference.trim() || null,
+      payment_remarks: r.remarks.trim() || null,
+      tagged_month: tagged.m,
+      tagged_year: tagged.y,
+      created_by: auth.user?.id ?? null,
+    };
+  };
 
-    // Roll the instalment breakdowns up to the deal, exactly like the new-deal
-    // screen does, so Tagged Premium and the deal totals stay in step.
+  // Roll the instalment breakdowns up to the deal, exactly like the new-deal
+  // screen does, so Tagged Premium and the deal totals stay in step.
+  const rollupDeal = async () => {
     const agg = calcs.reduce((a, c) => ({
       comm: a.comm + c.commission_before_tax, mkt: a.mkt + c.marketing_before_tax,
       loading: a.loading + c.loading, b2b: a.b2b + c.b2b_commission,
@@ -221,11 +235,78 @@ export function DealCustomInstalments({
       loading: agg.loading,
       b2b_commission: agg.b2b,
     } as any).eq("id", dealId);
+  };
+
+  const attachReceipts = async (i: number) => {
+    const files = pendingReceipts[i] ?? [];
+    if (!files.length) return;
+    const { data: auth } = await supabase.auth.getUser();
+    const label = rows[i]?.label ?? `Instalment ${i + 1}`;
+    const docs = files.map((p) => ({
+      deal_id: dealId,
+      doc_type: "b2b_commission_receipt",
+      file_name: `${label} — ${p.name}`,
+      storage_path: p.path,
+      uploaded_by: auth.user?.id ?? null,
+    }));
+    const { error } = await supabase.from("deal_documents").insert(docs as any);
+    if (error) toast.error("Instalment saved, but receipt failed to attach: " + error.message);
+    else setPendingReceipts((m) => ({ ...m, [i]: [] }));
+    qc.invalidateQueries({ queryKey: ["deal-installment-receipts", dealId] });
+  };
+
+  const uploadReceipts = async (i: number, fileList: File[]) => {
+    if (!fileList.length) return;
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return;
+    setUploadingIdx(i);
+    const done: { path: string; name: string }[] = [];
+    for (const file of fileList) {
+      const path = `b2b-receipts/${auth.user.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+      const { error } = await supabase.storage.from("crm-documents").upload(path, file, { upsert: false });
+      if (error) toast.error(`${file.name}: ${error.message}`);
+      else done.push({ path, name: file.name });
+    }
+    setUploadingIdx(null);
+    if (!done.length) return;
+    setPendingReceipts((m) => ({ ...m, [i]: [...(m[i] ?? []), ...done] }));
+    toast.success(`${done.length} receipt(s) uploaded`);
+  };
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["deal-installments", dealId] });
+    qc.invalidateQueries({ queryKey: ["deal", dealId] });
+  };
+
+  // Save a single instalment (its premium boxes, collection details, receipts).
+  const saveRow = async (i: number) => {
+    setSavingIdx(i);
+    const payload = await buildPayload(rows[i], i);
+    const { error } = await supabase
+      .from("deal_installments" as any)
+      .upsert([payload] as any, { onConflict: "deal_id,installment_number" });
+    if (error) { setSavingIdx(null); return toast.error(error.message); }
+    await attachReceipts(i);
+    await rollupDeal();
+    setSavingIdx(null);
+    toast.success(`${rows[i].label} saved`);
+    invalidate();
+  };
+
+  const save = async () => {
+    setSaving(true);
+    const payload = await Promise.all(rows.map((r, i) => buildPayload(r, i)));
+    const { error } = await supabase
+      .from("deal_installments" as any)
+      .upsert(payload as any, { onConflict: "deal_id,installment_number" });
+    if (error) { setSaving(false); return toast.error(error.message); }
+
+    for (let i = 0; i < rows.length; i++) await attachReceipts(i);
+    await rollupDeal();
 
     setSaving(false);
     toast.success("Instalment plan saved");
-    qc.invalidateQueries({ queryKey: ["deal-installments", dealId] });
-    qc.invalidateQueries({ queryKey: ["deal", dealId] });
+    invalidate();
   };
 
   return (
@@ -349,14 +430,18 @@ export function DealCustomInstalments({
                               <div><p className="mb-1 text-muted-foreground">B2B Commission</p>
                                 <MoneyInput value={r.b2b} onChange={(v) => setRow(i, { b2b: v })} disabled={!canEdit} showWords={false} /></div>
                             )}
-                            <div><p className="mb-1 text-muted-foreground">B2B Taker Name</p>
+                            <div className="col-span-2 md:col-span-6"><p className="mb-1 text-muted-foreground">Name of B2B Commission Taker</p>
                               {canEdit
                                 ? <B2BTakerField value={r.b2b_taker_name} onChange={(v) => setRow(i, { b2b_taker_name: v })} />
                                 : <span>{r.b2b_taker_name || "—"}</span>}</div>
                           </div>
+                          <div className="mt-3 rounded-md border p-3 max-w-xs">
+                            <p className="text-xs text-muted-foreground">Tagged Premium</p>
+                            <p className="font-medium tabular-nums">{fmtPKR(calcs[i]?.tagged_premium ?? 0)}</p>
+                          </div>
                         </div>
                         <div>
-                          <div className="text-xs font-medium mb-2">Payment to Company — Collection Details</div>
+                          <div className="text-xs font-medium mb-2">Payment to Company — Collection Details — {r.label}</div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                             {r.status === "paid" && (
                               <div><p className="mb-1 text-muted-foreground">Paid Date</p>
@@ -365,19 +450,53 @@ export function DealCustomInstalments({
                             )}
                             <div><p className="mb-1 text-muted-foreground">Payment Method</p>
                               <Select value={r.mode} onValueChange={(v) => setRow(i, { mode: v })}>
-                                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
                                 <SelectContent>
                                   {PAYMENT_MODES.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                                 </SelectContent>
                               </Select></div>
-                            <div><p className="mb-1 text-muted-foreground">Receive Date</p>
+                            <div><p className="mb-1 text-muted-foreground">Payment Receive Date</p>
                               <DateField value={r.receive_date} onChange={(v) => setRow(i, { receive_date: v })} disabled={!canEdit} placeholder="Receive date" /></div>
-                            <div><p className="mb-1 text-muted-foreground">Transaction / Cheque No.</p>
+                            <div><p className="mb-1 text-muted-foreground">Transaction / Cheque Reference</p>
                               <Input value={r.reference} disabled={!canEdit} onChange={(e) => setRow(i, { reference: e.target.value })} placeholder="TID / Cheque no." /></div>
-                            <div><p className="mb-1 text-muted-foreground">Remarks</p>
+                            <div><p className="mb-1 text-muted-foreground">Payment Remarks</p>
                               <Input value={r.remarks} disabled={!canEdit} onChange={(e) => setRow(i, { remarks: e.target.value })} /></div>
                           </div>
                         </div>
+                        <div className="space-y-1.5 max-w-md">
+                          <div className="text-xs font-medium">Payment Receipt — {r.label}</div>
+                          {canEdit && (
+                            <Input type="file" multiple accept="image/*,application/pdf"
+                              disabled={uploadingIdx === i}
+                              onChange={(e) => { const fs = Array.from(e.target.files ?? []); if (fs.length) uploadReceipts(i, fs); e.currentTarget.value = ""; }} />
+                          )}
+                          {(receiptsFor(r.label).length > 0 || (pendingReceipts[i] ?? []).length > 0) && (
+                            <ul className="space-y-1">
+                              {receiptsFor(r.label).map((d) => (
+                                <li key={d.id} className="rounded border px-2 py-1 text-xs truncate">{d.file_name.replace(`${r.label} — `, "")}</li>
+                              ))}
+                              {(pendingReceipts[i] ?? []).map((p) => (
+                                <li key={p.path} className="flex items-center justify-between rounded border px-2 py-1 text-xs">
+                                  <span className="truncate">{p.name}</span>
+                                  {canEdit && (
+                                    <button type="button" className="text-destructive ml-2"
+                                      onClick={() => setPendingReceipts((m) => ({ ...m, [i]: (m[i] ?? []).filter((x) => x.path !== p.path) }))}>Remove</button>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          <p className="text-[11px] text-muted-foreground">
+                            {uploadingIdx === i ? "Uploading…" : `Attach the payment receipt for ${r.label}.`}
+                          </p>
+                        </div>
+                        {canEdit && (
+                          <div className="flex justify-end">
+                            <Button type="button" size="sm" onClick={() => saveRow(i)} disabled={savingIdx === i}>
+                              {savingIdx === i ? "Saving…" : `Save ${r.label}`}
+                            </Button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )}
