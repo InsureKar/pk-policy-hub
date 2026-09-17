@@ -32,6 +32,7 @@ type Row = {
   b2b_pct: number;
   b2b_taker_name: string;
   status: "due" | "paid";
+  paid_date: string;
   mode: string;
   receive_date: string;
   reference: string;
@@ -47,7 +48,7 @@ const blank = (n: number, prev?: Row): Row => ({
   amount: 0,
   gross: 0, net: 0, loading: 0, commission: prev?.commission ?? 0, marketing: prev?.marketing ?? 0,
   b2b: 0, b2b_type: "fixed", b2b_pct: 0, b2b_taker_name: prev?.b2b_taker_name ?? "",
-  status: "due", mode: "", receive_date: "", reference: "", remarks: "",
+  status: "due", paid_date: "", mode: "", receive_date: "", reference: "", remarks: "",
   tagged_month: null, tagged_year: null,
 });
 
@@ -103,6 +104,7 @@ export function DealCustomInstalments({
       b2b_pct: 0,
       b2b_taker_name: s.b2b_taker_name ?? "",
       status: (s.payment_status === "paid" ? "paid" : "due") as "due" | "paid",
+      paid_date: s.paid_date ?? "",
       mode: s.payment_mode ?? "",
       receive_date: s.payment_receive_date ?? "",
       reference: s.transaction_reference ?? "",
