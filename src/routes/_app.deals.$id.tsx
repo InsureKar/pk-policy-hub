@@ -168,7 +168,7 @@ function DealDetail() {
       />
 
       <div className="grid lg:grid-cols-3 gap-4">
-        <Card className={canSeeFinancials ? "lg:col-span-2" : "lg:col-span-3"}>
+        <Card className="lg:col-span-2">
           <CardHeader><CardTitle className="text-base">Deal Information</CardTitle></CardHeader>
           <CardContent className="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
             <KV k="Cover Note #" v={d.cover_note_number || "—"} />
