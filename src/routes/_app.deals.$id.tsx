@@ -285,7 +285,7 @@ function DealDetail() {
         <DealCustomInstalments
           dealId={id}
           basePercentage={Number((d as any).base_percentage ?? 0) || undefined}
-          canEdit={canManageDeal}
+          canEdit
         />
       ) : (
         <DealInstalments
