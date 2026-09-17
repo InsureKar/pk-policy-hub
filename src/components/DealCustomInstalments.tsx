@@ -72,6 +72,25 @@ export function DealCustomInstalments({
   const [rows, setRows] = useState<Row[]>([]);
   const [open, setOpen] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savingIdx, setSavingIdx] = useState<number | null>(null);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [pendingReceipts, setPendingReceipts] = useState<Record<number, { path: string; name: string }[]>>({});
+
+  const { data: savedReceipts } = useQuery({
+    queryKey: ["deal-installment-receipts", dealId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("deal_documents" as any)
+        .select("id, file_name, storage_path")
+        .eq("deal_id", dealId)
+        .eq("doc_type", "b2b_commission_receipt");
+      return (data ?? []) as { id: string; file_name: string; storage_path: string }[];
+    },
+    enabled: !!dealId,
+  });
+
+  const receiptsFor = (label: string) =>
+    (savedReceipts ?? []).filter((d) => d.file_name.startsWith(`${label} — `));
 
   const { data: saved } = useQuery({
     queryKey: ["deal-installments", dealId],
