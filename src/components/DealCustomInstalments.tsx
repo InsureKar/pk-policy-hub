@@ -271,7 +271,21 @@ export function DealCustomInstalments({
                     </td>
                     <td className="p-2 min-w-[130px]">
                       {canEdit ? (
-                        <Select value={r.status} onValueChange={(v) => setRow(i, { status: v as "due" | "paid" })}>
+                        <Select
+                          value={r.status}
+                          onValueChange={(v) => {
+                            const status = v as "due" | "paid";
+                            if (status === "paid") {
+                              setRow(i, {
+                                status,
+                                paid_date: r.paid_date || new Date().toISOString().slice(0, 10),
+                              });
+                              setOpen(i);
+                            } else {
+                              setRow(i, { status, paid_date: "", tagged_month: null, tagged_year: null });
+                            }
+                          }}
+                        >
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="due">Due</SelectItem>
@@ -282,9 +296,12 @@ export function DealCustomInstalments({
                     </td>
                     <td className="p-2 whitespace-nowrap text-muted-foreground">
                       {r.status === "paid"
-                        ? (r.tagged_month
-                          ? `${MONTHS[r.tagged_month - 1]} ${r.tagged_year ?? ""}`
-                          : `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()} (on save)`)
+                        ? (() => {
+                          const pd = r.paid_date ? new Date(r.paid_date) : null;
+                          if (pd && !isNaN(pd.getTime())) return `${MONTHS[pd.getMonth()]} ${pd.getFullYear()}`;
+                          if (r.tagged_month) return `${MONTHS[r.tagged_month - 1]} ${r.tagged_year ?? ""}`;
+                          return `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()} (on save)`;
+                        })()
                         : "—"}
                     </td>
                     {canEdit && (
