@@ -84,7 +84,7 @@ export function DealCustomInstalments({
         .select("id, file_name, storage_path")
         .eq("deal_id", dealId)
         .eq("doc_type", "b2b_commission_receipt");
-      return (data ?? []) as { id: string; file_name: string; storage_path: string }[];
+      return ((data ?? []) as any[]).map((d) => ({ id: d.id, file_name: d.file_name, storage_path: d.storage_path }));
     },
     enabled: !!dealId,
   });
