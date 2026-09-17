@@ -591,8 +591,13 @@ function NewDealPage() {
             payment_receive_date: collectOf(i).date || null,
             transaction_reference: collectOf(i).ref.trim() || null,
             payment_remarks: collectOf(i).remarks.trim() || null,
-            tagged_month: paid ? paid.getMonth() + 1 : null,
-            tagged_year: paid ? paid.getFullYear() : null,
+            // A paid instalment is tagged to the month it was marked paid.
+            tagged_month: collectOf(i).status === "paid"
+              ? new Date().getMonth() + 1
+              : paid ? paid.getMonth() + 1 : null,
+            tagged_year: collectOf(i).status === "paid"
+              ? new Date().getFullYear()
+              : paid ? paid.getFullYear() : null,
             created_by: user.id,
 
           };
