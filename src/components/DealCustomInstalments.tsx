@@ -280,7 +280,9 @@ export function DealCustomInstalments({
                     </td>
                     {canEdit && (
                       <td className="p-2 text-right">
-                        <Button type="button" variant="ghost" size="sm" onClick={() => removeRow(i)}>Remove</Button>
+                        {!r.id && (
+                          <Button type="button" variant="ghost" size="sm" onClick={() => removeRow(i)}>Remove</Button>
+                        )}
                       </td>
                     )}
                   </tr>
@@ -294,19 +296,19 @@ export function DealCustomInstalments({
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs">
                             <div><p className="mb-1 text-muted-foreground">Gross Premium</p>
-                              <MoneyInput value={r.gross} onChange={(v) => setRow(i, { gross: v })} disabled={!canEdit} showWords={false} /></div>
+                              <MoneyInput value={r.gross} onChange={(v) => setRow(i, { gross: v })} disabled={!canEdit || !!r.id} showWords={false} /></div>
                             <div><p className="mb-1 text-muted-foreground">Net Premium</p>
-                              <MoneyInput value={r.net} onChange={(v) => setRow(i, { net: v })} disabled={!canEdit} showWords={false} /></div>
+                              <MoneyInput value={r.net} onChange={(v) => setRow(i, { net: v })} disabled={!canEdit || !!r.id} showWords={false} /></div>
                             <div><p className="mb-1 text-muted-foreground">Commission %</p>
-                              <Input type="number" step="0.001" className="text-right" disabled={!canEdit} value={r.commission}
+                              <Input type="number" step="0.001" className="text-right" disabled={!canEdit || !!r.id} value={r.commission}
                                 onChange={(e) => setRow(i, { commission: Number(e.target.value) || 0 })} /></div>
                             <div><p className="mb-1 text-muted-foreground">Marketing Budget %</p>
-                              <Input type="number" step="0.001" className="text-right" disabled={!canEdit} value={r.marketing}
+                              <Input type="number" step="0.001" className="text-right" disabled={!canEdit || !!r.id} value={r.marketing}
                                 onChange={(e) => setRow(i, { marketing: Number(e.target.value) || 0 })} /></div>
                             <div><p className="mb-1 text-muted-foreground">Loading</p>
-                              <MoneyInput value={r.loading} onChange={(v) => setRow(i, { loading: v })} disabled={!canEdit} showWords={false} /></div>
+                              <MoneyInput value={r.loading} onChange={(v) => setRow(i, { loading: v })} disabled={!canEdit || !!r.id} showWords={false} /></div>
                             <div><p className="mb-1 text-muted-foreground">B2B Commission Type</p>
-                              <Select value={r.b2b_type} onValueChange={(v) => setRow(i, { b2b_type: v as "fixed" | "percentage" })}>
+                              <Select value={r.b2b_type} disabled={!canEdit || !!r.id} onValueChange={(v) => setRow(i, { b2b_type: v as "fixed" | "percentage" })}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="fixed">Fixed Amount</SelectItem>
@@ -315,14 +317,14 @@ export function DealCustomInstalments({
                               </Select></div>
                             {r.b2b_type === "percentage" ? (
                               <div><p className="mb-1 text-muted-foreground">B2B Commission %</p>
-                                <Input type="number" step="0.001" className="text-right" disabled={!canEdit} value={r.b2b_pct}
+                                <Input type="number" step="0.001" className="text-right" disabled={!canEdit || !!r.id} value={r.b2b_pct}
                                   onChange={(e) => setRow(i, { b2b_pct: Number(e.target.value) || 0 })} /></div>
                             ) : (
                               <div><p className="mb-1 text-muted-foreground">B2B Commission</p>
-                                <MoneyInput value={r.b2b} onChange={(v) => setRow(i, { b2b: v })} disabled={!canEdit} showWords={false} /></div>
+                                <MoneyInput value={r.b2b} onChange={(v) => setRow(i, { b2b: v })} disabled={!canEdit || !!r.id} showWords={false} /></div>
                             )}
                             <div><p className="mb-1 text-muted-foreground">B2B Taker Name</p>
-                              {canEdit
+                              {canEdit && !r.id
                                 ? <B2BTakerField value={r.b2b_taker_name} onChange={(v) => setRow(i, { b2b_taker_name: v })} />
                                 : <span>{r.b2b_taker_name || "—"}</span>}</div>
                           </div>
