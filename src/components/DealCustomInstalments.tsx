@@ -343,14 +343,14 @@ export function DealCustomInstalments({
                               </Select></div>
                             {r.b2b_type === "percentage" ? (
                               <div><p className="mb-1 text-muted-foreground">B2B Commission %</p>
-                                <Input type="number" step="0.001" className="text-right" disabled={!canEdit || !!r.id} value={r.b2b_pct}
+                                <Input type="number" step="0.001" className="text-right" disabled={!canEdit} value={r.b2b_pct}
                                   onChange={(e) => setRow(i, { b2b_pct: Number(e.target.value) || 0 })} /></div>
                             ) : (
                               <div><p className="mb-1 text-muted-foreground">B2B Commission</p>
-                                <MoneyInput value={r.b2b} onChange={(v) => setRow(i, { b2b: v })} disabled={!canEdit || !!r.id} showWords={false} /></div>
+                                <MoneyInput value={r.b2b} onChange={(v) => setRow(i, { b2b: v })} disabled={!canEdit} showWords={false} /></div>
                             )}
                             <div><p className="mb-1 text-muted-foreground">B2B Taker Name</p>
-                              {canEdit && !r.id
+                              {canEdit
                                 ? <B2BTakerField value={r.b2b_taker_name} onChange={(v) => setRow(i, { b2b_taker_name: v })} />
                                 : <span>{r.b2b_taker_name || "—"}</span>}</div>
                           </div>
