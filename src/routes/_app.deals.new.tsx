@@ -468,14 +468,10 @@ function NewDealPage() {
        }), { comm: 0, mkt: 0, loading: 0, b2b: 0 })
      : null;
 
-    if (!(effectiveGross > 0)) return toast.error("Gross premium is required");
-    if (!Number.isFinite(form.net_premium) || form.net_premium < 0) return toast.error("Net premium must be a positive number");
-    if (cnError) return toast.error(cnError);
-    // Per-instalment schedules capture their collection details and receipts inside each period.
-    const firstInsProof = Object.values(insReceipts).flat()[0]?.path ?? "";
-    // Payment proof is only mandatory once the deal is moved to the Won stage.
+    // Payment proof and gross premium are only mandatory once the deal is moved to the Won stage.
     const stageName = (lists?.stages ?? []).find((s: any) => s.id === form.stage_id)?.name ?? "";
     const isWonStage = /won/i.test(stageName);
+    if (isWonStage && !(effectiveGross > 0)) return toast.error("Gross premium is required for a Won deal");
     if (isWonStage) {
       if (perIns) {
         if (!form.payment_proof_url && !firstInsProof)
