@@ -12,6 +12,7 @@ import { fmtPKR } from "@/lib/format";
 import { calculateDealFinancials } from "@/lib/calc";
 import { toast } from "sonner";
 import B2BTakerField from "@/components/B2BTakerField";
+import { openStorageDoc } from "@/lib/openStorageDoc";
 
 const PAYMENT_MODES = ["IBFT", "Cheque", "Cash", "Pay Order", "Online Payment"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
