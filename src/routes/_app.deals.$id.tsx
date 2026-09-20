@@ -50,7 +50,7 @@ function DealDetail() {
   const { data } = useQuery({
     queryKey: ["deal", id],
     queryFn: async () => {
-      const [deal, stages, companies, types, sources, profiles, teams, clients, settings] = await Promise.all([
+      const [deal, stages, companies, types, sources, profiles, teams, clients, settings, documents] = await Promise.all([
         supabase.from("deals").select("*").eq("id", id).maybeSingle(),
         supabase.from("deal_stages").select("*").order("sort_order"),
         supabase.from("insurance_companies").select("id, name"),
@@ -60,9 +60,11 @@ function DealDetail() {
         supabase.from("teams").select("id, name"),
         supabase.from("clients").select("id, company_name, full_name, client_type"),
         supabase.from("app_settings").select("value").eq("key","tagged_premium_base_percentage").maybeSingle(),
+        supabase.from("deal_documents").select("id, file_name, doc_type, storage_path, created_at").eq("deal_id", id).order("created_at", { ascending: false }),
       ]);
       return { deal: deal.data, stages: stages.data ?? [], companies: companies.data ?? [], types: types.data ?? [],
         sources: sources.data ?? [], profiles: profiles.data ?? [], teams: teams.data ?? [], clients: clients.data ?? [],
+        documents: documents.data ?? [],
         basePct: Number(settings.data?.value ?? 13) };
     },
   });
