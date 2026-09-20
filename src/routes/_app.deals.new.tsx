@@ -472,6 +472,10 @@ function NewDealPage() {
     const stageName = (lists?.stages ?? []).find((s: any) => s.id === form.stage_id)?.name ?? "";
     const isWonStage = /won/i.test(stageName);
     if (isWonStage && !(effectiveGross > 0)) return toast.error("Gross premium is required for a Won deal");
+    if (!Number.isFinite(form.net_premium) || form.net_premium < 0) return toast.error("Net premium must be a positive number");
+    if (cnError) return toast.error(cnError);
+    // Per-instalment schedules capture their collection details and receipts inside each period.
+    const firstInsProof = Object.values(insReceipts).flat()[0]?.path ?? "";
     if (isWonStage) {
       if (perIns) {
         if (!form.payment_proof_url && !firstInsProof)
