@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Maximize2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import B2BTakerField from "@/components/B2BTakerField";
+import { openStorageDoc } from "@/lib/openStorageDoc";
 
 export const Route = createFileRoute("/_app/deals/$id")({
   component: DealDetail,
