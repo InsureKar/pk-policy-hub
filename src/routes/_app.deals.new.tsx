@@ -473,11 +473,16 @@ function NewDealPage() {
     if (cnError) return toast.error(cnError);
     // Per-instalment schedules capture their collection details and receipts inside each period.
     const firstInsProof = Object.values(insReceipts).flat()[0]?.path ?? "";
-    if (perIns) {
-      if (!form.payment_proof_url && !firstInsProof)
-        return toast.error("Attach a payment receipt inside at least one instalment before saving");
-    } else if (!form.payment_proof_url) {
-      return toast.error("Payment proof is required before the deal can be saved");
+    // Payment proof is only mandatory once the deal is moved to the Won stage.
+    const stageName = (lists?.stages ?? []).find((s: any) => s.id === form.stage_id)?.name ?? "";
+    const isWonStage = /won/i.test(stageName);
+    if (isWonStage) {
+      if (perIns) {
+        if (!form.payment_proof_url && !firstInsProof)
+          return toast.error("Attach a payment receipt inside at least one instalment before saving a Won deal");
+      } else if (!form.payment_proof_url) {
+        return toast.error("Payment proof is required before a Won deal can be saved");
+      }
     }
 
     const isTravelBulk = form.policy_type === "bulk" && isTravel;
@@ -498,7 +503,7 @@ function NewDealPage() {
       const payable = travelRows.reduce((a, r) => a + payableOf(r), 0);
       const transferred = travelTransfers.reduce((a, t) => a + Number(t.amount || 0), 0);
       if (transferred > 0 && Math.abs(transferred - payable) > 0.01) {
-        return toast.error("Amount transfer total must match Payable to Insurance Company");
+        return toast.error("Amount transfer total must match Payable to own company");
       }
     } else if (form.policy_type === "bulk") {
       await Promise.all(bulkRows.map((r, i) => checkDuplicate(i, r.policy_number)));
