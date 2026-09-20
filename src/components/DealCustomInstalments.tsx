@@ -12,6 +12,7 @@ import { fmtPKR } from "@/lib/format";
 import { calculateDealFinancials } from "@/lib/calc";
 import { toast } from "sonner";
 import B2BTakerField from "@/components/B2BTakerField";
+import { openStorageDoc } from "@/lib/openStorageDoc";
 
 const PAYMENT_MODES = ["IBFT", "Cheque", "Cash", "Pay Order", "Online Payment"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -479,7 +480,10 @@ export function DealCustomInstalments({
                           {(receiptsFor(r.label).length > 0 || (pendingReceipts[i] ?? []).length > 0) && (
                             <ul className="space-y-1">
                               {receiptsFor(r.label).map((d) => (
-                                <li key={d.id} className="rounded border px-2 py-1 text-xs truncate">{d.file_name.replace(`${r.label} — `, "")}</li>
+                                <li key={d.id} className="rounded border px-2 py-1 text-xs truncate">
+                                  <button type="button" className="text-primary hover:underline truncate" title="View receipt"
+                                    onClick={() => openStorageDoc(d.storage_path)}>{d.file_name.replace(`${r.label} — `, "")}</button>
+                                </li>
                               ))}
                               {(pendingReceipts[i] ?? []).map((p) => (
                                 <li key={p.path} className="flex items-center justify-between rounded border px-2 py-1 text-xs">

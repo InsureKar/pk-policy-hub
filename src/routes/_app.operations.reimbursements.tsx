@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
+import { openStorageDoc } from "@/lib/openStorageDoc";
 import { DateField } from "@/components/DateField";
 import { DeleteButton } from "@/components/DeleteButton";
 
@@ -132,7 +133,10 @@ function ReimbursementsPage() {
                 <TableCell>{fmtDate(r.expense_date)}</TableCell>
                 <TableCell className="text-right tabular-nums">{fmtPKR(r.amount)}</TableCell>
                 <TableCell><StatusBadge status={r.status}/></TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right space-x-1">
+                  {r.attachment_url && (
+                    <Button size="sm" variant="ghost" onClick={() => openStorageDoc(r.attachment_url)}>View Bill</Button>
+                  )}
                   {isAdmin && ["submitted","under_review"].includes(r.status) && (
                     <Button size="sm" variant="outline" onClick={() => setReviewing(r)}>Review</Button>
                   )}
