@@ -34,7 +34,7 @@ const PAYMENT_MODES = ["IBFT", "Cheque", "Cash", "Pay Order", "Online Payment"] 
 function DealDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
-  const { hasRole } = useAuth();
+  const { hasRole, can } = useAuth();
   // Premium & Income calculations are restricted to Admin and Management.
   const canSeeFinancials = hasRole(["admin", "management"]);
   const canManageDeal = canSeeFinancials;
