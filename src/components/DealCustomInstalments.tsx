@@ -231,16 +231,13 @@ export function DealCustomInstalments({
       loading: a.loading + c.loading, b2b: a.b2b + c.b2b_commission,
       gross: a.gross + c.gross_premium, net: a.net + c.net_premium,
     }), { comm: 0, mkt: 0, loading: 0, b2b: 0, gross: 0, net: 0 });
-    // Instalments that carry no commission / marketing yet (future, not filled
-    // in) must not dilute the deal-level percentage — otherwise a single 15%
-    // instalment shows as 7.5% once a blank instalment exists.
-    const commGross = calcs.reduce((a, c) => a + (c.commission_percentage > 0 ? c.gross_premium : 0), 0);
-    const mktGross = calcs.reduce((a, c) => a + (c.marketing_budget_percentage > 0 ? c.gross_premium : 0), 0);
     await supabase.from("deals").update({
       gross_premium: agg.gross,
       net_premium: agg.net,
-      commission_percentage: commGross > 0 ? (agg.comm / commGross) * 100 : 0,
-      marketing_budget_percentage: mktGross > 0 ? (agg.mkt / mktGross) * 100 : 0,
+      // The deal row remains a weighted accounting roll-up. The Custom deal
+      // summary reads and displays each instalment's independent rate directly.
+      commission_percentage: agg.gross > 0 ? (agg.comm / agg.gross) * 100 : 0,
+      marketing_budget_percentage: agg.gross > 0 ? (agg.mkt / agg.gross) * 100 : 0,
       loading: agg.loading,
       b2b_commission: agg.b2b,
     } as any).eq("id", dealId);

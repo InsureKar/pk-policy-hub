@@ -465,7 +465,7 @@ function NewDealPage() {
      ? instalmentCalcs.reduce((a, c) => ({
          comm: a.comm + c.commission_before_tax, mkt: a.mkt + c.marketing_before_tax,
          loading: a.loading + c.loading, b2b: a.b2b + c.b2b_commission,
-       }), { comm: 0, mkt: 0, loading: 0, b2b: 0 })
+        }), { comm: 0, mkt: 0, loading: 0, b2b: 0 })
      : null;
 
     // Payment proof and gross premium are only mandatory once the deal is moved to the Won stage.

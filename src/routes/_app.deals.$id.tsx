@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { calculateDealFinancials } from "@/lib/calc";
+import { aggregateDealFinancials, calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { DateField } from "@/components/DateField";
 import { DealInstalments } from "@/components/DealInstalments";
@@ -54,7 +54,7 @@ function DealDetail() {
   const { data } = useQuery({
     queryKey: ["deal", id],
     queryFn: async () => {
-      const [deal, stages, companies, types, sources, profiles, teams, clients, settings, documents] = await Promise.all([
+      const [deal, stages, companies, types, sources, profiles, teams, clients, settings, documents, installments] = await Promise.all([
         supabase.from("deals").select("*").eq("id", id).maybeSingle(),
         supabase.from("deal_stages").select("*").order("sort_order"),
         supabase.from("insurance_companies").select("id, name"),
@@ -65,10 +65,12 @@ function DealDetail() {
         supabase.from("clients").select("id, company_name, full_name, client_type"),
         supabase.from("app_settings").select("value").eq("key","tagged_premium_base_percentage").maybeSingle(),
         supabase.from("deal_documents").select("id, file_name, doc_type, storage_path, created_at").eq("deal_id", id).order("created_at", { ascending: false }),
+        supabase.from("deal_installments").select("gross_premium, net_premium, commission_percentage, marketing_budget, loading, b2b_commission").eq("deal_id", id).order("installment_number"),
       ]);
       return { deal: deal.data, stages: stages.data ?? [], companies: companies.data ?? [], types: types.data ?? [],
         sources: sources.data ?? [], profiles: profiles.data ?? [], teams: teams.data ?? [], clients: clients.data ?? [],
         documents: documents.data ?? [],
+        installments: installments.data ?? [],
         basePct: Number(settings.data?.value ?? 13) };
     },
   });
@@ -76,15 +78,47 @@ function DealDetail() {
   const [stageId, setStageId] = useState<string>("");
   useEffect(() => { if (data?.deal?.stage_id) setStageId(data.deal.stage_id); }, [data?.deal?.stage_id]);
 
-  const calc = useMemo(() => data?.deal ? calculateDealFinancials({
-    gross_premium: data.deal.gross_premium,
-    net_premium: data.deal.net_premium,
-    commission_percentage: data.deal.commission_percentage,
-    marketing_budget_percentage: data.deal.marketing_budget_percentage,
-    loading: data.deal.loading,
-    b2b_commission: data.deal.b2b_commission,
-    base_percentage: (data.deal as any).base_percentage ?? data.basePct,
-  }) : null, [data]);
+  const customRates = useMemo(() => {
+    if (!data?.deal || !String(data.deal.payment_schedule ?? "").toLowerCase().startsWith("custom")) return [];
+    return [...new Set(data.installments.map((row: any) => Number(row.commission_percentage ?? 0)).filter((rate) => rate > 0))];
+  }, [data]);
+  const calc = useMemo(() => {
+    if (!data?.deal) return null;
+    const basePercentage = (data.deal as any).base_percentage ?? data.basePct;
+    if (String(data.deal.payment_schedule ?? "").toLowerCase().startsWith("custom") && data.installments.length) {
+      const inputs = data.installments.map((row: any) => {
+        const gross = Number(row.gross_premium ?? 0);
+        return {
+          gross_premium: gross,
+          net_premium: row.net_premium,
+          commission_percentage: row.commission_percentage,
+          marketing_budget_percentage: gross > 0 ? (Number(row.marketing_budget ?? 0) / gross) * 100 : 0,
+          loading: row.loading,
+          b2b_commission: row.b2b_commission,
+          base_percentage: basePercentage,
+        };
+      });
+      const aggregate = aggregateDealFinancials(inputs, basePercentage);
+      return {
+        ...aggregate,
+        commission_percentage: customRates[0] ?? 0,
+        marketing_budget_percentage: aggregate.gross_premium > 0
+          ? (aggregate.marketing_before_tax / aggregate.gross_premium) * 100
+          : 0,
+        loading: inputs.reduce((sum, row) => sum + Number(row.loading ?? 0), 0),
+        b2b_commission: inputs.reduce((sum, row) => sum + Number(row.b2b_commission ?? 0), 0),
+      };
+    }
+    return calculateDealFinancials({
+      gross_premium: data.deal.gross_premium,
+      net_premium: data.deal.net_premium,
+      commission_percentage: data.deal.commission_percentage,
+      marketing_budget_percentage: data.deal.marketing_budget_percentage,
+      loading: data.deal.loading,
+      b2b_commission: data.deal.b2b_commission,
+      base_percentage: basePercentage,
+    });
+  }, [customRates, data]);
 
   // Payment form state
   const [pay, setPay] = useState({
@@ -209,7 +243,7 @@ function DealDetail() {
                 <KV k="Gross Premium" v={fmtPKR(calc.gross_premium)} />
                 <KV k="Net Premium" v={fmtPKR(calc.net_premium)} />
                 <KV k="Tagged Premium (auto)" v={<span className="font-semibold">{fmtPKR(calc.tagged_premium)}</span>} />
-                <KV k="Commission %" v={fmtPct(calc.commission_percentage)} />
+                <KV k="Commission %" v={customRates.length > 1 ? customRates.map(fmtPct).join(" / ") : fmtPct(calc.commission_percentage)} />
                 <KV k="Marketing %" v={fmtPct(calc.marketing_budget_percentage)} />
                 <KV k="Loading" v={fmtPKR(calc.loading)} />
                 <KV k="B2B Commission" v={fmtPKR(calc.b2b_commission)} />
