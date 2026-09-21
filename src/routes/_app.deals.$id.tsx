@@ -309,7 +309,7 @@ function DealDetail() {
           startDate={d.policy_start_date}
           netPremium={Number(d.net_premium ?? 0)}
           underwrittenPremium={(d as any).underwritten_premium ?? 0}
-          canEdit={canManageDeal}
+          canEdit={canEditInstalments}
         />
       )}
 
