@@ -53,6 +53,7 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
   const [yearMonthDraft, setYearMonthDraft] = useState<string>("all"); // month picker inside year mode
   const [quarterDraft, setQuarterDraft] = useState<string>(String(Math.floor(now.getMonth() / 3) + 1));
   const [userDraft, setUserDraft] = useState<string>(lockUserId ?? "all");
+  const [drill, setDrill] = useState<{ title: string; subtitle: string; deals: any[] } | null>(null);
 
   const [applied, setApplied] = useState({
     mode: "year" as Mode,
