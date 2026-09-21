@@ -65,21 +65,57 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
   const { data } = useQuery({
     queryKey: ["pipeline-funnel"],
     queryFn: async () => {
-      const [deals, stages, profiles, inst] = await Promise.all([
-        supabase.from("deals").select("id, gross_premium, stage_id, assigned_do_id, team_lead_id, created_at, deal_type, payment_schedule, base_percentage"),
+      const [deals, stages, profiles, inst, clients, companies, types] = await Promise.all([
+        supabase.from("deals").select("id, deal_number, client_id, insurance_company_id, insurance_type_id, gross_premium, net_premium, tagged_premium, policy_start_date, payment_receive_date, stage_id, assigned_do_id, team_lead_id, created_at, deal_type, payment_schedule, base_percentage"),
         supabase.from("deal_stages").select("id, name, sort_order, is_won, is_lost").order("sort_order"),
         supabase.from("profiles").select("id, full_name"),
         supabase.from("deal_installments" as any).select("deal_id, amount, gross_premium, net_premium, commission_percentage, marketing_budget, loading, b2b_commission, paid_amount, paid_date, payment_receive_date, due_date, payment_status"),
+        supabase.from("clients").select("id, company_name, full_name"),
+        supabase.from("insurance_companies").select("id, name"),
+        supabase.from("insurance_types").select("id, name"),
       ]);
       return {
         deals: deals.data ?? [],
         stages: stages.data ?? [],
         profiles: profiles.data ?? [],
         installments: (inst.data ?? []) as any[],
+        clients: clients.data ?? [],
+        companies: companies.data ?? [],
+        types: types.data ?? [],
       };
     },
 
   });
+
+  const nameOf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of (data?.profiles ?? []) as any[]) m.set(p.id, p.full_name);
+    return m;
+  }, [data?.profiles]);
+
+  const clientOf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of (data?.clients ?? []) as any[]) m.set(c.id, c.company_name || c.full_name || "—");
+    return m;
+  }, [data?.clients]);
+
+  const companyOf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of (data?.companies ?? []) as any[]) m.set(c.id, c.name);
+    return m;
+  }, [data?.companies]);
+
+  const typeOf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const t of (data?.types ?? []) as any[]) m.set(t.id, t.name);
+    return m;
+  }, [data?.types]);
+
+  const stageNameOf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const s of (data?.stages ?? []) as any[]) m.set(s.id, s.name);
+    return m;
+  }, [data?.stages]);
 
   const visibleProfiles = useMemo(
     () => (data?.profiles ?? []).filter((p: any) => scope.all || scope.ids.includes(p.id)),
