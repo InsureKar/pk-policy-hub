@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { fmtPKR } from "@/lib/format";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { fmtPKR, fmtDate } from "@/lib/format";
 import { calculateDealFinancials } from "@/lib/calc";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 import { Circle } from "lucide-react";
@@ -402,6 +403,54 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
           <div className="text-center text-sm text-muted-foreground py-8">No pipeline stages configured.</div>
         )}
       </div>
+
+      <Dialog open={!!drill} onOpenChange={(o) => !o && setDrill(null)}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[1200px]">
+          <DialogHeader>
+            <DialogTitle>{drill?.title}</DialogTitle>
+            <DialogDescription>{drill?.subtitle} · {drill?.deals.length ?? 0} deals</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[65vh] overflow-auto rounded-md border">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-muted/60">
+                <tr className="text-left">
+                  {["Deal", "Client", "Type", "Assigned", "Team Lead", "Insurer", "Product", "Stage", "Gross", "Net", "Tagged", "Paid", "Outstanding", "Deal Date", "Policy Date", "Payment Date"].map((h) => (
+                    <th key={h} className="whitespace-nowrap px-2 py-2 font-medium text-muted-foreground">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(drill?.deals ?? []).map((d: any) => (
+                  <tr key={d.id} className="border-t">
+                    <td className="whitespace-nowrap px-2 py-1.5">{d.deal_number || "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{clientOf.get(d.client_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 capitalize">{d.deal_type ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{nameOf.get(d.assigned_do_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{nameOf.get(d.team_lead_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{companyOf.get(d.insurance_company_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{typeOf.get(d.insurance_type_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{stageNameOf.get(d.stage_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">{fmtPKR(d.gross_premium)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">{fmtPKR(d.net_premium)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">{fmtPKR(customDealIds.has(d.id) ? customWonInRange(d.id) : d.tagged_premium)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">{fmtPKR(wonValue(d))}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums text-brand-orange">{fmtPKR(dueValue(d))}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{fmtDate(d.created_at)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{fmtDate(d.policy_start_date)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{fmtDate(d.payment_receive_date)}</td>
+                  </tr>
+                ))}
+                {(drill?.deals.length ?? 0) === 0 && (
+                  <tr><td colSpan={16} className="px-2 py-6 text-center text-muted-foreground">No deals in this metric for the selected filters.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setDrill(null)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
