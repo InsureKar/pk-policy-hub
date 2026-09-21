@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtPKR } from "@/lib/format";
+import { calculateDealFinancials } from "@/lib/calc";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 import { Circle } from "lucide-react";
 
