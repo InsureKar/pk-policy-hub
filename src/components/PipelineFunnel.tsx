@@ -66,10 +66,10 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
     queryKey: ["pipeline-funnel"],
     queryFn: async () => {
       const [deals, stages, profiles, inst] = await Promise.all([
-        supabase.from("deals").select("id, gross_premium, stage_id, assigned_do_id, team_lead_id, created_at, deal_type"),
+        supabase.from("deals").select("id, gross_premium, stage_id, assigned_do_id, team_lead_id, created_at, deal_type, payment_schedule, base_percentage"),
         supabase.from("deal_stages").select("id, name, sort_order, is_won, is_lost").order("sort_order"),
         supabase.from("profiles").select("id, full_name"),
-        supabase.from("deal_installments" as any).select("deal_id, amount, gross_premium, paid_amount, payment_status"),
+        supabase.from("deal_installments" as any).select("deal_id, amount, gross_premium, net_premium, commission_percentage, marketing_budget, loading, b2b_commission, paid_amount, paid_date, payment_receive_date, due_date, payment_status"),
       ]);
       return {
         deals: deals.data ?? [],
@@ -86,23 +86,26 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
     [data, scope.all, scope.ids],
   );
 
-  const filteredDeals = useMemo(() => {
-    const { start, end } = rangeFor(applied.mode, applied.year, applied.month, applied.quarter);
-    return (data?.deals ?? []).filter((d: any) => {
-      if (!isVisibleRow(d, scope)) return false;
-      const dt = new Date(d.created_at);
-      if (dt < start || dt > end) return false;
-      if (applied.userId !== "all") {
-        if (!scope.all && !scope.ids.includes(applied.userId)) return false;
-        if (d.assigned_do_id !== applied.userId && d.team_lead_id !== applied.userId) return false;
-      }
-      return true;
-    });
-  }, [data, applied, scope]);
+  const range = useMemo(
+    () => rangeFor(applied.mode, applied.year, applied.month, applied.quarter),
+    [applied],
+  );
 
-  const stages = data?.stages ?? [];
-  const wonIds = new Set(stages.filter((s: any) => s.is_won).map((s: any) => s.id));
-  const lostIds = new Set(stages.filter((s: any) => s.is_lost).map((s: any) => s.id));
+  /** Custom ("set your own plan") deals are reported per instalment. */
+  const customDealIds = useMemo(
+    () => new Set(
+      (data?.deals ?? [])
+        .filter((d: any) => String(d.payment_schedule ?? "").toLowerCase().startsWith("custom"))
+        .map((d: any) => d.id),
+    ),
+    [data?.deals],
+  );
+
+  const baseOf = useMemo(() => {
+    const m = new Map<string, number | undefined>();
+    for (const d of (data?.deals ?? []) as any[]) m.set(d.id, d.base_percentage ?? undefined);
+    return m;
+  }, [data?.deals]);
 
   // Instalment-based deals: only the instalments actually marked paid count as won
   // business; everything still due is reported as Outstanding Premium.
@@ -119,8 +122,78 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
     return m;
   }, [data?.installments]);
 
-  /** Won value of a deal — instalment deals count only their paid instalments. */
+  /** The date a paid instalment belongs to — its actual payment date. */
+  const paidDateOf = (r: any) => {
+    const raw = r.paid_date || r.payment_receive_date || r.due_date;
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  /**
+   * Custom plans: each paid instalment keeps its own commission and its own
+   * Tagged Premium, and is reported in the month of its own payment date.
+   */
+  const customPaidTagged = useMemo(() => {
+    const m = new Map<string, { tagged: number; date: Date | null }[]>();
+    for (const r of (data?.installments ?? [])) {
+      if (!customDealIds.has(r.deal_id)) continue;
+      const isPaid = r.payment_status === "paid" || Number(r.paid_amount || 0) > 0;
+      if (!isPaid) continue;
+      const gross = Number(r.gross_premium || 0);
+      const mktPct = gross > 0 ? (Number(r.marketing_budget || 0) / gross) * 100 : 0;
+      const f = calculateDealFinancials({
+        gross_premium: gross,
+        net_premium: Number(r.net_premium || 0),
+        commission_percentage: Number(r.commission_percentage || 0),
+        marketing_budget_percentage: mktPct,
+        loading: Number(r.loading || 0),
+        b2b_commission: Number(r.b2b_commission || 0),
+        base_percentage: baseOf.get(r.deal_id),
+      });
+      const list = m.get(r.deal_id) ?? [];
+      list.push({ tagged: f.tagged_premium, date: paidDateOf(r) });
+      m.set(r.deal_id, list);
+    }
+    return m;
+  }, [data?.installments, customDealIds, baseOf]);
+
+  /** Tagged Premium of the custom instalments paid inside the selected period. */
+  const customWonInRange = (dealId: string) =>
+    (customPaidTagged.get(dealId) ?? []).reduce(
+      (a, x) => a + (x.date && x.date >= range.start && x.date <= range.end ? x.tagged : 0),
+      0,
+    );
+
+  const filteredDeals = useMemo(() => {
+    return (data?.deals ?? []).filter((d: any) => {
+      if (!isVisibleRow(d, scope)) return false;
+      const dt = new Date(d.created_at);
+      const inPeriod = dt >= range.start && dt <= range.end;
+      // Custom plans are also included when one of their instalments was paid
+      // inside the selected period, whatever the date the deal was created.
+      const paidInPeriod = customDealIds.has(d.id) && customWonInRange(d.id) > 0;
+      if (!inPeriod && !paidInPeriod) return false;
+      if (applied.userId !== "all") {
+        if (!scope.all && !scope.ids.includes(applied.userId)) return false;
+        if (d.assigned_do_id !== applied.userId && d.team_lead_id !== applied.userId) return false;
+      }
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, applied, scope, range, customDealIds, customPaidTagged]);
+
+  const stages = data?.stages ?? [];
+  const wonIds = new Set(stages.filter((s: any) => s.is_won).map((s: any) => s.id));
+  const lostIds = new Set(stages.filter((s: any) => s.is_lost).map((s: any) => s.id));
+
+  /**
+   * Won value of a deal — custom plans report the Tagged Premium of the
+   * instalments paid inside the selected period; other instalment deals keep
+   * counting their paid amounts, and plain deals their gross premium.
+   */
   const wonValue = (d: any) => {
+    if (customDealIds.has(d.id)) return customWonInRange(d.id);
     const e = insByDeal.get(d.id);
     return e ? e.paid : Number(d.gross_premium || 0);
   };
