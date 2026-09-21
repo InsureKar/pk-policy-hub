@@ -38,6 +38,9 @@ function DealDetail() {
   // Premium & Income calculations are restricted to Admin and Management.
   const canSeeFinancials = hasRole(["admin", "management"]);
   const canManageDeal = canSeeFinancials;
+  // Custom instalments can also be updated (marked paid, collection details) by
+  // any user with edit rights on deals, not just Admin/Management.
+  const canEditInstalments = canManageDeal || can("deals", "edit");
 
   const deleteDeal = async () => {
     if (!window.confirm("Delete this deal permanently? This cannot be undone.")) return;
@@ -297,7 +300,7 @@ function DealDetail() {
         <DealCustomInstalments
           dealId={id}
           basePercentage={Number((d as any).base_percentage ?? 0) || undefined}
-          canEdit={canManageDeal}
+          canEdit={canEditInstalments}
         />
       ) : (
         <DealInstalments
