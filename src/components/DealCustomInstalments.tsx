@@ -221,7 +221,10 @@ export function DealCustomInstalments({
   };
 
   // Roll the instalment breakdowns up to the deal, exactly like the new-deal
-  // screen does, so Tagged Premium and the deal totals stay in step.
+  // screen does, so the deal header totals stay in step. Each instalment keeps
+  // its OWN commission percentage and commission amount in deal_installments —
+  // this roll-up only sums amounts and never rewrites, averages or
+  // redistributes an instalment's own commission.
   const rollupDeal = async () => {
     const agg = calcs.reduce((a, c) => ({
       comm: a.comm + c.commission_before_tax, mkt: a.mkt + c.marketing_before_tax,
