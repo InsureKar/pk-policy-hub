@@ -364,25 +364,31 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
                   const list = sec.deals.filter((d: any) => d.stage_id === s.id);
                   const total = list.reduce((a: number, d: any) => a + (s.is_won ? wonValue(d) : Number(d.gross_premium || 0)), 0);
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={s.id}
-                      className={`min-w-[130px] flex-1 border-r px-3 py-2 last:border-r-0 ${s.is_won ? "bg-success/10" : s.is_lost ? "bg-destructive/5" : ""}`}
+                      onClick={() => setDrill({ title: `${sec.label} · ${s.name}`, subtitle: `${periodLabel} · ${fmtPKR(total)}`, deals: list })}
+                      className={`min-w-[130px] flex-1 cursor-pointer border-r px-3 py-2 text-left transition-colors last:border-r-0 hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${s.is_won ? "bg-success/10" : s.is_lost ? "bg-destructive/5" : ""}`}
                     >
                       <div className="text-xs text-muted-foreground">{s.name}</div>
                       <div className={`mt-2 text-base font-semibold tabular-nums ${s.is_won ? "text-success" : s.is_lost ? "text-destructive" : ""}`}>{fmtPKR(total)}</div>
                       <div className="mt-0.5 text-xs text-muted-foreground">{list.length} deals</div>
-                    </div>
+                    </button>
                   );
                 })}
                 {(() => {
                   const list = sec.deals.filter((d: any) => dueValue(d) > 0);
                   const outstanding = list.reduce((a: number, d: any) => a + dueValue(d), 0);
                   return (
-                    <div className="min-w-[150px] flex-1 border-l px-3 py-2 bg-warning/5">
+                    <button
+                      type="button"
+                      onClick={() => setDrill({ title: `${sec.label} · Outstanding Premium`, subtitle: `${periodLabel} · ${fmtPKR(outstanding)}`, deals: list })}
+                      className="min-w-[150px] flex-1 cursor-pointer border-l bg-warning/5 px-3 py-2 text-left transition-colors hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
                       <div className="text-xs text-muted-foreground">Outstanding Premium</div>
                       <div className="mt-2 text-base font-semibold tabular-nums text-brand-orange">{fmtPKR(outstanding)}</div>
                       <div className="mt-0.5 text-xs text-muted-foreground">{list.length} {list.length === 1 ? "deal" : "deals"} with due instalments</div>
-                    </div>
+                    </button>
                   );
                 })()}
                 </div>
