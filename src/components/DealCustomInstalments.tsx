@@ -221,7 +221,10 @@ export function DealCustomInstalments({
   };
 
   // Roll the instalment breakdowns up to the deal, exactly like the new-deal
-  // screen does, so Tagged Premium and the deal totals stay in step.
+  // screen does, so the deal header totals stay in step. Each instalment keeps
+  // its OWN commission percentage and commission amount in deal_installments —
+  // this roll-up only sums amounts and never rewrites, averages or
+  // redistributes an instalment's own commission.
   const rollupDeal = async () => {
     const agg = calcs.reduce((a, c) => ({
       comm: a.comm + c.commission_before_tax, mkt: a.mkt + c.marketing_before_tax,
@@ -442,9 +445,15 @@ export function DealCustomInstalments({
                                 ? <B2BTakerField value={r.b2b_taker_name} onChange={(v) => setRow(i, { b2b_taker_name: v })} />
                                 : <span>{r.b2b_taker_name || "—"}</span>}</div>
                           </div>
-                          <div className="mt-3 rounded-md border p-3 max-w-xs">
-                            <p className="text-xs text-muted-foreground">Tagged Premium</p>
-                            <p className="font-medium tabular-nums">{fmtPKR(calcs[i]?.tagged_premium ?? 0)}</p>
+                          <div className="mt-3 grid grid-cols-2 gap-3 max-w-md">
+                            <div className="rounded-md border p-3">
+                              <p className="text-xs text-muted-foreground">Commission ({r.commission || 0}%)</p>
+                              <p className="font-medium tabular-nums">{fmtPKR(calcs[i]?.commission_before_tax ?? 0)}</p>
+                            </div>
+                            <div className="rounded-md border p-3">
+                              <p className="text-xs text-muted-foreground">Tagged Premium</p>
+                              <p className="font-medium tabular-nums">{fmtPKR(calcs[i]?.tagged_premium ?? 0)}</p>
+                            </div>
                           </div>
                         </div>
                         <div>
