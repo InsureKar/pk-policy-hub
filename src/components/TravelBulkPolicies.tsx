@@ -353,7 +353,7 @@ export function TravelBulkPolicies({
                 <tr>
                   <td className="p-3" colSpan={3}>Total Transferred</td>
                   <td className="p-3 text-right tabular-nums">{fmtPKR(totalTransfers)}</td>
-                  <td colSpan={3}></td>
+                  <td colSpan={4}></td>
                 </tr>
               </tfoot>
             </table>
