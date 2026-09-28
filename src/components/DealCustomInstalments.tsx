@@ -10,6 +10,7 @@ import { DateField } from "@/components/DateField";
 import { MoneyInput } from "@/components/MoneyInput";
 import { fmtPKR } from "@/lib/format";
 import { calculateDealFinancials } from "@/lib/calc";
+import { instalmentCount, instalmentLabels } from "@/components/DealInstalments";
 import { toast } from "sonner";
 import B2BTakerField from "@/components/B2BTakerField";
 import { openStorageDoc } from "@/lib/openStorageDoc";
@@ -61,13 +62,17 @@ const blank = (n: number, prev?: Row): Row => ({
  * to the month in which it was marked paid.
  */
 export function DealCustomInstalments({
-  dealId, basePercentage, canEdit = true,
+  dealId, basePercentage, canEdit = true, schedule,
 }: {
   dealId: string;
+  /** Quarterly / Bi-Annually reuse this panel with a fixed number of periods. */
+  schedule?: string | null;
   basePercentage?: number | null;
   canEdit?: boolean;
 }) {
   const qc = useQueryClient();
+  const fixedCount = schedule && !schedule.toLowerCase().startsWith("custom") ? instalmentCount(schedule) : 0;
+  const fixedLabels = fixedCount ? instalmentLabels(fixedCount) : [];
   const { hasRole } = useAuth();
   const canSeeSensitive = hasRole(["admin", "management"]);
   const [rows, setRows] = useState<Row[]>([]);
@@ -106,7 +111,7 @@ export function DealCustomInstalments({
 
   useEffect(() => {
     if (!saved) return;
-    setRows(saved.map((s: any, i: number) => ({
+    const built: Row[] = saved.map((s: any, i: number) => ({
       id: s.id,
       installment_number: s.installment_number ?? i + 1,
       label: s.label ?? `Instalment ${i + 1}`,
@@ -131,8 +136,16 @@ export function DealCustomInstalments({
       remarks: s.payment_remarks ?? "",
       tagged_month: s.tagged_month ?? null,
       tagged_year: s.tagged_year ?? null,
-    })));
-  }, [saved]);
+    }));
+    // Fixed schedules always show every period; missing ones open as blank rows.
+    for (let n = 1; n <= fixedCount; n++) {
+      if (!built.some((r) => r.installment_number === n)) {
+        built.push({ ...blank(n, built[built.length - 1]), label: fixedLabels[n - 1] });
+      }
+    }
+    built.sort((a, b) => a.installment_number - b.installment_number);
+    setRows(built);
+  }, [saved, fixedCount]);
 
   const setRow = (i: number, patch: Partial<Row>) =>
     setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -324,7 +337,7 @@ export function DealCustomInstalments({
   return (
     <Card className="mt-4">
       <CardHeader>
-        <CardTitle className="text-base">Instalment Plan — Custom</CardTitle>
+        <CardTitle className="text-base">Instalment Plan — {fixedCount ? schedule : "Custom"}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="overflow-x-auto">
@@ -399,7 +412,7 @@ export function DealCustomInstalments({
                     </td>
                     {canEdit && (
                       <td className="p-2 text-right">
-                        {!r.id && (
+                        {!r.id && !fixedCount && (
                           <Button type="button" variant="ghost" size="sm" onClick={() => removeRow(i)}>Remove</Button>
                         )}
                       </td>
@@ -536,7 +549,7 @@ export function DealCustomInstalments({
         {canEdit && (
           <div className="space-y-2">
             <div className="flex flex-wrap gap-2 justify-between">
-              <Button type="button" variant="outline" onClick={addRow} disabled={rows.length >= 4}>Add Instalment</Button>
+              <Button type="button" variant="outline" onClick={addRow} disabled={rows.length >= 4 || !!fixedCount}>Add Instalment</Button>
               <Button type="button" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save Instalment Plan"}</Button>
             </div>
             <p className="text-xs text-muted-foreground">
