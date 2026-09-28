@@ -34,6 +34,7 @@ type Row = {
   b2b_pct: number;
   b2b_taker_name: string;
   status: "due" | "paid";
+  saved_status?: "due" | "paid";
   paid_date: string;
   mode: string;
   receive_date: string;
@@ -129,6 +130,7 @@ export function DealCustomInstalments({
       b2b_pct: 0,
       b2b_taker_name: s.b2b_taker_name ?? "",
       status: (s.payment_status === "paid" ? "paid" : "due") as "due" | "paid",
+      saved_status: (s.payment_status === "paid" ? "paid" : "due") as "due" | "paid",
       paid_date: s.paid_date ?? "",
       mode: s.payment_mode ?? "",
       receive_date: s.payment_receive_date ?? "",
@@ -347,7 +349,7 @@ export function DealCustomInstalments({
   // Sequential unlock: only the first saved instalment that is still unpaid can
   // be edited. Paid instalments and later unpaid ones stay locked. Newly added
   // (unsaved) rows remain editable so users can append instalments.
-  const firstUnpaidSaved = rows.findIndex((r) => r.id && r.status !== "paid");
+  const firstUnpaidSaved = rows.findIndex((r) => r.id && (r.saved_status ?? r.status) !== "paid");
   const rowEditable = (i: number) => canEdit && (!rows[i]?.id || i === firstUnpaidSaved);
 
   return (
