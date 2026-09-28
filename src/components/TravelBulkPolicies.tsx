@@ -255,7 +255,7 @@ export function TravelBulkPolicies({
                   </td>
                   <td className="p-3 align-top min-w-fit"><div className="min-w-[150px]"><MoneyInput className="h-10" value={r.premium} onChange={(v) => update(i, { premium: v })}/></div></td>
                   <td className="p-3 align-top min-w-fit">
-                    <Input type="number" step="0.01" min="0" max={canExceed45 ? undefined : 45} className="h-10 text-right min-w-[110px]" value={r.commission_percentage}
+                    <Input type="number" step="0.01" min="0" max={canExceed45 ? undefined : 45} className="h-10 text-right min-w-[110px]" value={r.commission_percentage || ""}
                       onChange={(e) => update(i, { commission_percentage: Number(e.target.value) || 0 })}
                       onBlur={(e) => {
                         const v = Number(e.target.value) || 0;

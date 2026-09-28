@@ -165,7 +165,7 @@ function CommissionsTab() {
                   return (
                     <td key={l.key} className="px-3 py-1.5">
                       <Input type="number" step="0.01" className="h-8 w-20 ml-auto text-right"
-                        defaultValue={rate?.percentage ?? 0}
+                        defaultValue={Number(rate?.percentage) || ""}
                         onBlur={(e)=>set(c.id, l.key, e.target.value)}/>
                     </td>
                   );

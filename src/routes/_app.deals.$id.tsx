@@ -485,8 +485,8 @@ function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSav
             <Field label="Policy End"><DateField value={f.policy_end_date ?? ""} onChange={(v) => set("policy_end_date", v)} placeholder="End date"/></Field>
             <Field label="Gross Premium (PKR)"><MoneyInput value={f.gross_premium} onChange={(_, raw) => setNum("gross_premium", raw)}/></Field>
             <Field label="Net Premium (PKR)"><MoneyInput value={f.net_premium} onChange={(_, raw) => setNum("net_premium", raw)}/></Field>
-            <Field label="Commission %"><Input type="number" step="0.001" value={f.commission_percentage ?? 0} onChange={(e) => setNum("commission_percentage", e.target.value)}/></Field>
-            <Field label="Marketing Budget %"><Input type="number" step="0.001" value={f.marketing_budget_percentage ?? 0} onChange={(e) => setNum("marketing_budget_percentage", e.target.value)}/></Field>
+            <Field label="Commission %"><Input type="number" step="0.001" value={Number(f.commission_percentage) || ""} onChange={(e) => setNum("commission_percentage", e.target.value)}/></Field>
+            <Field label="Marketing Budget %"><Input type="number" step="0.001" value={Number(f.marketing_budget_percentage) || ""} onChange={(e) => setNum("marketing_budget_percentage", e.target.value)}/></Field>
             <Field label="Loading (PKR)"><MoneyInput value={f.loading} onChange={(_, raw) => setNum("loading", raw)}/></Field>
             <Field label="B2B Commission (PKR)"><MoneyInput value={f.b2b_commission} onChange={(_, raw) => setNum("b2b_commission", raw)}/></Field>
             <Field label="Name of B2B Commission Taker"><B2BTakerField value={(f.b2b_taker_name as string) ?? ""} onChange={(v) => set("b2b_taker_name", v)}/></Field>
@@ -711,7 +711,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                       <td className="p-2"><DateField value={r.date_issued ?? ""} onChange={(v) => updateRow(r.id, { date_issued: v || null })} className="h-8" placeholder="Date"/></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.policy_number ?? ""} onBlur={e => updateRow(r.id, { policy_number: e.target.value })}/></td>
                       <td className="p-2"><Input type="number" step="0.01" className="h-8 text-right" defaultValue={r.premium ?? 0} onBlur={e => updateRow(r.id, { premium: Number(e.target.value) || 0 })}/></td>
-                      <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={r.commission_percentage ?? 0} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>
+                      <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={Number(r.commission_percentage) || ""} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>
                       <td className="p-2 text-right tabular-nums">{fmtPKR(commAmt)}</td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.payable_company ?? ""} onBlur={e => updateRow(r.id, { payable_company: e.target.value })}/></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.agent_name ?? ""} onBlur={e => updateRow(r.id, { agent_name: e.target.value })}/></td>

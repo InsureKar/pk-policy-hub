@@ -198,7 +198,7 @@ export function DealInstalments({
                 </td>
                 <td className="p-2 min-w-[100px]">
                   <input type="number" step="0.001" className="w-full rounded-md border bg-background px-2 py-1 text-right disabled:opacity-50"
-                    value={r.commission_percentage} disabled={!rowEditable(i)}
+                    value={r.commission_percentage || ""} disabled={!rowEditable(i)}
                     onChange={(e) => setRow(i, { commission_percentage: Number(e.target.value) || 0 })} />
                 </td>
                 <td className="p-2 min-w-[170px]">
