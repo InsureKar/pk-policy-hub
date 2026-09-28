@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtPKR } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -25,6 +27,9 @@ export type TravelTransferRow = {
   amount: number;
   tid: string;
   agent: string;
+  /** When checked, this transfer is marked as an agent payment with the chosen destination. */
+  agent_payment_destination: boolean;
+  payment_destination: "" | "company" | "insurance_company";
 };
 
 export const emptyTravelRow = (): TravelPolicyRow => ({
@@ -33,6 +38,7 @@ export const emptyTravelRow = (): TravelPolicyRow => ({
 });
 export const emptyTransferRow = (): TravelTransferRow => ({
   transfer_date: "", bank_name: "", amount: 0, tid: "", agent: "",
+  agent_payment_destination: false, payment_destination: "",
 });
 
 export const payableOf = (r: TravelPolicyRow) =>
