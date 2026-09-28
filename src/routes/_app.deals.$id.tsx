@@ -330,8 +330,9 @@ function DealDetail() {
         </Card>
       )}
 
-      {String(d.payment_schedule ?? "").toLowerCase().startsWith("custom") ? (
+      {/^(custom|quarter|bi-annual|bi annual|half)/.test(String(d.payment_schedule ?? "").toLowerCase()) ? (
         <DealCustomInstalments
+          schedule={d.payment_schedule}
           dealId={id}
           basePercentage={Number((d as any).base_percentage ?? 0) || undefined}
           canEdit={canEditInstalments}
