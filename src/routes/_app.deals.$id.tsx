@@ -79,8 +79,8 @@ function DealDetail() {
   useEffect(() => { if (data?.deal?.stage_id) setStageId(data.deal.stage_id); }, [data?.deal?.stage_id]);
 
   const customRates = useMemo(() => {
-    if (!data?.deal || !String(data.deal.payment_schedule ?? "").toLowerCase().startsWith("custom")) return [];
-    return [...new Set(data.installments.map((row: any) => Number(row.commission_percentage ?? 0)).filter((rate) => rate > 0))];
+    if (!data?.deal || !/^(custom|quarter|bi-annual|bi annual|half)/.test(String(data.deal.payment_schedule ?? "").toLowerCase())) return [];
+    return [...new Set(data.installments.filter((row: any) => String(row.payment_status ?? "").toLowerCase() === "paid").map((row: any) => Number(row.commission_percentage ?? 0)).filter((rate) => rate > 0))];
   }, [data]);
   const calc = useMemo(() => {
     if (!data?.deal) return null;
