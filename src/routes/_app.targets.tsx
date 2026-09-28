@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -144,7 +145,7 @@ function TargetRow({ user, role, existing, achieved, periodMonth, onSaved }: any
       <td className="px-4 py-2.5 font-medium">{user.full_name}</td>
       <td className="px-4 py-2.5 text-muted-foreground">{role}</td>
       <td className="px-4 py-2.5 text-right">
-        <Input type="number" className="w-40 ml-auto text-right" value={amount} onChange={e => setAmount(e.target.value)}/>
+        <div className="w-40 ml-auto"><MoneyInput value={amount} onChange={(_, raw) => setAmount(raw)}/></div>
       </td>
       <td className="px-4 py-2.5 text-right tabular-nums">{fmtPKR(achieved)}</td>
       <td className={`px-4 py-2.5 text-right tabular-nums ${pct >= 100 ? "text-emerald-500" : pct >= 50 ? "" : "text-destructive"}`}>{pct}%</td>

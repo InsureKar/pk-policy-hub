@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { useMemo, useState } from "react";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -233,11 +234,11 @@ function AssetsPage() {
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">Purchase Cost (PKR)</div>
-                  <Input type="number" value={form.purchase_cost} onChange={e => setForm({ ...form, purchase_cost: e.target.value })} />
+                  <MoneyInput value={form.purchase_cost} onChange={(_, raw) => setForm({ ...form, purchase_cost: raw })} />
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">Salvage Value (PKR)</div>
-                  <Input type="number" value={form.salvage_value} onChange={e => setForm({ ...form, salvage_value: e.target.value })} />
+                  <MoneyInput value={form.salvage_value} onChange={(_, raw) => setForm({ ...form, salvage_value: raw })} />
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">Useful Life (years)</div>

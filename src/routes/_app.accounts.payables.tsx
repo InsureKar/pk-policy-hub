@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
@@ -210,7 +211,7 @@ function NewPayableDialog() {
             </Select>
           </Field>
           <Field label="Payee" className="col-span-2"><Input value={form.payee_name} onChange={e => setForm({ ...form, payee_name: e.target.value })} /></Field>
-          <Field label="Amount"><Input type="number" step="0.01" value={form.original_amount} onChange={e => setForm({ ...form, original_amount: e.target.value })} /></Field>
+          <Field label="Amount"><MoneyInput value={form.original_amount} onChange={(_, raw) => setForm({ ...form, original_amount: raw })} /></Field>
           <Field label="Due date"><DateField value={form.due_date} onChange={(v) => setForm({ ...form, due_date: v })}/></Field>
           <Field label="Description" className="col-span-2"><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></Field>
         </div>
@@ -271,7 +272,7 @@ function PayDialog({ payable }: { payable: any }) {
       <DialogContent className="max-w-md">
         <DialogHeader><DialogTitle>Record payable payment</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Amount"><Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} /></Field>
+          <Field label="Amount"><MoneyInput value={amount} onChange={(_, raw) => setAmount(raw)} /></Field>
           <Field label="Payment date"><DateField value={date} onChange={(v) => setDate(v)}/></Field>
         </div>
         <DialogFooter>

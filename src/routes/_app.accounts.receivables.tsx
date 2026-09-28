@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
@@ -303,7 +304,7 @@ function RecordPaymentDialog({ receivable }: { receivable: any }) {
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>Record payment — {receivable.receivable_number}</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Amount (PKR)"><Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}/></Field>
+          <Field label="Amount (PKR)"><MoneyInput value={amount} onChange={(_, raw) => setAmount(raw)}/></Field>
           <Field label="Payment date"><DateField value={date} onChange={(v) => setDate(v)}/></Field>
           <Field label="Installment">
             <Select value={instId} onValueChange={setInstId}>

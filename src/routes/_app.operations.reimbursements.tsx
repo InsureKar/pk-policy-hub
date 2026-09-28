@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -100,7 +101,7 @@ function ReimbursementsPage() {
                   <SelectContent>{(data?.cats ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                 </Select>
               </F>
-              <F label="Amount *"><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}/></F>
+              <F label="Amount *"><MoneyInput value={form.amount} onChange={(_, raw) => setForm({ ...form, amount: raw })}/></F>
               <F label="Expense Date *"><DateField value={form.expense_date} onChange={(v) => setForm({ ...form, expense_date: v })}/></F>
               <F label="Attachment"><Input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)}/></F>
               <div className="col-span-2"><F label="Description *"><Textarea rows={2} value={form.description ?? ""} onChange={e => setForm({ ...form, description: e.target.value })}/></F></div>

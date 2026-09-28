@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { RelatedTickets } from "@/components/RelatedTickets";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -482,12 +483,12 @@ function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSav
             <Field label="Policy Number"><Input value={f.policy_number ?? ""} onChange={(e) => set("policy_number", e.target.value)}/></Field>
             <Field label="Policy Start"><DateField value={f.policy_start_date ?? ""} onChange={(v) => set("policy_start_date", v)} placeholder="Start date"/></Field>
             <Field label="Policy End"><DateField value={f.policy_end_date ?? ""} onChange={(v) => set("policy_end_date", v)} placeholder="End date"/></Field>
-            <Field label="Gross Premium (PKR)"><Input type="number" step="0.01" value={f.gross_premium ?? 0} onChange={(e) => setNum("gross_premium", e.target.value)}/></Field>
-            <Field label="Net Premium (PKR)"><Input type="number" step="0.01" value={f.net_premium ?? 0} onChange={(e) => setNum("net_premium", e.target.value)}/></Field>
+            <Field label="Gross Premium (PKR)"><MoneyInput value={f.gross_premium} onChange={(_, raw) => setNum("gross_premium", raw)}/></Field>
+            <Field label="Net Premium (PKR)"><MoneyInput value={f.net_premium} onChange={(_, raw) => setNum("net_premium", raw)}/></Field>
             <Field label="Commission %"><Input type="number" step="0.001" value={f.commission_percentage ?? 0} onChange={(e) => setNum("commission_percentage", e.target.value)}/></Field>
             <Field label="Marketing Budget %"><Input type="number" step="0.001" value={f.marketing_budget_percentage ?? 0} onChange={(e) => setNum("marketing_budget_percentage", e.target.value)}/></Field>
-            <Field label="Loading (PKR)"><Input type="number" step="0.01" value={f.loading ?? 0} onChange={(e) => setNum("loading", e.target.value)}/></Field>
-            <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={f.b2b_commission ?? 0} onChange={(e) => setNum("b2b_commission", e.target.value)}/></Field>
+            <Field label="Loading (PKR)"><MoneyInput value={f.loading} onChange={(_, raw) => setNum("loading", raw)}/></Field>
+            <Field label="B2B Commission (PKR)"><MoneyInput value={f.b2b_commission} onChange={(_, raw) => setNum("b2b_commission", raw)}/></Field>
             <Field label="Name of B2B Commission Taker"><B2BTakerField value={(f.b2b_taker_name as string) ?? ""} onChange={(v) => set("b2b_taker_name", v)}/></Field>
             <div className="sm:col-span-2 lg:col-span-3">
               <Field label="Notes"><Textarea rows={3} value={f.notes ?? ""} onChange={(e) => set("notes", e.target.value)}/></Field>
@@ -673,8 +674,8 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
   const content = (
     <div className="space-y-4 text-sm">
         <div className="grid sm:grid-cols-4 gap-3">
-          <Field label="Total Policy Amount *"><Input type="number" step="0.01" value={totalPolicy} onChange={e => setTotalPolicy(Number(e.target.value) || 0)}/></Field>
-          <Field label="Total Posting Amount *"><Input type="number" step="0.01" value={totalPost} onChange={e => setTotalPost(Number(e.target.value) || 0)}/></Field>
+          <Field label="Total Policy Amount *"><MoneyInput value={totalPolicy} onChange={(v) => setTotalPolicy(v)}/></Field>
+          <Field label="Total Posting Amount *"><MoneyInput value={totalPost} onChange={(v) => setTotalPost(v)}/></Field>
           <Field label="Posting From *"><DateField value={from} onChange={setFrom} placeholder="From date"/></Field>
           <Field label="Posting To *"><DateField value={to} onChange={setTo} placeholder="To date"/></Field>
         </div>

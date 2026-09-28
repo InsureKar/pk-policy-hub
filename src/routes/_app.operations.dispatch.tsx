@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -319,7 +320,7 @@ function DispatchPage() {
                 <div><Label>Cheque Name / Payee</Label>
                   <Input value={form.cheque_payee} onChange={(e) => setForm((f: any) => ({ ...f, cheque_payee: e.target.value }))} /></div>
                 <div><Label>Cheque Amount</Label>
-                  <Input type="number" min={0} value={form.cheque_amount} onChange={(e) => setForm((f: any) => ({ ...f, cheque_amount: e.target.value }))} /></div>
+                  <MoneyInput value={form.cheque_amount} onChange={(_, raw) => setForm((f: any) => ({ ...f, cheque_amount: raw }))} /></div>
                 <div>
                   <Label>Cheque Status</Label>
                   <Select value={form.cheque_status || "none"} onValueChange={(v) => setForm((f: any) => ({ ...f, cheque_status: v === "none" ? "" : v }))}>
