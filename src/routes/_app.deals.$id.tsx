@@ -65,7 +65,7 @@ function DealDetail() {
         supabase.from("clients").select("id, company_name, full_name, client_type"),
         supabase.from("app_settings").select("value").eq("key","tagged_premium_base_percentage").maybeSingle(),
         supabase.from("deal_documents").select("id, file_name, doc_type, storage_path, created_at").eq("deal_id", id).order("created_at", { ascending: false }),
-        supabase.from("deal_installments").select("gross_premium, net_premium, commission_percentage, marketing_budget, loading, b2b_commission").eq("deal_id", id).order("installment_number"),
+        supabase.from("deal_installments").select("gross_premium, net_premium, commission_percentage, marketing_budget, loading, b2b_commission, payment_status").eq("deal_id", id).order("installment_number"),
       ]);
       return { deal: deal.data, stages: stages.data ?? [], companies: companies.data ?? [], types: types.data ?? [],
         sources: sources.data ?? [], profiles: profiles.data ?? [], teams: teams.data ?? [], clients: clients.data ?? [],
