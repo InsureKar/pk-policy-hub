@@ -2920,10 +2920,12 @@ export type Database = {
       travel_posting_transfers: {
         Row: {
           agent: string | null
+          agent_payment_destination: boolean
           amount: number
           bank_name: string | null
           created_at: string
           id: string
+          payment_destination: string | null
           posting_id: string
           remarks: string | null
           sr_no: number
@@ -2932,10 +2934,12 @@ export type Database = {
         }
         Insert: {
           agent?: string | null
+          agent_payment_destination?: boolean
           amount?: number
           bank_name?: string | null
           created_at?: string
           id?: string
+          payment_destination?: string | null
           posting_id: string
           remarks?: string | null
           sr_no?: number
@@ -2944,10 +2948,12 @@ export type Database = {
         }
         Update: {
           agent?: string | null
+          agent_payment_destination?: boolean
           amount?: number
           bank_name?: string | null
           created_at?: string
           id?: string
+          payment_destination?: string | null
           posting_id?: string
           remarks?: string | null
           sr_no?: number

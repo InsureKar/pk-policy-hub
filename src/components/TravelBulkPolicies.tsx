@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtPKR } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -25,6 +27,9 @@ export type TravelTransferRow = {
   amount: number;
   tid: string;
   agent: string;
+  /** When checked, this transfer is marked as an agent payment with the chosen destination. */
+  agent_payment_destination: boolean;
+  payment_destination: "" | "company" | "insurance_company";
 };
 
 export const emptyTravelRow = (): TravelPolicyRow => ({
@@ -33,6 +38,7 @@ export const emptyTravelRow = (): TravelPolicyRow => ({
 });
 export const emptyTransferRow = (): TravelTransferRow => ({
   transfer_date: "", bank_name: "", amount: 0, tid: "", agent: "",
+  agent_payment_destination: false, payment_destination: "",
 });
 
 export const payableOf = (r: TravelPolicyRow) =>
@@ -188,6 +194,8 @@ export function TravelBulkPolicies({
               amount,
               tid: String(cells[cols.tid] ?? "").trim(),
               agent: String(cells[cols.agent] ?? "").trim(),
+              agent_payment_destination: false,
+              payment_destination: "",
             });
           }
         }
@@ -306,6 +314,7 @@ export function TravelBulkPolicies({
                   <th className="text-right p-3 whitespace-nowrap min-w-fit">Amount</th>
                   <th className="text-left p-3 whitespace-nowrap min-w-fit">TID</th>
                   <th className="text-left p-3 whitespace-nowrap min-w-fit">Agent</th>
+                  <th className="text-left p-3 whitespace-nowrap min-w-fit">Agent Payment Destination</th>
                   <th className="min-w-fit"></th>
                 </tr>
               </thead>
@@ -318,6 +327,26 @@ export function TravelBulkPolicies({
                     <td className="p-3 min-w-fit"><div className="min-w-[150px]"><MoneyInput className="h-10" value={t.amount} onChange={(v) => updateT(i, { amount: v })}/></div></td>
                     <td className="p-3 min-w-fit"><Input className="h-10 min-w-[140px]" value={t.tid} onChange={(e) => updateT(i, { tid: e.target.value })}/></td>
                     <td className="p-3 min-w-fit"><Input className="h-10 min-w-[120px]" value={t.agent} onChange={(e) => updateT(i, { agent: e.target.value })}/></td>
+                    <td className="p-3 min-w-fit">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={t.agent_payment_destination}
+                          onCheckedChange={(v) => updateT(i, { agent_payment_destination: v === true, payment_destination: v === true ? (t.payment_destination || "company") : "" })}
+                          aria-label="Agent Payment Destination"
+                        />
+                        <Select
+                          value={t.payment_destination || undefined}
+                          disabled={!t.agent_payment_destination}
+                          onValueChange={(v) => updateT(i, { payment_destination: v as "company" | "insurance_company" })}
+                        >
+                          <SelectTrigger className="h-10 min-w-[220px]"><SelectValue placeholder="Select Destination"/></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="company">Paid to Company (receivable)</SelectItem>
+                            <SelectItem value="insurance_company">Paid directly to Insurance Company</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </td>
                     <td className="p-3 min-w-fit"><Button size="sm" variant="ghost" onClick={() => setTransfers(transfers.filter((_, idx) => idx !== i))}>×</Button></td>
                   </tr>
                 ))}
@@ -326,7 +355,7 @@ export function TravelBulkPolicies({
                 <tr>
                   <td className="p-3" colSpan={3}>Total Transferred</td>
                   <td className="p-3 text-right tabular-nums">{fmtPKR(totalTransfers)}</td>
-                  <td colSpan={3}></td>
+                  <td colSpan={4}></td>
                 </tr>
               </tfoot>
             </table>
