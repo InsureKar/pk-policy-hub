@@ -144,9 +144,10 @@ function NewDealPage() {
 
   const bulkTotals = useMemo(() => {
     if (isTravel) {
+      // Travel bulk policies: Net Premium is always the same as the entered Gross Premium.
       return travelRows.reduce((a, r) => ({
         gross: a.gross + Number(r.premium || 0),
-        net: a.net + payableOf(r),
+        net: a.net + Number(r.premium || 0),
         count: a.count + 1,
       }), { gross: 0, net: 0, count: 0 });
     }
@@ -665,6 +666,8 @@ function NewDealPage() {
               posting_id: posting.id, sr_no: idx + 1,
               transfer_date: t.transfer_date || null, bank_name: t.bank_name || null,
               amount: t.amount, tid: t.tid || null, agent: t.agent || null,
+              agent_payment_destination: !!t.agent_payment_destination,
+              payment_destination: t.agent_payment_destination ? t.payment_destination || null : null,
             })) as any,
           );
           if (tErr) toast.error("Deal created, but transfer details failed: " + tErr.message);
