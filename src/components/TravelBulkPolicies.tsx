@@ -194,6 +194,8 @@ export function TravelBulkPolicies({
               amount,
               tid: String(cells[cols.tid] ?? "").trim(),
               agent: String(cells[cols.agent] ?? "").trim(),
+              agent_payment_destination: false,
+              payment_destination: "",
             });
           }
         }
