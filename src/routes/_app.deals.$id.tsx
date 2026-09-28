@@ -65,7 +65,7 @@ function DealDetail() {
         supabase.from("clients").select("id, company_name, full_name, client_type"),
         supabase.from("app_settings").select("value").eq("key","tagged_premium_base_percentage").maybeSingle(),
         supabase.from("deal_documents").select("id, file_name, doc_type, storage_path, created_at").eq("deal_id", id).order("created_at", { ascending: false }),
-        supabase.from("deal_installments").select("gross_premium, net_premium, commission_percentage, marketing_budget, loading, b2b_commission").eq("deal_id", id).order("installment_number"),
+        supabase.from("deal_installments").select("gross_premium, net_premium, commission_percentage, marketing_budget, loading, b2b_commission, payment_status").eq("deal_id", id).order("installment_number"),
       ]);
       return { deal: deal.data, stages: stages.data ?? [], companies: companies.data ?? [], types: types.data ?? [],
         sources: sources.data ?? [], profiles: profiles.data ?? [], teams: teams.data ?? [], clients: clients.data ?? [],
@@ -79,14 +79,15 @@ function DealDetail() {
   useEffect(() => { if (data?.deal?.stage_id) setStageId(data.deal.stage_id); }, [data?.deal?.stage_id]);
 
   const customRates = useMemo(() => {
-    if (!data?.deal || !String(data.deal.payment_schedule ?? "").toLowerCase().startsWith("custom")) return [];
-    return [...new Set(data.installments.map((row: any) => Number(row.commission_percentage ?? 0)).filter((rate) => rate > 0))];
+    if (!data?.deal || !/^(custom|quarter|bi-annual|bi annual|half)/.test(String(data.deal.payment_schedule ?? "").toLowerCase())) return [];
+    return [...new Set(data.installments.filter((row: any) => String(row.payment_status ?? "").toLowerCase() === "paid").map((row: any) => Number(row.commission_percentage ?? 0)).filter((rate) => rate > 0))];
   }, [data]);
   const calc = useMemo(() => {
     if (!data?.deal) return null;
     const basePercentage = (data.deal as any).base_percentage ?? data.basePct;
-    if (String(data.deal.payment_schedule ?? "").toLowerCase().startsWith("custom") && data.installments.length) {
-      const inputs = data.installments.map((row: any) => {
+    if (/^(custom|quarter|bi-annual|bi annual|half)/.test(String(data.deal.payment_schedule ?? "").toLowerCase()) && data.installments.length) {
+      const paidRows = data.installments.filter((row: any) => String(row.payment_status ?? "").toLowerCase() === "paid");
+      const inputs = paidRows.map((row: any) => {
         const gross = Number(row.gross_premium ?? 0);
         return {
           gross_premium: gross,
