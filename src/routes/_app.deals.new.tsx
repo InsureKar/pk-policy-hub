@@ -881,10 +881,10 @@ function NewDealPage() {
                                 <div><p className="mb-1 text-muted-foreground">Net Premium</p>
                                   <MoneyInput value={breakdownOf(i).net} onChange={(v) => setBreakdown(i, { net: v })} /></div>
                                 <div><p className="mb-1 text-muted-foreground">Commission %</p>
-                                  <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).commission}
+                                  <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).commission || ""}
                                     onChange={(e) => setBreakdown(i, { commission: Number(e.target.value) || 0 })} /></div>
                                 <div><p className="mb-1 text-muted-foreground">Marketing Budget %</p>
-                                  <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).marketing}
+                                  <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).marketing || ""}
                                     onChange={(e) => setBreakdown(i, { marketing: Number(e.target.value) || 0 })} /></div>
                                 <div><p className="mb-1 text-muted-foreground">Loading</p>
                                   <MoneyInput value={breakdownOf(i).loading} onChange={(v) => setBreakdown(i, { loading: v })} /></div>
@@ -900,7 +900,7 @@ function NewDealPage() {
                                 {breakdownOf(i).b2b_type === "percentage" ? (
                                   <>
                                     <div><p className="mb-1 text-muted-foreground">B2B Commission %</p>
-                                      <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).b2b_pct}
+                                      <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).b2b_pct || ""}
                                         onChange={(e) => setBreakdown(i, { b2b_pct: Number(e.target.value) || 0 })} /></div>
                                     <div><p className="mb-1 text-muted-foreground">B2B Commission (auto)</p>
                                       <Input readOnly tabIndex={-1} className="bg-muted/50 text-right" value={fmtPKR(b2bOf(i))} /></div>
@@ -1192,9 +1192,9 @@ function NewDealPage() {
               </Field>
               {canSeeFinancials && (
                 <>
-                  <Field label="Commission %"><Input type="number" step="0.001" value={form.commission_percentage} onChange={(e)=>setNum("commission_percentage", e.target.value)}/></Field>
+                  <Field label="Commission %"><Input type="number" step="0.001" value={form.commission_percentage || ""} onChange={(e)=>setNum("commission_percentage", e.target.value)}/></Field>
                   {canSeeMarketing && (
-                    <Field label="Marketing Budget %"><Input type="number" step="0.001" value={form.marketing_budget_percentage} onChange={(e)=>setNum("marketing_budget_percentage", e.target.value)}/></Field>
+                    <Field label="Marketing Budget %"><Input type="number" step="0.001" value={form.marketing_budget_percentage || ""} onChange={(e)=>setNum("marketing_budget_percentage", e.target.value)}/></Field>
                   )}
 
                   <Field label="Loading (PKR)"><MoneyInput value={form.loading} onChange={(_, raw)=>setNum("loading", raw)}/></Field>
@@ -1294,7 +1294,7 @@ function NewDealPage() {
                 </Field>
                 {form.b2b_commission_type === "percentage" ? (
                   <>
-                    <Field label="B2B Commission %"><Input type="number" step="0.001" value={form.b2b_commission_percentage} onChange={(e)=>setNum("b2b_commission_percentage", e.target.value)}/></Field>
+                    <Field label="B2B Commission %"><Input type="number" step="0.001" value={form.b2b_commission_percentage || ""} onChange={(e)=>setNum("b2b_commission_percentage", e.target.value)}/></Field>
                     <Field label="B2B Commission Amount (auto)"><Input readOnly tabIndex={-1} value={fmtPKR(b2bAmount)} className="bg-muted/50"/></Field>
                   </>
                 ) : (

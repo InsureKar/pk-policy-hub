@@ -166,7 +166,7 @@ function PayrollPage() {
               <F label="Department"><Input value={empDialog.department ?? ""} onChange={e => setEmpDialog({ ...empDialog, department: e.target.value })}/></F>
               <F label="Designation"><Input value={empDialog.designation ?? ""} onChange={e => setEmpDialog({ ...empDialog, designation: e.target.value })}/></F>
               <F label="Monthly Salary"><MoneyInput value={empDialog.monthly_salary} onChange={(_, raw) => setEmpDialog({ ...empDialog, monthly_salary: raw })}/></F>
-              <F label="Salary Tax %"><Input type="number" step="0.01" value={empDialog.salary_tax_percentage ?? 0} onChange={e => setEmpDialog({ ...empDialog, salary_tax_percentage: e.target.value })}/></F>
+              <F label="Salary Tax %"><Input type="number" step="0.01" value={Number(empDialog.salary_tax_percentage) || ""} onChange={e => setEmpDialog({ ...empDialog, salary_tax_percentage: e.target.value })}/></F>
               <F label="Default Allowances"><MoneyInput value={empDialog.default_allowances} onChange={(_, raw) => setEmpDialog({ ...empDialog, default_allowances: raw })}/></F>
               <F label="Default Deductions"><MoneyInput value={empDialog.default_deductions} onChange={(_, raw) => setEmpDialog({ ...empDialog, default_deductions: raw })}/></F>
               <F label="Joining Date"><DateField value={empDialog.joining_date ?? ""} onChange={(v) => setEmpDialog({ ...empDialog, joining_date: v })}/></F>
