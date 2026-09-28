@@ -167,7 +167,7 @@ export function DealCustomInstalments({
   const collected = rows.reduce((a, r) => a + (r.status === "paid" ? r.amount : 0), 0);
 
   const addRow = () =>
-    setRows((rs) => [...rs, blank(rs.length ? rs[rs.length - 1].installment_number + 1 : 1, rs[rs.length - 1])]);
+    setRows((rs) => rs.length >= 4 ? rs : [...rs, blank(rs.length ? rs[rs.length - 1].installment_number + 1 : 1, rs[rs.length - 1])]);
 
   const removeRow = async (i: number) => {
     const r = rows[i];
@@ -536,7 +536,7 @@ export function DealCustomInstalments({
         {canEdit && (
           <div className="space-y-2">
             <div className="flex flex-wrap gap-2 justify-between">
-              <Button type="button" variant="outline" onClick={addRow}>Add Instalment</Button>
+              <Button type="button" variant="outline" onClick={addRow} disabled={rows.length >= 4}>Add Instalment</Button>
               <Button type="button" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save Instalment Plan"}</Button>
             </div>
             <p className="text-xs text-muted-foreground">
