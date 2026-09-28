@@ -85,8 +85,9 @@ function DealDetail() {
   const calc = useMemo(() => {
     if (!data?.deal) return null;
     const basePercentage = (data.deal as any).base_percentage ?? data.basePct;
-    if (String(data.deal.payment_schedule ?? "").toLowerCase().startsWith("custom") && data.installments.length) {
-      const inputs = data.installments.map((row: any) => {
+    if (/^(custom|quarter|bi-annual|bi annual|half)/.test(String(data.deal.payment_schedule ?? "").toLowerCase()) && data.installments.length) {
+      const paidRows = data.installments.filter((row: any) => String(row.payment_status ?? "").toLowerCase() === "paid");
+      const inputs = paidRows.map((row: any) => {
         const gross = Number(row.gross_premium ?? 0);
         return {
           gross_premium: gross,
