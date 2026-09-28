@@ -1013,10 +1013,10 @@ function NewDealPage() {
                 {isCustom && (
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-[11px] text-muted-foreground">
-                      Add as many instalments as you need and set each due date and amount yourself.
+                      Add up to 4 instalments and set each due date and amount yourself.
                     </p>
-                    <Button type="button" variant="outline" size="sm"
-                      onClick={() => setCustomRows((rs) => [...rs, { due: "", amount: 0 }])}>
+                    <Button type="button" variant="outline" size="sm" disabled={customRows.length >= 4}
+                      onClick={() => setCustomRows((rs) => rs.length >= 4 ? rs : [...rs, { due: "", amount: 0 }])}>
                       Add Instalment
                     </Button>
                   </div>
