@@ -390,7 +390,7 @@ export function DealCustomInstalments({
                     </td>
                     <td className="p-2 text-right min-w-[150px]">
                       {canEdit && !r.id
-                        ? <div className="max-w-[200px] ml-auto"><MoneyInput value={r.amount} onChange={(v) => setRow(i, { amount: v })} showWords={false} /></div>
+                        ? <div className="max-w-[200px] ml-auto"><MoneyInput value={r.amount} onChange={(v) => setRow(i, { amount: v })} /></div>
                         : <span className="tabular-nums">{fmtPKR(r.amount)}</span>}
                     </td>
                     <td className="p-2 min-w-[130px]">
@@ -446,9 +446,9 @@ export function DealCustomInstalments({
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs">
                             <div><p className="mb-1 text-muted-foreground">Gross Premium</p>
-                              <MoneyInput value={r.gross} onChange={(v) => setRow(i, { gross: v })} disabled={!rowEditable(i)} showWords={false} /></div>
+                              <MoneyInput value={r.gross} onChange={(v) => setRow(i, { gross: v })} disabled={!rowEditable(i)} /></div>
                             <div><p className="mb-1 text-muted-foreground">Net Premium</p>
-                              <MoneyInput value={r.net} onChange={(v) => setRow(i, { net: v })} disabled={!rowEditable(i)} showWords={false} /></div>
+                              <MoneyInput value={r.net} onChange={(v) => setRow(i, { net: v })} disabled={!rowEditable(i)} /></div>
                             <div><p className="mb-1 text-muted-foreground">Commission %</p>
                               <Input type="number" step="0.001" className="text-right" disabled={!rowEditable(i)} value={r.commission}
                                 onChange={(e) => setRow(i, { commission: Number(e.target.value) || 0 })} /></div>
@@ -456,7 +456,7 @@ export function DealCustomInstalments({
                               <Input type="number" step="0.001" className="text-right" disabled={!rowEditable(i)} value={r.marketing}
                                 onChange={(e) => setRow(i, { marketing: Number(e.target.value) || 0 })} /></div>
                             <div><p className="mb-1 text-muted-foreground">Loading</p>
-                              <MoneyInput value={r.loading} onChange={(v) => setRow(i, { loading: v })} disabled={!rowEditable(i)} showWords={false} /></div>
+                              <MoneyInput value={r.loading} onChange={(v) => setRow(i, { loading: v })} disabled={!rowEditable(i)} /></div>
                             <div><p className="mb-1 text-muted-foreground">B2B Commission Type</p>
                               <Select value={r.b2b_type} disabled={!rowEditable(i)} onValueChange={(v) => setRow(i, { b2b_type: v as "fixed" | "percentage" })}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -471,7 +471,7 @@ export function DealCustomInstalments({
                                   onChange={(e) => setRow(i, { b2b_pct: Number(e.target.value) || 0 })} /></div>
                             ) : (
                               <div><p className="mb-1 text-muted-foreground">B2B Commission</p>
-                                <MoneyInput value={r.b2b} onChange={(v) => setRow(i, { b2b: v })} disabled={!rowEditable(i)} showWords={false} /></div>
+                                <MoneyInput value={r.b2b} onChange={(v) => setRow(i, { b2b: v })} disabled={!rowEditable(i)} /></div>
                             )}
                             <div className="col-span-2 md:col-span-6"><p className="mb-1 text-muted-foreground">Name of B2B Commission Taker</p>
                               {rowEditable(i)

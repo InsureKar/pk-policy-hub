@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -218,7 +219,7 @@ function PayTaxDialog({ record }: { record: any }) {
         <DialogHeader><DialogTitle>Record tax payment</DialogTitle></DialogHeader>
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">Amount (PKR)</Label>
-          <Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} />
+          <MoneyInput value={amount} onChange={(_, raw) => setAmount(raw)} />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>

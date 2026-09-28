@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
@@ -118,8 +119,8 @@ function ExpensesPage() {
                   <SelectContent>{subCats.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                 </Select>
               </F>
-              <F label="Amount *"><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}/></F>
-              <F label="Tax"><Input type="number" value={form.tax_amount} onChange={e => setForm({ ...form, tax_amount: e.target.value })}/></F>
+              <F label="Amount *"><MoneyInput value={form.amount} onChange={(_, raw) => setForm({ ...form, amount: raw })}/></F>
+              <F label="Tax"><MoneyInput value={form.tax_amount} onChange={(_, raw) => setForm({ ...form, tax_amount: raw })}/></F>
               <F label="Vendor"><Input value={form.vendor ?? ""} onChange={e => setForm({ ...form, vendor: e.target.value })}/></F>
               <F label="Invoice #"><Input value={form.invoice_number ?? ""} onChange={e => setForm({ ...form, invoice_number: e.target.value })}/></F>
               <F label="Payment Method"><Input value={form.payment_method ?? ""} onChange={e => setForm({ ...form, payment_method: e.target.value })}/></F>

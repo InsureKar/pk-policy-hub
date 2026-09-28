@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import * as XLSX from "xlsx";
@@ -252,7 +253,7 @@ export function TravelBulkPolicies({
                     />
                     {dupErrors?.[i] && <p className="text-xs text-destructive mt-1.5">{dupErrors[i]}</p>}
                   </td>
-                  <td className="p-3 align-top min-w-fit"><Input type="number" step="0.01" min="0" className="h-10 text-right min-w-[110px]" value={r.premium} onChange={(e) => update(i, { premium: Number(e.target.value) || 0 })}/></td>
+                  <td className="p-3 align-top min-w-fit"><div className="min-w-[150px]"><MoneyInput className="h-10" value={r.premium} onChange={(v) => update(i, { premium: v })}/></div></td>
                   <td className="p-3 align-top min-w-fit">
                     <Input type="number" step="0.01" min="0" max={canExceed45 ? undefined : 45} className="h-10 text-right min-w-[110px]" value={r.commission_percentage}
                       onChange={(e) => update(i, { commission_percentage: Number(e.target.value) || 0 })}
@@ -314,7 +315,7 @@ export function TravelBulkPolicies({
                     <td className="p-3 whitespace-nowrap">{i + 1}</td>
                     <td className="p-3 min-w-fit"><Input type="date" className="h-10 min-w-[140px]" value={t.transfer_date} onChange={(e) => updateT(i, { transfer_date: e.target.value })}/></td>
                     <td className="p-3 min-w-fit"><Input className="h-10 min-w-[160px]" value={t.bank_name} onChange={(e) => updateT(i, { bank_name: e.target.value })}/></td>
-                    <td className="p-3 min-w-fit"><Input type="number" step="0.01" min="0" className="h-10 text-right min-w-[120px]" value={t.amount} onChange={(e) => updateT(i, { amount: Number(e.target.value) || 0 })}/></td>
+                    <td className="p-3 min-w-fit"><div className="min-w-[150px]"><MoneyInput className="h-10" value={t.amount} onChange={(v) => updateT(i, { amount: v })}/></div></td>
                     <td className="p-3 min-w-fit"><Input className="h-10 min-w-[140px]" value={t.tid} onChange={(e) => updateT(i, { tid: e.target.value })}/></td>
                     <td className="p-3 min-w-fit"><Input className="h-10 min-w-[120px]" value={t.agent} onChange={(e) => updateT(i, { agent: e.target.value })}/></td>
                     <td className="p-3 min-w-fit"><Button size="sm" variant="ghost" onClick={() => setTransfers(transfers.filter((_, idx) => idx !== i))}>×</Button></td>
