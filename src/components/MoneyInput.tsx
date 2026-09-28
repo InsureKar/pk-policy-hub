@@ -2,42 +2,45 @@ import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-/** Groups a number with commas (Pakistani/English style, 2 decimals max). */
+/** Groups a number with commas (2 decimals max). */
 export function withCommas(n: number | string | null | undefined): string {
   const v = Number(n ?? 0);
   if (!Number.isFinite(v)) return "0";
-  return new Intl.NumberFormat("en-PK", { maximumFractionDigits: 2 }).format(v);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(v);
 }
 
 const UNITS = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
   "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
 const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+const SCALES = ["", "Thousand", "Million", "Billion", "Trillion"];
 
-function twoDigits(n: number): string {
-  if (n < 20) return UNITS[n];
-  return `${TENS[Math.floor(n / 10)]}${n % 10 ? ` ${UNITS[n % 10]}` : ""}`;
+function belowThousand(n: number): string {
+  const out: string[] = [];
+  if (n >= 100) { out.push(`${UNITS[Math.floor(n / 100)]} Hundred`); n %= 100; }
+  if (n >= 20) { out.push(TENS[Math.floor(n / 10)] + (n % 10 ? ` ${UNITS[n % 10]}` : "")); }
+  else if (n > 0) out.push(UNITS[n]);
+  return out.join(" ");
 }
 
-/** Converts an amount to words using the Pakistani numbering system (Crore / Lakh / Thousand). */
+/** Converts an amount to words (international system), e.g. "Five Hundred Thousand Rupees Only". Display only. */
 export function amountInWords(value: number | string | null | undefined): string {
   let n = Math.floor(Math.abs(Number(value ?? 0)));
-  if (!Number.isFinite(n) || n === 0) return "Zero Rupees";
+  if (!Number.isFinite(n) || n === 0) return "Zero Rupees Only";
   const parts: string[] = [];
-  const crore = Math.floor(n / 10000000); n %= 10000000;
-  const lakh = Math.floor(n / 100000); n %= 100000;
-  const thousand = Math.floor(n / 1000); n %= 1000;
-  const hundred = Math.floor(n / 100); n %= 100;
-  if (crore) parts.push(`${amountInWords(crore).replace(" Rupees", "")} Crore`);
-  if (lakh) parts.push(`${twoDigits(lakh)} Lakh`);
-  if (thousand) parts.push(`${twoDigits(thousand)} Thousand`);
-  if (hundred) parts.push(`${UNITS[hundred]} Hundred`);
-  if (n) parts.push(twoDigits(n));
-  return `${parts.join(" ")} Rupees`;
+  let i = 0;
+  while (n > 0 && i < SCALES.length) {
+    const chunk = n % 1000;
+    if (chunk) parts.unshift(`${belowThousand(chunk)}${SCALES[i] ? ` ${SCALES[i]}` : ""}`);
+    n = Math.floor(n / 1000);
+    i++;
+  }
+  return `${parts.join(" ")} Rupees Only`;
 }
 
 interface MoneyInputProps {
-  value: number;
-  onChange: (v: number) => void;
+  value: number | string | null | undefined;
+  /** Emits the numeric value (0 when empty) and the raw cleaned string ("" when empty). */
+  onChange: (v: number, raw: string) => void;
   readOnly?: boolean;
   disabled?: boolean;
   placeholder?: string;
@@ -46,23 +49,37 @@ interface MoneyInputProps {
   showWords?: boolean;
 }
 
+const toDisplay = (v: number | string | null | undefined) => {
+  if (v === null || v === undefined || v === "") return "";
+  const n = Number(v);
+  return Number.isFinite(n) && n !== 0 ? withCommas(n) : "";
+};
+
 /**
- * Currency input that displays thousands separators while typing and spells
- * the amount out in words underneath. Emits a plain number.
+ * Currency input: starts empty, can be fully cleared, shows thousands
+ * separators while typing and the amount in words underneath.
  */
 export function MoneyInput({ value, onChange, readOnly, disabled, placeholder, className, showWords = true }: MoneyInputProps) {
-  const [text, setText] = React.useState(() => (value ? withCommas(value) : ""));
+  const [text, setText] = React.useState(() => toDisplay(value));
   const [focused, setFocused] = React.useState(false);
 
   React.useEffect(() => {
-    if (!focused) setText(value ? withCommas(value) : "");
+    if (!focused) setText(toDisplay(value));
   }, [value, focused]);
 
   const handle = (raw: string) => {
-    const cleaned = raw.replace(/[^0-9.]/g, "");
-    setText(cleaned === "" ? "" : withCommas(cleaned.endsWith(".") ? cleaned.slice(0, -1) : cleaned) + (cleaned.endsWith(".") ? "." : ""));
-    onChange(Number(cleaned) || 0);
+    let cleaned = raw.replace(/[^0-9.]/g, "");
+    const dot = cleaned.indexOf(".");
+    if (dot >= 0) cleaned = cleaned.slice(0, dot + 1) + cleaned.slice(dot + 1).replace(/\./g, "");
+    if (cleaned === "") { setText(""); onChange(0, ""); return; }
+    const [int, dec] = cleaned.split(".");
+    const intFmt = int === "" ? "0" : new Intl.NumberFormat("en-US").format(Number(int));
+    setText(dec !== undefined ? `${intFmt}.${dec.slice(0, 2)}` : intFmt);
+    onChange(Number(cleaned) || 0, cleaned);
   };
+
+  const numeric = Number(String(value ?? "").replace(/,/g, ""));
+  const showText = showWords && text !== "" && Number.isFinite(numeric) && numeric !== 0;
 
   return (
     <div className="space-y-1">
@@ -71,13 +88,13 @@ export function MoneyInput({ value, onChange, readOnly, disabled, placeholder, c
         value={text}
         readOnly={readOnly}
         disabled={disabled}
-        placeholder={placeholder ?? "0"}
+        placeholder={placeholder ?? ""}
         className={cn("text-right tabular-nums", className)}
         onFocus={() => setFocused(true)}
-        onBlur={() => { setFocused(false); setText(value ? withCommas(value) : ""); }}
+        onBlur={() => { setFocused(false); setText(toDisplay(value)); }}
         onChange={(e) => handle(e.target.value)}
       />
-      {showWords && <p className="text-[11px] leading-tight text-muted-foreground">{amountInWords(value)}</p>}
+      {showText && <p className="text-[11px] leading-tight text-muted-foreground">{amountInWords(numeric)}</p>}
     </div>
   );
 }
