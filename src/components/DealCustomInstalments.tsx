@@ -297,8 +297,20 @@ export function DealCustomInstalments({
     qc.invalidateQueries({ queryKey: ["deal", dealId] });
   };
 
+  // A paid instalment cannot be saved without a paid date and a payment receipt.
+  const paidValidationError = (i: number): string | null => {
+    const r = rows[i];
+    if (r.status !== "paid") return null;
+    if (!r.paid_date) return `${r.label}: enter the paid date before saving a paid instalment.`;
+    const hasReceipt = receiptsFor(r.label).length > 0 || (pendingReceipts[i] ?? []).length > 0;
+    if (!hasReceipt) return `${r.label}: upload the payment receipt before saving a paid instalment.`;
+    return null;
+  };
+
   // Save a single instalment (its premium boxes, collection details, receipts).
   const saveRow = async (i: number) => {
+    const err = paidValidationError(i);
+    if (err) return toast.error(err);
     setSavingIdx(i);
     const payload = await buildPayload(rows[i], i);
     const { error } = await supabase
@@ -313,6 +325,10 @@ export function DealCustomInstalments({
   };
 
   const save = async () => {
+    for (let i = 0; i < rows.length; i++) {
+      const err = paidValidationError(i);
+      if (err) { setOpen(i); return toast.error(err); }
+    }
     setSaving(true);
     const payload = await Promise.all(rows.map((r, i) => buildPayload(r, i)));
     const { error } = await supabase
