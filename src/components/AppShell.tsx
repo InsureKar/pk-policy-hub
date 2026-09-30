@@ -130,7 +130,7 @@ const groups: NavGroup[] = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { profile, roles, signOut, hasRole, can, allow } = useAuth();
+  const { profile, roles, signOut, hasRole, can, allow, access } = useAuth();
   const { theme, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const primaryRole = roles[0] ?? "do";
@@ -151,10 +151,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <nav className="flex-1 px-2 py-3 space-y-1 overflow-y-auto">
           {groups.map((g) => {
-            if (g.roles && !hasRole(g.roles)) return null;
-            if (g.module && !can(g.module)) return null;
-            if (g.perm && !allow(g.perm)) return null;
-            const visibleItems = g.items.filter(i => (!i.roles || hasRole(i.roles)) && (!i.module || can(i.module)) && (!i.perm || allow(i.perm)));
+            // An explicitly granted screen permission always shows that screen.
+            const granted = (k?: string) => !!k && !!access[k] && access[k] !== "none";
+            const groupOk = (!g.roles || hasRole(g.roles)) && (!g.module || can(g.module)) && (!g.perm || allow(g.perm));
+            const visibleItems = g.items.filter(i => {
+              if (i.perm && access[i.perm] === "none") return false;
+              if (granted(i.perm)) return true;
+              return groupOk && (!i.roles || hasRole(i.roles)) && (!i.module || can(i.module)) && (!i.perm || allow(i.perm));
+            });
             if (visibleItems.length === 0) return null;
             // Single-item groups render flat (no collapsible header)
             if (visibleItems.length === 1 && !g.expandable) {
