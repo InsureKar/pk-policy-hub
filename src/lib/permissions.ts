@@ -98,6 +98,39 @@ export const PERMISSION_GROUPS: PermGroup[] = [
       { key: "deals.financials", label: "Deal Financial Information", module: "deals" },
       { key: "deals.documents", label: "Deal Documents", module: "deals" },
       { key: "deals.payments", label: "Deal Payments", module: "deals" },
+      { key: "deals.pipeline", label: "Pipeline", module: "deals" },
+      { key: "deals.tasks", label: "Tasks", module: "deals" },
+      { key: "deals.renewals", label: "Renewals", module: "renewals" },
+      { key: "leads.unassigned", label: "Unassigned Leads", module: "leads" },
+    ],
+  },
+  {
+    label: "Reports & Analytics",
+    items: [
+      { key: "reports.analytics", label: "Analytics", module: "reports" },
+      { key: "reports.income", label: "Income", module: "reports" },
+      { key: "reports.finance", label: "Finance Reports", module: "reports" },
+      { key: "reports.operations", label: "Ops Reports", module: "reports" },
+    ],
+  },
+  {
+    label: "Operations (More)",
+    items: [
+      { key: "operations.underwriting", label: "Underwriting", module: "operations" },
+      { key: "operations.commissions", label: "Commissions", module: "operations" },
+      { key: "operations.performance", label: "Employee Performance", module: "operations" },
+      { key: "operations.reimbursements", label: "Reimbursements", module: "operations" },
+    ],
+  },
+  {
+    label: "Admin (More)",
+    items: [
+      { key: "admin.teams", label: "Teams", module: "admin" },
+      { key: "admin.permissions", label: "Access & Permissions", module: "admin" },
+      { key: "admin.review", label: "Review User", module: "admin" },
+      { key: "admin.targets", label: "Monthly Targets", module: "admin" },
+      { key: "admin.activity", label: "Activity Log", module: "admin" },
+      { key: "admin.master", label: "Master Data (Companies, Commissions, Products)", module: "admin" },
     ],
   },
 ];
