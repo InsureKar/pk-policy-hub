@@ -1,6 +1,6 @@
 import { MoneyInput } from "@/components/MoneyInput";
 import { RelatedTickets } from "@/components/RelatedTickets";
-import { DealTasks, isTaskOverdue } from "@/components/DealTasks";
+import { DealTasks } from "@/components/DealTasks";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
