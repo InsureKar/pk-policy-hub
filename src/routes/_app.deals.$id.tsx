@@ -1,5 +1,6 @@
 import { MoneyInput } from "@/components/MoneyInput";
 import { RelatedTickets } from "@/components/RelatedTickets";
+import { DealTasks } from "@/components/DealTasks";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
@@ -353,6 +354,10 @@ function DealDetail() {
       <DealInvoicesAndTravel dealId={id} stage={stage} isTravel={(type ?? "").toLowerCase() === "travel"} />
 
       <StageHistory dealId={id} stages={data.stages} profiles={data.profiles} />
+
+      <div className="mt-4">
+        <DealTasks dealId={id} clientId={d.client_id} />
+      </div>
 
       <div className="mt-4">
         <RelatedTickets dealId={id} clientId={d.client_id ?? undefined} policyNumber={d.policy_number} />

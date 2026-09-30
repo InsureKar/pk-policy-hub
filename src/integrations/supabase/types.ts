@@ -2305,9 +2305,46 @@ export type Database = {
           },
         ]
       }
+      task_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: string | null
+          id: string
+          task_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          task_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_activity_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assigned_to: string | null
+          attachment_name: string | null
+          attachment_path: string | null
           client_id: string | null
           completed_at: string | null
           created_at: string
@@ -2315,6 +2352,7 @@ export type Database = {
           deal_id: string | null
           description: string | null
           due_date: string | null
+          due_time: string | null
           id: string
           priority: string
           status: string
@@ -2323,6 +2361,8 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
           client_id?: string | null
           completed_at?: string | null
           created_at?: string
@@ -2330,6 +2370,7 @@ export type Database = {
           deal_id?: string | null
           description?: string | null
           due_date?: string | null
+          due_time?: string | null
           id?: string
           priority?: string
           status?: string
@@ -2338,6 +2379,8 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
           client_id?: string | null
           completed_at?: string | null
           created_at?: string
@@ -2345,6 +2388,7 @@ export type Database = {
           deal_id?: string | null
           description?: string | null
           due_date?: string | null
+          due_time?: string | null
           id?: string
           priority?: string
           status?: string
@@ -3528,6 +3572,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_team_lead_of: { Args: { _user: string }; Returns: boolean }
       module_allows: {
         Args: {
           _min: Database["public"]["Enums"]["permission_level"]
