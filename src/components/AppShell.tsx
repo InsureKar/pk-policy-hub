@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
 import { useState, type ReactNode } from "react";
 import insureSLogo from "@/assets/logo.png";
+import { History } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 
 type NavItem = {
   to: string;
@@ -69,6 +71,7 @@ const groups: NavGroup[] = [
       { to: "/permissions", label: "Access & Permissions", icon: Shield, roles: ["admin", "management"] },
       { to: "/review", label: "Review User", icon: UserSearch, roles: ["admin", "management"] },
       { to: "/targets", label: "Monthly Targets", icon: Target, roles: ["admin", "management"] },
+      { to: "/activity", label: "Activity Log", icon: History, roles: ["admin", "management"] },
     ],
   },
   {
@@ -195,7 +198,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </aside>
-      <main className="flex-1 min-w-0">{children}</main>
+      <main className="flex-1 min-w-0 relative">
+        <div className="absolute top-3 right-4 z-30"><NotificationBell /></div>
+        {children}
+      </main>
     </div>
   );
 }
