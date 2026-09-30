@@ -60,9 +60,14 @@ function TasksPage() {
     },
   });
 
+  const isDone = (s: string) => s === "done" || s === "completed";
   const rows = useMemo(
-    () => (data?.tasks ?? []).filter((t) => (filter === "all" ? true : filter === "open" ? t.status !== "done" : t.status === "done")),
-    [data, filter],
+    () => (data?.tasks ?? []).filter((t) =>
+      filter === "all" ? true
+      : filter === "open" ? !isDone(t.status)
+      : filter === "mine" ? t.assigned_to === user?.id && !isDone(t.status)
+      : isDone(t.status)),
+    [data, filter, user],
   );
 
   const submit = async () => {
@@ -111,6 +116,7 @@ function TasksPage() {
             <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="open">Open tasks</SelectItem>
+              <SelectItem value="mine">Assigned to me</SelectItem>
               <SelectItem value="done">Completed</SelectItem>
               <SelectItem value="all">All</SelectItem>
             </SelectContent>
