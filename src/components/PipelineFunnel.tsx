@@ -8,6 +8,7 @@ import { fmtPKR, fmtDate } from "@/lib/format";
 import { calculateDealFinancials } from "@/lib/calc";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 import { Circle } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 type Props = {
   defaultFrom?: string;
@@ -422,7 +423,7 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
               <tbody>
                 {(drill?.deals ?? []).map((d: any) => (
                   <tr key={d.id} className="border-t">
-                    <td className="whitespace-nowrap px-2 py-1.5">{d.deal_number || "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5"><Link to="/deals/$id" params={{ id: d.id }} className="font-medium text-primary hover:underline">{d.deal_number || "Open deal"}</Link></td>
                     <td className="whitespace-nowrap px-2 py-1.5">{clientOf.get(d.client_id) ?? "—"}</td>
                     <td className="whitespace-nowrap px-2 py-1.5 capitalize">{d.deal_type ?? "—"}</td>
                     <td className="whitespace-nowrap px-2 py-1.5">{nameOf.get(d.assigned_do_id) ?? "—"}</td>
