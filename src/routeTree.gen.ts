@@ -30,6 +30,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClientsRouteImport } from './routes/_app.clients'
 import { Route as AppAssetsRouteImport } from './routes/_app.assets'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
+import { Route as AppActivityRouteImport } from './routes/_app.activity'
 import { Route as AppAccountsRouteImport } from './routes/_app.accounts'
 import { Route as AppTicketsIndexRouteImport } from './routes/_app.tickets.index'
 import { Route as AppOperationsIndexRouteImport } from './routes/_app.operations.index'
@@ -167,6 +168,11 @@ const AppAssetsRoute = AppAssetsRouteImport.update({
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppActivityRoute = AppActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAccountsRoute = AppAccountsRouteImport.update({
@@ -351,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/accounts': typeof AppAccountsRouteWithChildren
+  '/activity': typeof AppActivityRoute
   '/analytics': typeof AppAnalyticsRoute
   '/assets': typeof AppAssetsRoute
   '/clients': typeof AppClientsRoute
@@ -406,6 +413,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/activity': typeof AppActivityRoute
   '/analytics': typeof AppAnalyticsRoute
   '/assets': typeof AppAssetsRoute
   '/clients': typeof AppClientsRoute
@@ -462,6 +470,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_app/accounts': typeof AppAccountsRouteWithChildren
+  '/_app/activity': typeof AppActivityRoute
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/assets': typeof AppAssetsRoute
   '/_app/clients': typeof AppClientsRoute
@@ -520,6 +529,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/accounts'
+    | '/activity'
     | '/analytics'
     | '/assets'
     | '/clients'
@@ -575,6 +585,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/activity'
     | '/analytics'
     | '/assets'
     | '/clients'
@@ -630,6 +641,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/_app/accounts'
+    | '/_app/activity'
     | '/_app/analytics'
     | '/_app/assets'
     | '/_app/clients'
@@ -836,6 +848,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/analytics'
       preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/activity': {
+      id: '/_app/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AppActivityRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/accounts': {
@@ -1169,6 +1188,7 @@ const AppTicketsRouteWithChildren = AppTicketsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAccountsRoute: typeof AppAccountsRouteWithChildren
+  AppActivityRoute: typeof AppActivityRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppAssetsRoute: typeof AppAssetsRoute
   AppClientsRoute: typeof AppClientsRoute
@@ -1194,6 +1214,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountsRoute: AppAccountsRouteWithChildren,
+  AppActivityRoute: AppActivityRoute,
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppAssetsRoute: AppAssetsRoute,
   AppClientsRoute: AppClientsRoute,
