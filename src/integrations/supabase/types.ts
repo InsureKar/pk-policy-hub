@@ -59,6 +59,10 @@ export type Database = {
           entity_type: string
           id: string
           metadata: Json
+          module: string | null
+          new_value: Json | null
+          old_value: Json | null
+          summary: string | null
         }
         Insert: {
           action: string
@@ -68,6 +72,10 @@ export type Database = {
           entity_type: string
           id?: string
           metadata?: Json
+          module?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          summary?: string | null
         }
         Update: {
           action?: string
@@ -77,6 +85,10 @@ export type Database = {
           entity_type?: string
           id?: string
           metadata?: Json
+          module?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          summary?: string | null
         }
         Relationships: [
           {
@@ -1615,6 +1627,48 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dedupe_key: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_read: boolean
+          kind: string
+          message: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dedupe_key?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          kind?: string
+          message?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dedupe_key?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          kind?: string
+          message?: string | null
+          title?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -3565,6 +3619,7 @@ export type Database = {
         Args: { _min: Database["public"]["Enums"]["permission_level"] }
         Returns: boolean
       }
+      generate_my_reminders: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3591,6 +3646,16 @@ export type Database = {
       perm_key_level: { Args: { _key: string; _user: string }; Returns: string }
       perm_rank: {
         Args: { _l: Database["public"]["Enums"]["permission_level"] }
+        Returns: number
+      }
+      send_notification: {
+        Args: {
+          _entity_id?: string
+          _entity_type?: string
+          _message: string
+          _title: string
+          _user_ids: string[]
+        }
         Returns: number
       }
       travel_policy_conflict: {
