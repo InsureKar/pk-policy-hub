@@ -42,36 +42,36 @@ const groups: NavGroup[] = [
   },
   {
     label: "Analytics", icon: BarChart3, module: "reports",
-    items: [{ to: "/analytics", label: "Analytics", icon: BarChart3 }],
+    items: [{ to: "/analytics", label: "Analytics", icon: BarChart3, perm: "reports.analytics" }],
   },
   {
     label: "Sales", icon: Briefcase, module: "deals",
     items: [
       { to: "/deals", label: "Deals", icon: Briefcase, perm: "deals.view" },
       { to: "/deals/new", label: "New Deal", icon: Plus, perm: "deals.add" },
-      { to: "/pipeline", label: "Pipeline", icon: KanbanSquare },
+      { to: "/pipeline", label: "Pipeline", icon: KanbanSquare, perm: "deals.pipeline" },
       { to: "/clients", label: "Clients", icon: Building2, module: "clients", perm: "clients.list" },
-      { to: "/leads/unassigned", label: "Unassigned Leads", icon: Inbox, module: "leads", roles: ["admin"] },
-      { to: "/tasks", label: "Tasks", icon: CalendarClock },
+      { to: "/leads/unassigned", label: "Unassigned Leads", icon: Inbox, module: "leads", roles: ["admin"], perm: "leads.unassigned" },
+      { to: "/tasks", label: "Tasks", icon: CalendarClock, perm: "deals.tasks" },
     ],
   },
   {
     label: "Operations", icon: RefreshCw, module: "renewals",
     items: [
-      { to: "/renewals", label: "Renewals", icon: RefreshCw },
-      { to: "/income", label: "Income", icon: DollarSign, roles: ["admin", "management"] },
+      { to: "/renewals", label: "Renewals", icon: RefreshCw, perm: "deals.renewals" },
+      { to: "/income", label: "Income", icon: DollarSign, roles: ["admin", "management"], perm: "reports.income" },
     ],
   },
   {
     label: "Admin", icon: UserCog, roles: ["admin", "management"], module: "admin",
     items: [
-      { to: "/teams", label: "Teams", icon: UsersRound, roles: ["admin", "management"] },
+      { to: "/teams", label: "Teams", icon: UsersRound, roles: ["admin", "management"], perm: "admin.teams" },
       { to: "/users", label: "User Management", icon: Users, roles: ["admin"], perm: "admin.users_roles" },
       { to: "/assets", label: "Assets", icon: Boxes, roles: ["admin", "management"], perm: "admin.assets" },
-      { to: "/permissions", label: "Access & Permissions", icon: Shield, roles: ["admin", "management"] },
-      { to: "/review", label: "Review User", icon: UserSearch, roles: ["admin", "management"] },
-      { to: "/targets", label: "Monthly Targets", icon: Target, roles: ["admin", "management"] },
-      { to: "/activity", label: "Activity Log", icon: History, roles: ["admin", "management"] },
+      { to: "/permissions", label: "Access & Permissions", icon: Shield, roles: ["admin", "management"], perm: "admin.permissions" },
+      { to: "/review", label: "Review User", icon: UserSearch, roles: ["admin", "management"], perm: "admin.review" },
+      { to: "/targets", label: "Monthly Targets", icon: Target, roles: ["admin", "management"], perm: "admin.targets" },
+      { to: "/activity", label: "Activity Log", icon: History, roles: ["admin", "management"], perm: "admin.activity" },
     ],
   },
   {
@@ -86,21 +86,21 @@ const groups: NavGroup[] = [
       { to: "/accounts/installments", label: "Installments", icon: CalendarClock, perm: "accounts.installments" },
       { to: "/accounts/invoices", label: "Invoices", icon: FileText, perm: "operations.invoice_issue" },
       { to: "/accounts/payments", label: "Payments", icon: CreditCard, perm: "operations.payments" },
-      { to: "/accounts/reports", label: "Finance Reports", icon: BarChart3, roles: ["admin", "management", "team_lead"] },
+      { to: "/accounts/reports", label: "Finance Reports", icon: BarChart3, roles: ["admin", "management", "team_lead"], perm: "reports.finance" },
     ],
   },
   {
     label: "Operations", icon: Landmark, module: "operations", roles: ["admin", "management", "team_lead", "do"],
     items: [
       { to: "/operations", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "management"], perm: "operations.dashboard" },
-      { to: "/operations/underwriting", label: "Underwriting", icon: FileSearch },
+      { to: "/operations/underwriting", label: "Underwriting", icon: FileSearch, perm: "operations.underwriting" },
       { to: "/operations/payroll", label: "Payroll", icon: Wallet2, roles: ["admin", "management"], perm: "admin.payroll" },
-      { to: "/operations/commissions", label: "Commissions", icon: HandCoins, roles: ["admin", "management"] },
-      { to: "/operations/performance", label: "Employee Performance", icon: Award, roles: ["admin", "management"] },
+      { to: "/operations/commissions", label: "Commissions", icon: HandCoins, roles: ["admin", "management"], perm: "operations.commissions" },
+      { to: "/operations/performance", label: "Employee Performance", icon: Award, roles: ["admin", "management"], perm: "operations.performance" },
       { to: "/operations/expenses", label: "Expenses", icon: ReceiptText, roles: ["admin", "management"], perm: "operations.expenses" },
-      { to: "/operations/reimbursements", label: "Reimbursements", icon: HandCoins },
+      { to: "/operations/reimbursements", label: "Reimbursements", icon: HandCoins, perm: "operations.reimbursements" },
       { to: "/operations/dispatch", label: "Dispatch Record", icon: PackageCheck, perm: "operations.dispatch" },
-      { to: "/operations/reports", label: "Ops Reports", icon: BarChart3, roles: ["admin", "management"] },
+      { to: "/operations/reports", label: "Ops Reports", icon: BarChart3, roles: ["admin", "management"], perm: "reports.operations" },
     ],
   },
   {
@@ -118,9 +118,9 @@ const groups: NavGroup[] = [
 
     label: "Master Data", icon: Database, module: "admin", roles: ["admin"], expandable: true,
     items: [
-      { to: "/master", label: "Insurance Companies", icon: Building2, roles: ["admin"], search: { tab: "companies" } },
-      { to: "/master", label: "Commission Settings", icon: DollarSign, roles: ["admin"], search: { tab: "commissions" } },
-      { to: "/master", label: "Products", icon: Database, roles: ["admin"], search: { tab: "products" } },
+      { to: "/master", label: "Insurance Companies", icon: Building2, roles: ["admin"], search: { tab: "companies" }, perm: "admin.master" },
+      { to: "/master", label: "Commission Settings", icon: DollarSign, roles: ["admin"], search: { tab: "commissions" }, perm: "admin.master" },
+      { to: "/master", label: "Products", icon: Database, roles: ["admin"], search: { tab: "products" }, perm: "admin.master" },
     ],
   },
   {
