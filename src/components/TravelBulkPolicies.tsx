@@ -91,12 +91,14 @@ export function TravelBulkPolicies({
   const totalPayableInsCo = rows.reduce((a, r) => a + payableToInsuranceCo(r), 0);
   const totalLoading = rows.reduce((a, r) => a + loadingOf(r), 0);
   const totalTransfers = transfers.reduce((a, t) => a + Number(t.amount || 0), 0);
-  const diff = Number((totalTransfers - totalPayable).toFixed(2));
-  const matchStatus = transfers.length === 0 ? "pending" : diff === 0 ? "matched" : diff > 0 ? "excess" : "short";
+  // Round to whole rupees before comparing so sub-rupee rounding noise
+  // never shows as "Excess by Rs 0". Top badge and bottom line share this result.
+  const diff = Math.round(totalTransfers - totalPayable);
+  const matchStatus = transfers.length === 0 ? "pending" : diff === 0 ? "matched" : diff > 0 ? "excess" : "deficit";
   const matchCls: Record<string, string> = {
     matched: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
     excess: "bg-red-500/15 text-red-600 border-red-500/30",
-    short: "bg-amber-500/15 text-amber-600 border-amber-500/30",
+    deficit: "bg-amber-500/15 text-amber-600 border-amber-500/30",
     pending: "bg-muted text-muted-foreground",
   };
 
@@ -365,7 +367,7 @@ export function TravelBulkPolicies({
             <p className="text-sm">
               {matchStatus === "matched" && <span className="text-emerald-600">Transfers match Payable to own company ✓</span>}
               {matchStatus === "excess" && <span className="text-red-600">Excess by {fmtPKR(diff)}</span>}
-              {matchStatus === "short" && <span className="text-amber-600">Short by {fmtPKR(-diff)}</span>}
+              {matchStatus === "deficit" && <span className="text-amber-600">Deficit by {fmtPKR(-diff)}</span>}
               {matchStatus === "pending" && <span className="text-muted-foreground">Add transfers totalling {fmtPKR(totalPayable)}</span>}
             </p>
           </div>
