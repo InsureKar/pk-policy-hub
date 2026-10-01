@@ -503,7 +503,8 @@ function NewDealPage() {
       }
       const payable = travelRows.reduce((a, r) => a + payableOf(r), 0);
       const transferred = travelTransfers.reduce((a, t) => a + Number(t.amount || 0), 0);
-      if (transferred > 0 && Math.abs(transferred - payable) > 0.01) {
+      // Same whole-rupee comparison as the MATCHED badge, so a matched screen always saves.
+      if (transferred > 0 && Math.round(transferred - payable) !== 0) {
         return toast.error("Amount transfer total must match Payable to own company");
       }
     } else if (form.policy_type === "bulk") {
