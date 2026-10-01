@@ -288,7 +288,7 @@ function NewDealPage() {
     return Array.from({ length: count }, (_, i) => {
       const due = new Date(start);
       due.setMonth(due.getMonth() + Math.round(i * step));
-      return { label: labels[i], due: due.toISOString().slice(0, 10), amount: amounts[i], manual: false };
+      return { label: labels[i], due: `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`, amount: amounts[i], manual: false };
     });
   }, [form.payment_schedule, form.policy_start_date, effGross, manualSchedule, underwritten, isCustom, customRows]);
 
@@ -606,10 +606,10 @@ function NewDealPage() {
             payment_remarks: collectOf(i).remarks.trim() || null,
             // A paid instalment is tagged to the month it was marked paid.
             tagged_month: collectOf(i).status === "paid"
-              ? new Date().getMonth() + 1
+              ? (paid ?? new Date()).getMonth() + 1
               : paid ? paid.getMonth() + 1 : null,
             tagged_year: collectOf(i).status === "paid"
-              ? new Date().getFullYear()
+              ? (paid ?? new Date()).getFullYear()
               : paid ? paid.getFullYear() : null,
             created_by: user.id,
 

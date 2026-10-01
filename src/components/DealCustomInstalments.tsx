@@ -201,7 +201,7 @@ export function DealCustomInstalments({
     const c = calcs[i];
     // Paid instalments are tagged to the month of their paid date
     // (falling back to any existing tag, then to the current month).
-    const pd = r.paid_date ? new Date(r.paid_date) : null;
+    const pd = r.paid_date ? new Date(`${String(r.paid_date).slice(0, 10)}T00:00:00`) : null;
     const tagged = r.status === "paid"
       ? pd && !isNaN(pd.getTime())
         ? { m: pd.getMonth() + 1, y: pd.getFullYear() }
@@ -402,7 +402,7 @@ export function DealCustomInstalments({
                             if (status === "paid") {
                               setRow(i, {
                                 status,
-                                paid_date: r.paid_date || new Date().toISOString().slice(0, 10),
+                                paid_date: r.paid_date || (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`; })(),
                               });
                               setOpen(i);
                             } else {
