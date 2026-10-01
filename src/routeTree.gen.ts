@@ -9,70 +9,66 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppRouteImport } from './routes/_app'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as AppAccountsRouteImport } from './routes/_app.accounts'
-import { Route as AppActivityRouteImport } from './routes/_app.activity'
-import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
-import { Route as AppAssetsRouteImport } from './routes/_app.assets'
-import { Route as AppClientsRouteImport } from './routes/_app.clients'
-import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
-import { Route as AppIncomeRouteImport } from './routes/_app.income'
-import { Route as AppMasterRouteImport } from './routes/_app.master'
-import { Route as AppOperationsRouteImport } from './routes/_app.operations'
-import { Route as AppPermissionsRouteImport } from './routes/_app.permissions'
-import { Route as AppPipelineRouteImport } from './routes/_app.pipeline'
-import { Route as AppRenewalsRouteImport } from './routes/_app.renewals'
-import { Route as AppReviewRouteImport } from './routes/_app.review'
-import { Route as AppSettingsRouteImport } from './routes/_app.settings'
-import { Route as AppTargetsRouteImport } from './routes/_app.targets'
-import { Route as AppTasksRouteImport } from './routes/_app.tasks'
-import { Route as AppTeamsRouteImport } from './routes/_app.teams'
-import { Route as AppTicketsRouteImport } from './routes/_app.tickets'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
-import { Route as AppAccountsIndexRouteImport } from './routes/_app.accounts.index'
-import { Route as AppAccountsApprovalsRouteImport } from './routes/_app.accounts.approvals'
-import { Route as AppAccountsB2bRouteImport } from './routes/_app.accounts.b2b'
-import { Route as AppAccountsInstallmentsRouteImport } from './routes/_app.accounts.installments'
-import { Route as AppAccountsInvoicesRouteImport } from './routes/_app.accounts.invoices'
-import { Route as AppAccountsPayablesRouteImport } from './routes/_app.accounts.payables'
-import { Route as AppAccountsPaymentsRouteImport } from './routes/_app.accounts.payments'
-import { Route as AppAccountsReceivablesRouteImport } from './routes/_app.accounts.receivables'
-import { Route as AppAccountsReportsRouteImport } from './routes/_app.accounts.reports'
-import { Route as AppAccountsSalesRouteImport } from './routes/_app.accounts.sales'
-import { Route as AppAccountsTaxRouteImport } from './routes/_app.accounts.tax'
-import { Route as AppDealsIndexRouteImport } from './routes/_app.deals.index'
-import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
-import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
-import { Route as AppLeadsUnassignedRouteImport } from './routes/_app.leads.unassigned'
-import { Route as AppOperationsIndexRouteImport } from './routes/_app.operations.index'
-import { Route as AppOperationsCommissionsRouteImport } from './routes/_app.operations.commissions'
-import { Route as AppOperationsDispatchRouteImport } from './routes/_app.operations.dispatch'
-import { Route as AppOperationsExpensesRouteImport } from './routes/_app.operations.expenses'
-import { Route as AppOperationsPayrollRouteImport } from './routes/_app.operations.payroll'
-import { Route as AppOperationsPerformanceRouteImport } from './routes/_app.operations.performance'
-import { Route as AppOperationsReimbursementsRouteImport } from './routes/_app.operations.reimbursements'
-import { Route as AppOperationsReportsRouteImport } from './routes/_app.operations.reports'
+import { Route as AppTicketsRouteImport } from './routes/_app.tickets'
+import { Route as AppTeamsRouteImport } from './routes/_app.teams'
+import { Route as AppTasksRouteImport } from './routes/_app.tasks'
+import { Route as AppTargetsRouteImport } from './routes/_app.targets'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppReviewRouteImport } from './routes/_app.review'
+import { Route as AppRenewalsRouteImport } from './routes/_app.renewals'
+import { Route as AppPipelineRouteImport } from './routes/_app.pipeline'
+import { Route as AppPermissionsRouteImport } from './routes/_app.permissions'
+import { Route as AppOperationsRouteImport } from './routes/_app.operations'
+import { Route as AppMasterRouteImport } from './routes/_app.master'
+import { Route as AppIncomeRouteImport } from './routes/_app.income'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppClientsRouteImport } from './routes/_app.clients'
+import { Route as AppAssetsRouteImport } from './routes/_app.assets'
+import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
+import { Route as AppActivityRouteImport } from './routes/_app.activity'
+import { Route as AppAccountsRouteImport } from './routes/_app.accounts'
 import { Route as AppTicketsIndexRouteImport } from './routes/_app.tickets.index'
-import { Route as AppTicketsIdRouteImport } from './routes/_app.tickets.$id'
-import { Route as AppTicketsAllRouteImport } from './routes/_app.tickets.all'
-import { Route as AppTicketsMineRouteImport } from './routes/_app.tickets.mine'
-import { Route as AppTicketsReportsRouteImport } from './routes/_app.tickets.reports'
-import { Route as AppTicketsSlaRouteImport } from './routes/_app.tickets.sla'
+import { Route as AppOperationsIndexRouteImport } from './routes/_app.operations.index'
+import { Route as AppDealsIndexRouteImport } from './routes/_app.deals.index'
+import { Route as AppAccountsIndexRouteImport } from './routes/_app.accounts.index'
 import { Route as AppTicketsTeamRouteImport } from './routes/_app.tickets.team'
+import { Route as AppTicketsSlaRouteImport } from './routes/_app.tickets.sla'
+import { Route as AppTicketsReportsRouteImport } from './routes/_app.tickets.reports'
+import { Route as AppTicketsMineRouteImport } from './routes/_app.tickets.mine'
+import { Route as AppTicketsAllRouteImport } from './routes/_app.tickets.all'
+import { Route as AppTicketsIdRouteImport } from './routes/_app.tickets.$id'
+import { Route as AppOperationsReportsRouteImport } from './routes/_app.operations.reports'
+import { Route as AppOperationsReimbursementsRouteImport } from './routes/_app.operations.reimbursements'
+import { Route as AppOperationsPerformanceRouteImport } from './routes/_app.operations.performance'
+import { Route as AppOperationsPayrollRouteImport } from './routes/_app.operations.payroll'
+import { Route as AppOperationsExpensesRouteImport } from './routes/_app.operations.expenses'
+import { Route as AppOperationsDispatchRouteImport } from './routes/_app.operations.dispatch'
+import { Route as AppOperationsCommissionsRouteImport } from './routes/_app.operations.commissions'
+import { Route as AppLeadsUnassignedRouteImport } from './routes/_app.leads.unassigned'
+import { Route as AppDealsNewRouteImport } from './routes/_app.deals.new'
+import { Route as AppDealsIdRouteImport } from './routes/_app.deals.$id'
+import { Route as AppAccountsTaxRouteImport } from './routes/_app.accounts.tax'
+import { Route as AppAccountsSalesRouteImport } from './routes/_app.accounts.sales'
+import { Route as AppAccountsReportsRouteImport } from './routes/_app.accounts.reports'
+import { Route as AppAccountsReceivablesRouteImport } from './routes/_app.accounts.receivables'
+import { Route as AppAccountsPaymentsRouteImport } from './routes/_app.accounts.payments'
+import { Route as AppAccountsPayablesRouteImport } from './routes/_app.accounts.payables'
+import { Route as AppAccountsInvoicesRouteImport } from './routes/_app.accounts.invoices'
+import { Route as AppAccountsInstallmentsRouteImport } from './routes/_app.accounts.installments'
+import { Route as AppAccountsB2bRouteImport } from './routes/_app.accounts.b2b'
+import { Route as AppAccountsApprovalsRouteImport } from './routes/_app.accounts.approvals'
 import { Route as AppOperationsUnderwritingIndexRouteImport } from './routes/_app.operations.underwriting.index'
-import { Route as AppOperationsUnderwritingIdRouteImport } from './routes/_app.operations.underwriting.$id'
 import { Route as AppOperationsUnderwritingNewRouteImport } from './routes/_app.operations.underwriting.new'
+import { Route as AppOperationsUnderwritingIdRouteImport } from './routes/_app.operations.underwriting.$id'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -80,94 +76,18 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppAccountsRoute = AppAccountsRouteImport.update({
-  id: '/accounts',
-  path: '/accounts',
-  getParentRoute: () => AppRoute,
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppActivityRoute = AppActivityRouteImport.update({
-  id: '/activity',
-  path: '/activity',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAssetsRoute = AppAssetsRouteImport.update({
-  id: '/assets',
-  path: '/assets',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppClientsRoute = AppClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDashboardRoute = AppDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppIncomeRoute = AppIncomeRouteImport.update({
-  id: '/income',
-  path: '/income',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMasterRoute = AppMasterRouteImport.update({
-  id: '/master',
-  path: '/master',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppOperationsRoute = AppOperationsRouteImport.update({
-  id: '/operations',
-  path: '/operations',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPermissionsRoute = AppPermissionsRouteImport.update({
-  id: '/permissions',
-  path: '/permissions',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPipelineRoute = AppPipelineRouteImport.update({
-  id: '/pipeline',
-  path: '/pipeline',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRenewalsRoute = AppRenewalsRouteImport.update({
-  id: '/renewals',
-  path: '/renewals',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppReviewRoute = AppReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTargetsRoute = AppTargetsRouteImport.update({
-  id: '/targets',
-  path: '/targets',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTasksRoute = AppTasksRouteImport.update({
-  id: '/tasks',
-  path: '/tasks',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTeamsRoute = AppTeamsRouteImport.update({
-  id: '/teams',
-  path: '/teams',
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTicketsRoute = AppTicketsRouteImport.update({
@@ -175,9 +95,104 @@ const AppTicketsRoute = AppTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => AppRoute,
 } as any)
-const AppUsersRoute = AppUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
+const AppTeamsRoute = AppTeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksRoute = AppTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTargetsRoute = AppTargetsRouteImport.update({
+  id: '/targets',
+  path: '/targets',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReviewRoute = AppReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRenewalsRoute = AppRenewalsRouteImport.update({
+  id: '/renewals',
+  path: '/renewals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPipelineRoute = AppPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPermissionsRoute = AppPermissionsRouteImport.update({
+  id: '/permissions',
+  path: '/permissions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOperationsRoute = AppOperationsRouteImport.update({
+  id: '/operations',
+  path: '/operations',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMasterRoute = AppMasterRouteImport.update({
+  id: '/master',
+  path: '/master',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIncomeRoute = AppIncomeRouteImport.update({
+  id: '/income',
+  path: '/income',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientsRoute = AppClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssetsRoute = AppAssetsRouteImport.update({
+  id: '/assets',
+  path: '/assets',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppActivityRoute = AppActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccountsRoute = AppAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTicketsIndexRoute = AppTicketsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppOperationsIndexRoute = AppOperationsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppOperationsRoute,
+} as any)
+const AppDealsIndexRoute = AppDealsIndexRouteImport.update({
+  id: '/deals/',
+  path: '/deals/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAccountsIndexRoute = AppAccountsIndexRouteImport.update({
@@ -185,79 +200,66 @@ const AppAccountsIndexRoute = AppAccountsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppAccountsRoute,
 } as any)
-const AppAccountsApprovalsRoute = AppAccountsApprovalsRouteImport.update({
-  id: '/approvals',
-  path: '/approvals',
-  getParentRoute: () => AppAccountsRoute,
+const AppTicketsTeamRoute = AppTicketsTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AppTicketsRoute,
 } as any)
-const AppAccountsB2bRoute = AppAccountsB2bRouteImport.update({
-  id: '/b2b',
-  path: '/b2b',
-  getParentRoute: () => AppAccountsRoute,
+const AppTicketsSlaRoute = AppTicketsSlaRouteImport.update({
+  id: '/sla',
+  path: '/sla',
+  getParentRoute: () => AppTicketsRoute,
 } as any)
-const AppAccountsInstallmentsRoute = AppAccountsInstallmentsRouteImport.update({
-  id: '/installments',
-  path: '/installments',
-  getParentRoute: () => AppAccountsRoute,
-} as any)
-const AppAccountsInvoicesRoute = AppAccountsInvoicesRouteImport.update({
-  id: '/invoices',
-  path: '/invoices',
-  getParentRoute: () => AppAccountsRoute,
-} as any)
-const AppAccountsPayablesRoute = AppAccountsPayablesRouteImport.update({
-  id: '/payables',
-  path: '/payables',
-  getParentRoute: () => AppAccountsRoute,
-} as any)
-const AppAccountsPaymentsRoute = AppAccountsPaymentsRouteImport.update({
-  id: '/payments',
-  path: '/payments',
-  getParentRoute: () => AppAccountsRoute,
-} as any)
-const AppAccountsReceivablesRoute = AppAccountsReceivablesRouteImport.update({
-  id: '/receivables',
-  path: '/receivables',
-  getParentRoute: () => AppAccountsRoute,
-} as any)
-const AppAccountsReportsRoute = AppAccountsReportsRouteImport.update({
+const AppTicketsReportsRoute = AppTicketsReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
-  getParentRoute: () => AppAccountsRoute,
+  getParentRoute: () => AppTicketsRoute,
 } as any)
-const AppAccountsSalesRoute = AppAccountsSalesRouteImport.update({
-  id: '/sales',
-  path: '/sales',
-  getParentRoute: () => AppAccountsRoute,
+const AppTicketsMineRoute = AppTicketsMineRouteImport.update({
+  id: '/mine',
+  path: '/mine',
+  getParentRoute: () => AppTicketsRoute,
 } as any)
-const AppAccountsTaxRoute = AppAccountsTaxRouteImport.update({
-  id: '/tax',
-  path: '/tax',
-  getParentRoute: () => AppAccountsRoute,
+const AppTicketsAllRoute = AppTicketsAllRouteImport.update({
+  id: '/all',
+  path: '/all',
+  getParentRoute: () => AppTicketsRoute,
 } as any)
-const AppDealsIndexRoute = AppDealsIndexRouteImport.update({
-  id: '/deals/',
-  path: '/deals/',
-  getParentRoute: () => AppRoute,
+const AppTicketsIdRoute = AppTicketsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppTicketsRoute,
 } as any)
-const AppDealsIdRoute = AppDealsIdRouteImport.update({
-  id: '/deals/$id',
-  path: '/deals/$id',
-  getParentRoute: () => AppRoute,
+const AppOperationsReportsRoute = AppOperationsReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppOperationsRoute,
 } as any)
-const AppDealsNewRoute = AppDealsNewRouteImport.update({
-  id: '/deals/new',
-  path: '/deals/new',
-  getParentRoute: () => AppRoute,
+const AppOperationsReimbursementsRoute =
+  AppOperationsReimbursementsRouteImport.update({
+    id: '/reimbursements',
+    path: '/reimbursements',
+    getParentRoute: () => AppOperationsRoute,
+  } as any)
+const AppOperationsPerformanceRoute =
+  AppOperationsPerformanceRouteImport.update({
+    id: '/performance',
+    path: '/performance',
+    getParentRoute: () => AppOperationsRoute,
+  } as any)
+const AppOperationsPayrollRoute = AppOperationsPayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
+  getParentRoute: () => AppOperationsRoute,
 } as any)
-const AppLeadsUnassignedRoute = AppLeadsUnassignedRouteImport.update({
-  id: '/leads/unassigned',
-  path: '/leads/unassigned',
-  getParentRoute: () => AppRoute,
+const AppOperationsExpensesRoute = AppOperationsExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => AppOperationsRoute,
 } as any)
-const AppOperationsIndexRoute = AppOperationsIndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AppOperationsDispatchRoute = AppOperationsDispatchRouteImport.update({
+  id: '/dispatch',
+  path: '/dispatch',
   getParentRoute: () => AppOperationsRoute,
 } as any)
 const AppOperationsCommissionsRoute =
@@ -266,72 +268,70 @@ const AppOperationsCommissionsRoute =
     path: '/commissions',
     getParentRoute: () => AppOperationsRoute,
   } as any)
-const AppOperationsDispatchRoute = AppOperationsDispatchRouteImport.update({
-  id: '/dispatch',
-  path: '/dispatch',
-  getParentRoute: () => AppOperationsRoute,
+const AppLeadsUnassignedRoute = AppLeadsUnassignedRouteImport.update({
+  id: '/leads/unassigned',
+  path: '/leads/unassigned',
+  getParentRoute: () => AppRoute,
 } as any)
-const AppOperationsExpensesRoute = AppOperationsExpensesRouteImport.update({
-  id: '/expenses',
-  path: '/expenses',
-  getParentRoute: () => AppOperationsRoute,
+const AppDealsNewRoute = AppDealsNewRouteImport.update({
+  id: '/deals/new',
+  path: '/deals/new',
+  getParentRoute: () => AppRoute,
 } as any)
-const AppOperationsPayrollRoute = AppOperationsPayrollRouteImport.update({
-  id: '/payroll',
-  path: '/payroll',
-  getParentRoute: () => AppOperationsRoute,
+const AppDealsIdRoute = AppDealsIdRouteImport.update({
+  id: '/deals/$id',
+  path: '/deals/$id',
+  getParentRoute: () => AppRoute,
 } as any)
-const AppOperationsPerformanceRoute =
-  AppOperationsPerformanceRouteImport.update({
-    id: '/performance',
-    path: '/performance',
-    getParentRoute: () => AppOperationsRoute,
-  } as any)
-const AppOperationsReimbursementsRoute =
-  AppOperationsReimbursementsRouteImport.update({
-    id: '/reimbursements',
-    path: '/reimbursements',
-    getParentRoute: () => AppOperationsRoute,
-  } as any)
-const AppOperationsReportsRoute = AppOperationsReportsRouteImport.update({
+const AppAccountsTaxRoute = AppAccountsTaxRouteImport.update({
+  id: '/tax',
+  path: '/tax',
+  getParentRoute: () => AppAccountsRoute,
+} as any)
+const AppAccountsSalesRoute = AppAccountsSalesRouteImport.update({
+  id: '/sales',
+  path: '/sales',
+  getParentRoute: () => AppAccountsRoute,
+} as any)
+const AppAccountsReportsRoute = AppAccountsReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
-  getParentRoute: () => AppOperationsRoute,
+  getParentRoute: () => AppAccountsRoute,
 } as any)
-const AppTicketsIndexRoute = AppTicketsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppTicketsRoute,
+const AppAccountsReceivablesRoute = AppAccountsReceivablesRouteImport.update({
+  id: '/receivables',
+  path: '/receivables',
+  getParentRoute: () => AppAccountsRoute,
 } as any)
-const AppTicketsIdRoute = AppTicketsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppTicketsRoute,
+const AppAccountsPaymentsRoute = AppAccountsPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AppAccountsRoute,
 } as any)
-const AppTicketsAllRoute = AppTicketsAllRouteImport.update({
-  id: '/all',
-  path: '/all',
-  getParentRoute: () => AppTicketsRoute,
+const AppAccountsPayablesRoute = AppAccountsPayablesRouteImport.update({
+  id: '/payables',
+  path: '/payables',
+  getParentRoute: () => AppAccountsRoute,
 } as any)
-const AppTicketsMineRoute = AppTicketsMineRouteImport.update({
-  id: '/mine',
-  path: '/mine',
-  getParentRoute: () => AppTicketsRoute,
+const AppAccountsInvoicesRoute = AppAccountsInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => AppAccountsRoute,
 } as any)
-const AppTicketsReportsRoute = AppTicketsReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AppTicketsRoute,
+const AppAccountsInstallmentsRoute = AppAccountsInstallmentsRouteImport.update({
+  id: '/installments',
+  path: '/installments',
+  getParentRoute: () => AppAccountsRoute,
 } as any)
-const AppTicketsSlaRoute = AppTicketsSlaRouteImport.update({
-  id: '/sla',
-  path: '/sla',
-  getParentRoute: () => AppTicketsRoute,
+const AppAccountsB2bRoute = AppAccountsB2bRouteImport.update({
+  id: '/b2b',
+  path: '/b2b',
+  getParentRoute: () => AppAccountsRoute,
 } as any)
-const AppTicketsTeamRoute = AppTicketsTeamRouteImport.update({
-  id: '/team',
-  path: '/team',
-  getParentRoute: () => AppTicketsRoute,
+const AppAccountsApprovalsRoute = AppAccountsApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => AppAccountsRoute,
 } as any)
 const AppOperationsUnderwritingIndexRoute =
   AppOperationsUnderwritingIndexRouteImport.update({
@@ -339,16 +339,16 @@ const AppOperationsUnderwritingIndexRoute =
     path: '/underwriting/',
     getParentRoute: () => AppOperationsRoute,
   } as any)
-const AppOperationsUnderwritingIdRoute =
-  AppOperationsUnderwritingIdRouteImport.update({
-    id: '/underwriting/$id',
-    path: '/underwriting/$id',
-    getParentRoute: () => AppOperationsRoute,
-  } as any)
 const AppOperationsUnderwritingNewRoute =
   AppOperationsUnderwritingNewRouteImport.update({
     id: '/underwriting/new',
     path: '/underwriting/new',
+    getParentRoute: () => AppOperationsRoute,
+  } as any)
+const AppOperationsUnderwritingIdRoute =
+  AppOperationsUnderwritingIdRouteImport.update({
+    id: '/underwriting/$id',
+    path: '/underwriting/$id',
     getParentRoute: () => AppOperationsRoute,
   } as any)
 
@@ -703,18 +703,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -724,130 +717,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/accounts': {
-      id: '/_app/accounts'
-      path: '/accounts'
-      fullPath: '/accounts'
-      preLoaderRoute: typeof AppAccountsRouteImport
-      parentRoute: typeof AppRoute
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/activity': {
-      id: '/_app/activity'
-      path: '/activity'
-      fullPath: '/activity'
-      preLoaderRoute: typeof AppActivityRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/analytics': {
-      id: '/_app/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AppAnalyticsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/assets': {
-      id: '/_app/assets'
-      path: '/assets'
-      fullPath: '/assets'
-      preLoaderRoute: typeof AppAssetsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/clients': {
-      id: '/_app/clients'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof AppClientsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/dashboard': {
-      id: '/_app/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AppDashboardRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/income': {
-      id: '/_app/income'
-      path: '/income'
-      fullPath: '/income'
-      preLoaderRoute: typeof AppIncomeRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/master': {
-      id: '/_app/master'
-      path: '/master'
-      fullPath: '/master'
-      preLoaderRoute: typeof AppMasterRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/operations': {
-      id: '/_app/operations'
-      path: '/operations'
-      fullPath: '/operations'
-      preLoaderRoute: typeof AppOperationsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/permissions': {
-      id: '/_app/permissions'
-      path: '/permissions'
-      fullPath: '/permissions'
-      preLoaderRoute: typeof AppPermissionsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/pipeline': {
-      id: '/_app/pipeline'
-      path: '/pipeline'
-      fullPath: '/pipeline'
-      preLoaderRoute: typeof AppPipelineRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/renewals': {
-      id: '/_app/renewals'
-      path: '/renewals'
-      fullPath: '/renewals'
-      preLoaderRoute: typeof AppRenewalsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/review': {
-      id: '/_app/review'
-      path: '/review'
-      fullPath: '/review'
-      preLoaderRoute: typeof AppReviewRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/targets': {
-      id: '/_app/targets'
-      path: '/targets'
-      fullPath: '/targets'
-      preLoaderRoute: typeof AppTargetsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/tasks': {
-      id: '/_app/tasks'
-      path: '/tasks'
-      fullPath: '/tasks'
-      preLoaderRoute: typeof AppTasksRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/teams': {
-      id: '/_app/teams'
-      path: '/teams'
-      fullPath: '/teams'
-      preLoaderRoute: typeof AppTeamsRouteImport
+    '/_app/users': {
+      id: '/_app/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/tickets': {
@@ -857,11 +745,144 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTicketsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/users': {
-      id: '/_app/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AppUsersRouteImport
+    '/_app/teams': {
+      id: '/_app/teams'
+      path: '/teams'
+      fullPath: '/teams'
+      preLoaderRoute: typeof AppTeamsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tasks': {
+      id: '/_app/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AppTasksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/targets': {
+      id: '/_app/targets'
+      path: '/targets'
+      fullPath: '/targets'
+      preLoaderRoute: typeof AppTargetsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/review': {
+      id: '/_app/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AppReviewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/renewals': {
+      id: '/_app/renewals'
+      path: '/renewals'
+      fullPath: '/renewals'
+      preLoaderRoute: typeof AppRenewalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/pipeline': {
+      id: '/_app/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof AppPipelineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/permissions': {
+      id: '/_app/permissions'
+      path: '/permissions'
+      fullPath: '/permissions'
+      preLoaderRoute: typeof AppPermissionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/operations': {
+      id: '/_app/operations'
+      path: '/operations'
+      fullPath: '/operations'
+      preLoaderRoute: typeof AppOperationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/master': {
+      id: '/_app/master'
+      path: '/master'
+      fullPath: '/master'
+      preLoaderRoute: typeof AppMasterRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/income': {
+      id: '/_app/income'
+      path: '/income'
+      fullPath: '/income'
+      preLoaderRoute: typeof AppIncomeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/clients': {
+      id: '/_app/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof AppClientsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assets': {
+      id: '/_app/assets'
+      path: '/assets'
+      fullPath: '/assets'
+      preLoaderRoute: typeof AppAssetsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/analytics': {
+      id: '/_app/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/activity': {
+      id: '/_app/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AppActivityRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/accounts': {
+      id: '/_app/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AppAccountsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tickets/': {
+      id: '/_app/tickets/'
+      path: '/'
+      fullPath: '/tickets/'
+      preLoaderRoute: typeof AppTicketsIndexRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/operations/': {
+      id: '/_app/operations/'
+      path: '/'
+      fullPath: '/operations/'
+      preLoaderRoute: typeof AppOperationsIndexRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/deals/': {
+      id: '/_app/deals/'
+      path: '/deals'
+      fullPath: '/deals/'
+      preLoaderRoute: typeof AppDealsIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/accounts/': {
@@ -871,193 +892,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsIndexRouteImport
       parentRoute: typeof AppAccountsRoute
     }
-    '/_app/accounts/approvals': {
-      id: '/_app/accounts/approvals'
-      path: '/approvals'
-      fullPath: '/accounts/approvals'
-      preLoaderRoute: typeof AppAccountsApprovalsRouteImport
-      parentRoute: typeof AppAccountsRoute
-    }
-    '/_app/accounts/b2b': {
-      id: '/_app/accounts/b2b'
-      path: '/b2b'
-      fullPath: '/accounts/b2b'
-      preLoaderRoute: typeof AppAccountsB2bRouteImport
-      parentRoute: typeof AppAccountsRoute
-    }
-    '/_app/accounts/installments': {
-      id: '/_app/accounts/installments'
-      path: '/installments'
-      fullPath: '/accounts/installments'
-      preLoaderRoute: typeof AppAccountsInstallmentsRouteImport
-      parentRoute: typeof AppAccountsRoute
-    }
-    '/_app/accounts/invoices': {
-      id: '/_app/accounts/invoices'
-      path: '/invoices'
-      fullPath: '/accounts/invoices'
-      preLoaderRoute: typeof AppAccountsInvoicesRouteImport
-      parentRoute: typeof AppAccountsRoute
-    }
-    '/_app/accounts/payables': {
-      id: '/_app/accounts/payables'
-      path: '/payables'
-      fullPath: '/accounts/payables'
-      preLoaderRoute: typeof AppAccountsPayablesRouteImport
-      parentRoute: typeof AppAccountsRoute
-    }
-    '/_app/accounts/payments': {
-      id: '/_app/accounts/payments'
-      path: '/payments'
-      fullPath: '/accounts/payments'
-      preLoaderRoute: typeof AppAccountsPaymentsRouteImport
-      parentRoute: typeof AppAccountsRoute
-    }
-    '/_app/accounts/receivables': {
-      id: '/_app/accounts/receivables'
-      path: '/receivables'
-      fullPath: '/accounts/receivables'
-      preLoaderRoute: typeof AppAccountsReceivablesRouteImport
-      parentRoute: typeof AppAccountsRoute
-    }
-    '/_app/accounts/reports': {
-      id: '/_app/accounts/reports'
-      path: '/reports'
-      fullPath: '/accounts/reports'
-      preLoaderRoute: typeof AppAccountsReportsRouteImport
-      parentRoute: typeof AppAccountsRoute
-    }
-    '/_app/accounts/sales': {
-      id: '/_app/accounts/sales'
-      path: '/sales'
-      fullPath: '/accounts/sales'
-      preLoaderRoute: typeof AppAccountsSalesRouteImport
-      parentRoute: typeof AppAccountsRoute
-    }
-    '/_app/accounts/tax': {
-      id: '/_app/accounts/tax'
-      path: '/tax'
-      fullPath: '/accounts/tax'
-      preLoaderRoute: typeof AppAccountsTaxRouteImport
-      parentRoute: typeof AppAccountsRoute
-    }
-    '/_app/deals/': {
-      id: '/_app/deals/'
-      path: '/deals'
-      fullPath: '/deals/'
-      preLoaderRoute: typeof AppDealsIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/deals/$id': {
-      id: '/_app/deals/$id'
-      path: '/deals/$id'
-      fullPath: '/deals/$id'
-      preLoaderRoute: typeof AppDealsIdRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/deals/new': {
-      id: '/_app/deals/new'
-      path: '/deals/new'
-      fullPath: '/deals/new'
-      preLoaderRoute: typeof AppDealsNewRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/leads/unassigned': {
-      id: '/_app/leads/unassigned'
-      path: '/leads/unassigned'
-      fullPath: '/leads/unassigned'
-      preLoaderRoute: typeof AppLeadsUnassignedRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/operations/': {
-      id: '/_app/operations/'
-      path: '/'
-      fullPath: '/operations/'
-      preLoaderRoute: typeof AppOperationsIndexRouteImport
-      parentRoute: typeof AppOperationsRoute
-    }
-    '/_app/operations/commissions': {
-      id: '/_app/operations/commissions'
-      path: '/commissions'
-      fullPath: '/operations/commissions'
-      preLoaderRoute: typeof AppOperationsCommissionsRouteImport
-      parentRoute: typeof AppOperationsRoute
-    }
-    '/_app/operations/dispatch': {
-      id: '/_app/operations/dispatch'
-      path: '/dispatch'
-      fullPath: '/operations/dispatch'
-      preLoaderRoute: typeof AppOperationsDispatchRouteImport
-      parentRoute: typeof AppOperationsRoute
-    }
-    '/_app/operations/expenses': {
-      id: '/_app/operations/expenses'
-      path: '/expenses'
-      fullPath: '/operations/expenses'
-      preLoaderRoute: typeof AppOperationsExpensesRouteImport
-      parentRoute: typeof AppOperationsRoute
-    }
-    '/_app/operations/payroll': {
-      id: '/_app/operations/payroll'
-      path: '/payroll'
-      fullPath: '/operations/payroll'
-      preLoaderRoute: typeof AppOperationsPayrollRouteImport
-      parentRoute: typeof AppOperationsRoute
-    }
-    '/_app/operations/performance': {
-      id: '/_app/operations/performance'
-      path: '/performance'
-      fullPath: '/operations/performance'
-      preLoaderRoute: typeof AppOperationsPerformanceRouteImport
-      parentRoute: typeof AppOperationsRoute
-    }
-    '/_app/operations/reimbursements': {
-      id: '/_app/operations/reimbursements'
-      path: '/reimbursements'
-      fullPath: '/operations/reimbursements'
-      preLoaderRoute: typeof AppOperationsReimbursementsRouteImport
-      parentRoute: typeof AppOperationsRoute
-    }
-    '/_app/operations/reports': {
-      id: '/_app/operations/reports'
-      path: '/reports'
-      fullPath: '/operations/reports'
-      preLoaderRoute: typeof AppOperationsReportsRouteImport
-      parentRoute: typeof AppOperationsRoute
-    }
-    '/_app/tickets/': {
-      id: '/_app/tickets/'
-      path: '/'
-      fullPath: '/tickets/'
-      preLoaderRoute: typeof AppTicketsIndexRouteImport
-      parentRoute: typeof AppTicketsRoute
-    }
-    '/_app/tickets/$id': {
-      id: '/_app/tickets/$id'
-      path: '/$id'
-      fullPath: '/tickets/$id'
-      preLoaderRoute: typeof AppTicketsIdRouteImport
-      parentRoute: typeof AppTicketsRoute
-    }
-    '/_app/tickets/all': {
-      id: '/_app/tickets/all'
-      path: '/all'
-      fullPath: '/tickets/all'
-      preLoaderRoute: typeof AppTicketsAllRouteImport
-      parentRoute: typeof AppTicketsRoute
-    }
-    '/_app/tickets/mine': {
-      id: '/_app/tickets/mine'
-      path: '/mine'
-      fullPath: '/tickets/mine'
-      preLoaderRoute: typeof AppTicketsMineRouteImport
-      parentRoute: typeof AppTicketsRoute
-    }
-    '/_app/tickets/reports': {
-      id: '/_app/tickets/reports'
-      path: '/reports'
-      fullPath: '/tickets/reports'
-      preLoaderRoute: typeof AppTicketsReportsRouteImport
+    '/_app/tickets/team': {
+      id: '/_app/tickets/team'
+      path: '/team'
+      fullPath: '/tickets/team'
+      preLoaderRoute: typeof AppTicketsTeamRouteImport
       parentRoute: typeof AppTicketsRoute
     }
     '/_app/tickets/sla': {
@@ -1067,12 +906,173 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTicketsSlaRouteImport
       parentRoute: typeof AppTicketsRoute
     }
-    '/_app/tickets/team': {
-      id: '/_app/tickets/team'
-      path: '/team'
-      fullPath: '/tickets/team'
-      preLoaderRoute: typeof AppTicketsTeamRouteImport
+    '/_app/tickets/reports': {
+      id: '/_app/tickets/reports'
+      path: '/reports'
+      fullPath: '/tickets/reports'
+      preLoaderRoute: typeof AppTicketsReportsRouteImport
       parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/mine': {
+      id: '/_app/tickets/mine'
+      path: '/mine'
+      fullPath: '/tickets/mine'
+      preLoaderRoute: typeof AppTicketsMineRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/all': {
+      id: '/_app/tickets/all'
+      path: '/all'
+      fullPath: '/tickets/all'
+      preLoaderRoute: typeof AppTicketsAllRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/tickets/$id': {
+      id: '/_app/tickets/$id'
+      path: '/$id'
+      fullPath: '/tickets/$id'
+      preLoaderRoute: typeof AppTicketsIdRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/_app/operations/reports': {
+      id: '/_app/operations/reports'
+      path: '/reports'
+      fullPath: '/operations/reports'
+      preLoaderRoute: typeof AppOperationsReportsRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/operations/reimbursements': {
+      id: '/_app/operations/reimbursements'
+      path: '/reimbursements'
+      fullPath: '/operations/reimbursements'
+      preLoaderRoute: typeof AppOperationsReimbursementsRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/operations/performance': {
+      id: '/_app/operations/performance'
+      path: '/performance'
+      fullPath: '/operations/performance'
+      preLoaderRoute: typeof AppOperationsPerformanceRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/operations/payroll': {
+      id: '/_app/operations/payroll'
+      path: '/payroll'
+      fullPath: '/operations/payroll'
+      preLoaderRoute: typeof AppOperationsPayrollRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/operations/expenses': {
+      id: '/_app/operations/expenses'
+      path: '/expenses'
+      fullPath: '/operations/expenses'
+      preLoaderRoute: typeof AppOperationsExpensesRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/operations/dispatch': {
+      id: '/_app/operations/dispatch'
+      path: '/dispatch'
+      fullPath: '/operations/dispatch'
+      preLoaderRoute: typeof AppOperationsDispatchRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/operations/commissions': {
+      id: '/_app/operations/commissions'
+      path: '/commissions'
+      fullPath: '/operations/commissions'
+      preLoaderRoute: typeof AppOperationsCommissionsRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/leads/unassigned': {
+      id: '/_app/leads/unassigned'
+      path: '/leads/unassigned'
+      fullPath: '/leads/unassigned'
+      preLoaderRoute: typeof AppLeadsUnassignedRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/deals/new': {
+      id: '/_app/deals/new'
+      path: '/deals/new'
+      fullPath: '/deals/new'
+      preLoaderRoute: typeof AppDealsNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/deals/$id': {
+      id: '/_app/deals/$id'
+      path: '/deals/$id'
+      fullPath: '/deals/$id'
+      preLoaderRoute: typeof AppDealsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/accounts/tax': {
+      id: '/_app/accounts/tax'
+      path: '/tax'
+      fullPath: '/accounts/tax'
+      preLoaderRoute: typeof AppAccountsTaxRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/accounts/sales': {
+      id: '/_app/accounts/sales'
+      path: '/sales'
+      fullPath: '/accounts/sales'
+      preLoaderRoute: typeof AppAccountsSalesRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/accounts/reports': {
+      id: '/_app/accounts/reports'
+      path: '/reports'
+      fullPath: '/accounts/reports'
+      preLoaderRoute: typeof AppAccountsReportsRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/accounts/receivables': {
+      id: '/_app/accounts/receivables'
+      path: '/receivables'
+      fullPath: '/accounts/receivables'
+      preLoaderRoute: typeof AppAccountsReceivablesRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/accounts/payments': {
+      id: '/_app/accounts/payments'
+      path: '/payments'
+      fullPath: '/accounts/payments'
+      preLoaderRoute: typeof AppAccountsPaymentsRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/accounts/payables': {
+      id: '/_app/accounts/payables'
+      path: '/payables'
+      fullPath: '/accounts/payables'
+      preLoaderRoute: typeof AppAccountsPayablesRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/accounts/invoices': {
+      id: '/_app/accounts/invoices'
+      path: '/invoices'
+      fullPath: '/accounts/invoices'
+      preLoaderRoute: typeof AppAccountsInvoicesRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/accounts/installments': {
+      id: '/_app/accounts/installments'
+      path: '/installments'
+      fullPath: '/accounts/installments'
+      preLoaderRoute: typeof AppAccountsInstallmentsRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/accounts/b2b': {
+      id: '/_app/accounts/b2b'
+      path: '/b2b'
+      fullPath: '/accounts/b2b'
+      preLoaderRoute: typeof AppAccountsB2bRouteImport
+      parentRoute: typeof AppAccountsRoute
+    }
+    '/_app/accounts/approvals': {
+      id: '/_app/accounts/approvals'
+      path: '/approvals'
+      fullPath: '/accounts/approvals'
+      preLoaderRoute: typeof AppAccountsApprovalsRouteImport
+      parentRoute: typeof AppAccountsRoute
     }
     '/_app/operations/underwriting/': {
       id: '/_app/operations/underwriting/'
@@ -1081,18 +1081,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOperationsUnderwritingIndexRouteImport
       parentRoute: typeof AppOperationsRoute
     }
-    '/_app/operations/underwriting/$id': {
-      id: '/_app/operations/underwriting/$id'
-      path: '/underwriting/$id'
-      fullPath: '/operations/underwriting/$id'
-      preLoaderRoute: typeof AppOperationsUnderwritingIdRouteImport
-      parentRoute: typeof AppOperationsRoute
-    }
     '/_app/operations/underwriting/new': {
       id: '/_app/operations/underwriting/new'
       path: '/underwriting/new'
       fullPath: '/operations/underwriting/new'
       preLoaderRoute: typeof AppOperationsUnderwritingNewRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
+    '/_app/operations/underwriting/$id': {
+      id: '/_app/operations/underwriting/$id'
+      path: '/underwriting/$id'
+      fullPath: '/operations/underwriting/$id'
+      preLoaderRoute: typeof AppOperationsUnderwritingIdRouteImport
       parentRoute: typeof AppOperationsRoute
     }
   }
