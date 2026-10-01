@@ -102,7 +102,7 @@ export function DealInstalments({
       return {
         installment_number: i + 1,
         label: labels[i],
-        due_date: s?.due_date ?? due.toISOString().slice(0, 10),
+        due_date: s?.due_date ?? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`,
         amount: showUnderwriting ? amounts[i] : s ? Number(s.amount) : amounts[i],
         paid_date: s?.paid_date ?? "",
         paid_amount: s ? Number(s.paid_amount) : 0,

@@ -741,7 +741,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
               <div className="text-xs">
                 {status === "excess" && <span className="text-red-600">Excess: {fmtPKR(diff)}</span>}
                 {status === "deficit" && <span className="text-amber-600">Deficit: {fmtPKR(-diff)}</span>}
-                {status === "balanced" && <span className="text-emerald-600">Balanced ✓</span>}
+                {status === "balanced" && <span className="text-emerald-600">Matched ✓</span>}
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">Deal cannot progress to Won until posting is Balanced.</p>
@@ -755,7 +755,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base flex items-center gap-2">
           Travel Posting
-          <Badge variant="outline" className={badgeCls[status]}>{status.toUpperCase()}</Badge>
+          <Badge variant="outline" className={badgeCls[status]}>{status === "balanced" ? "MATCHED" : status.toUpperCase()}</Badge>
         </CardTitle>
         <Button size="sm" variant="outline" onClick={() => setFull(true)}><Maximize2 className="w-4 h-4 mr-1"/>Full Screen</Button>
       </CardHeader>

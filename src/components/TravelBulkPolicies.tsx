@@ -68,7 +68,7 @@ const toDate = (v: any): string => {
     if (d) return `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
   }
   const d = new Date(v);
-  return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+  return isNaN(d.getTime()) ? "" : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 };
 
 export function TravelBulkPolicies({
