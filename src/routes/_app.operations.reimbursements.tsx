@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
+import { openStorageDoc } from "@/lib/openStorageDoc";
 import { DateField } from "@/components/DateField";
 import { DeleteButton } from "@/components/DeleteButton";
 
@@ -99,7 +101,7 @@ function ReimbursementsPage() {
                   <SelectContent>{(data?.cats ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                 </Select>
               </F>
-              <F label="Amount *"><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}/></F>
+              <F label="Amount *"><MoneyInput value={form.amount} onChange={(_, raw) => setForm({ ...form, amount: raw })}/></F>
               <F label="Expense Date *"><DateField value={form.expense_date} onChange={(v) => setForm({ ...form, expense_date: v })}/></F>
               <F label="Attachment"><Input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)}/></F>
               <div className="col-span-2"><F label="Description *"><Textarea rows={2} value={form.description ?? ""} onChange={e => setForm({ ...form, description: e.target.value })}/></F></div>
@@ -132,7 +134,10 @@ function ReimbursementsPage() {
                 <TableCell>{fmtDate(r.expense_date)}</TableCell>
                 <TableCell className="text-right tabular-nums">{fmtPKR(r.amount)}</TableCell>
                 <TableCell><StatusBadge status={r.status}/></TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right space-x-1">
+                  {r.attachment_url && (
+                    <Button size="sm" variant="ghost" onClick={() => openStorageDoc(r.attachment_url)}>View Bill</Button>
+                  )}
                   {isAdmin && ["submitted","under_review"].includes(r.status) && (
                     <Button size="sm" variant="outline" onClick={() => setReviewing(r)}>Review</Button>
                   )}

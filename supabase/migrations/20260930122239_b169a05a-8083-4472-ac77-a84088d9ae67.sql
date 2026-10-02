@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.tg_log_activity() FROM public, anon, authenticated;

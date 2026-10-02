@@ -1,4 +1,6 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { RelatedTickets } from "@/components/RelatedTickets";
+import { DealTasks } from "@/components/DealTasks";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
@@ -12,15 +14,17 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { calculateDealFinancials } from "@/lib/calc";
+import { aggregateDealFinancials, calculateDealFinancials } from "@/lib/calc";
 import { fmtPKR, fmtPct, fmtDate } from "@/lib/format";
 import { DateField } from "@/components/DateField";
 import { DealInstalments } from "@/components/DealInstalments";
+import { DealCustomInstalments } from "@/components/DealCustomInstalments";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { ArrowLeft, Maximize2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import B2BTakerField from "@/components/B2BTakerField";
+import { openStorageDoc } from "@/lib/openStorageDoc";
 
 export const Route = createFileRoute("/_app/deals/$id")({
   component: DealDetail,
@@ -32,10 +36,13 @@ const PAYMENT_MODES = ["IBFT", "Cheque", "Cash", "Pay Order", "Online Payment"] 
 function DealDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
-  const { hasRole } = useAuth();
+  const { hasRole, can } = useAuth();
   // Premium & Income calculations are restricted to Admin and Management.
   const canSeeFinancials = hasRole(["admin", "management"]);
   const canManageDeal = canSeeFinancials;
+  // Custom instalments can also be updated (marked paid, collection details) by
+  // any user with edit rights on deals, not just Admin/Management.
+  const canEditInstalments = canManageDeal || can("deals", "edit");
 
   const deleteDeal = async () => {
     if (!window.confirm("Delete this deal permanently? This cannot be undone.")) return;
@@ -49,7 +56,7 @@ function DealDetail() {
   const { data } = useQuery({
     queryKey: ["deal", id],
     queryFn: async () => {
-      const [deal, stages, companies, types, sources, profiles, teams, clients, settings] = await Promise.all([
+      const [deal, stages, companies, types, sources, profiles, teams, clients, settings, documents, installments] = await Promise.all([
         supabase.from("deals").select("*").eq("id", id).maybeSingle(),
         supabase.from("deal_stages").select("*").order("sort_order"),
         supabase.from("insurance_companies").select("id, name"),
@@ -59,9 +66,13 @@ function DealDetail() {
         supabase.from("teams").select("id, name"),
         supabase.from("clients").select("id, company_name, full_name, client_type"),
         supabase.from("app_settings").select("value").eq("key","tagged_premium_base_percentage").maybeSingle(),
+        supabase.from("deal_documents").select("id, file_name, doc_type, storage_path, created_at").eq("deal_id", id).order("created_at", { ascending: false }),
+        supabase.from("deal_installments").select("gross_premium, net_premium, commission_percentage, marketing_budget, loading, b2b_commission, payment_status").eq("deal_id", id).order("installment_number"),
       ]);
       return { deal: deal.data, stages: stages.data ?? [], companies: companies.data ?? [], types: types.data ?? [],
         sources: sources.data ?? [], profiles: profiles.data ?? [], teams: teams.data ?? [], clients: clients.data ?? [],
+        documents: documents.data ?? [],
+        installments: installments.data ?? [],
         basePct: Number(settings.data?.value ?? 13) };
     },
   });
@@ -69,15 +80,48 @@ function DealDetail() {
   const [stageId, setStageId] = useState<string>("");
   useEffect(() => { if (data?.deal?.stage_id) setStageId(data.deal.stage_id); }, [data?.deal?.stage_id]);
 
-  const calc = useMemo(() => data?.deal ? calculateDealFinancials({
-    gross_premium: data.deal.gross_premium,
-    net_premium: data.deal.net_premium,
-    commission_percentage: data.deal.commission_percentage,
-    marketing_budget_percentage: data.deal.marketing_budget_percentage,
-    loading: data.deal.loading,
-    b2b_commission: data.deal.b2b_commission,
-    base_percentage: (data.deal as any).base_percentage ?? data.basePct,
-  }) : null, [data]);
+  const customRates = useMemo(() => {
+    if (!data?.deal || !/^(custom|quarter|bi-annual|bi annual|half)/.test(String(data.deal.payment_schedule ?? "").toLowerCase())) return [];
+    return [...new Set(data.installments.filter((row: any) => String(row.payment_status ?? "").toLowerCase() === "paid").map((row: any) => Number(row.commission_percentage ?? 0)).filter((rate) => rate > 0))];
+  }, [data]);
+  const calc = useMemo(() => {
+    if (!data?.deal) return null;
+    const basePercentage = (data.deal as any).base_percentage ?? data.basePct;
+    if (/^(custom|quarter|bi-annual|bi annual|half)/.test(String(data.deal.payment_schedule ?? "").toLowerCase()) && data.installments.length) {
+      const paidRows = data.installments.filter((row: any) => String(row.payment_status ?? "").toLowerCase() === "paid");
+      const inputs = paidRows.map((row: any) => {
+        const gross = Number(row.gross_premium ?? 0);
+        return {
+          gross_premium: gross,
+          net_premium: row.net_premium,
+          commission_percentage: row.commission_percentage,
+          marketing_budget_percentage: gross > 0 ? (Number(row.marketing_budget ?? 0) / gross) * 100 : 0,
+          loading: row.loading,
+          b2b_commission: row.b2b_commission,
+          base_percentage: basePercentage,
+        };
+      });
+      const aggregate = aggregateDealFinancials(inputs, basePercentage);
+      return {
+        ...aggregate,
+        commission_percentage: customRates[0] ?? 0,
+        marketing_budget_percentage: aggregate.gross_premium > 0
+          ? (aggregate.marketing_before_tax / aggregate.gross_premium) * 100
+          : 0,
+        loading: inputs.reduce((sum, row) => sum + Number(row.loading ?? 0), 0),
+        b2b_commission: inputs.reduce((sum, row) => sum + Number(row.b2b_commission ?? 0), 0),
+      };
+    }
+    return calculateDealFinancials({
+      gross_premium: data.deal.gross_premium,
+      net_premium: data.deal.net_premium,
+      commission_percentage: data.deal.commission_percentage,
+      marketing_budget_percentage: data.deal.marketing_budget_percentage,
+      loading: data.deal.loading,
+      b2b_commission: data.deal.b2b_commission,
+      base_percentage: basePercentage,
+    });
+  }, [customRates, data]);
 
   // Payment form state
   const [pay, setPay] = useState({
@@ -202,7 +246,7 @@ function DealDetail() {
                 <KV k="Gross Premium" v={fmtPKR(calc.gross_premium)} />
                 <KV k="Net Premium" v={fmtPKR(calc.net_premium)} />
                 <KV k="Tagged Premium (auto)" v={<span className="font-semibold">{fmtPKR(calc.tagged_premium)}</span>} />
-                <KV k="Commission %" v={fmtPct(calc.commission_percentage)} />
+                <KV k="Commission %" v={customRates.length > 1 ? customRates.map(fmtPct).join(" / ") : fmtPct(calc.commission_percentage)} />
                 <KV k="Marketing %" v={fmtPct(calc.marketing_budget_percentage)} />
                 <KV k="Loading" v={fmtPKR(calc.loading)} />
                 <KV k="B2B Commission" v={fmtPKR(calc.b2b_commission)} />
@@ -289,18 +333,31 @@ function DealDetail() {
         </Card>
       )}
 
-      <DealInstalments
-        dealId={id}
-        schedule={d.payment_schedule}
-        startDate={d.policy_start_date}
-        netPremium={Number(d.net_premium ?? 0)}
-        underwrittenPremium={(d as any).underwritten_premium ?? 0}
-        canEdit={canManageDeal}
-      />
+      {/^(custom|quarter|bi-annual|bi annual|half)/.test(String(d.payment_schedule ?? "").toLowerCase()) ? (
+        <DealCustomInstalments
+          schedule={d.payment_schedule}
+          dealId={id}
+          basePercentage={Number((d as any).base_percentage ?? 0) || undefined}
+          canEdit={canEditInstalments}
+        />
+      ) : (
+        <DealInstalments
+          dealId={id}
+          schedule={d.payment_schedule}
+          startDate={d.policy_start_date}
+          netPremium={Number(d.net_premium ?? 0)}
+          underwrittenPremium={(d as any).underwritten_premium ?? 0}
+          canEdit={canEditInstalments}
+        />
+      )}
 
       <DealInvoicesAndTravel dealId={id} stage={stage} isTravel={(type ?? "").toLowerCase() === "travel"} />
 
       <StageHistory dealId={id} stages={data.stages} profiles={data.profiles} />
+
+      <div className="mt-4">
+        <DealTasks dealId={id} clientId={d.client_id} />
+      </div>
 
       <div className="mt-4">
         <RelatedTickets dealId={id} clientId={d.client_id ?? undefined} policyNumber={d.policy_number} />
@@ -308,6 +365,25 @@ function DealDetail() {
 
 
       {d.notes && <Card className="mt-4"><CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader><CardContent className="text-sm whitespace-pre-wrap">{d.notes}</CardContent></Card>}
+
+      {(data.documents?.length ?? 0) > 0 && (
+        <Card className="mt-4">
+          <CardHeader><CardTitle className="text-base">Documents &amp; Receipts</CardTitle></CardHeader>
+          <CardContent className="space-y-1.5 text-sm">
+            {data.documents.map((doc: any) => (
+              <div key={doc.id} className="flex items-center justify-between gap-3 rounded border px-3 py-2">
+                <div className="min-w-0">
+                  <div className="truncate">{doc.file_name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {(doc.doc_type ?? "document").replace(/_/g, " ")} · {fmtDate(doc.created_at)}
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => openStorageDoc(doc.storage_path)}>View</Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
@@ -412,12 +488,12 @@ function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSav
             <Field label="Policy Number"><Input value={f.policy_number ?? ""} onChange={(e) => set("policy_number", e.target.value)}/></Field>
             <Field label="Policy Start"><DateField value={f.policy_start_date ?? ""} onChange={(v) => set("policy_start_date", v)} placeholder="Start date"/></Field>
             <Field label="Policy End"><DateField value={f.policy_end_date ?? ""} onChange={(v) => set("policy_end_date", v)} placeholder="End date"/></Field>
-            <Field label="Gross Premium (PKR)"><Input type="number" step="0.01" value={f.gross_premium ?? 0} onChange={(e) => setNum("gross_premium", e.target.value)}/></Field>
-            <Field label="Net Premium (PKR)"><Input type="number" step="0.01" value={f.net_premium ?? 0} onChange={(e) => setNum("net_premium", e.target.value)}/></Field>
-            <Field label="Commission %"><Input type="number" step="0.001" value={f.commission_percentage ?? 0} onChange={(e) => setNum("commission_percentage", e.target.value)}/></Field>
-            <Field label="Marketing Budget %"><Input type="number" step="0.001" value={f.marketing_budget_percentage ?? 0} onChange={(e) => setNum("marketing_budget_percentage", e.target.value)}/></Field>
-            <Field label="Loading (PKR)"><Input type="number" step="0.01" value={f.loading ?? 0} onChange={(e) => setNum("loading", e.target.value)}/></Field>
-            <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={f.b2b_commission ?? 0} onChange={(e) => setNum("b2b_commission", e.target.value)}/></Field>
+            <Field label="Gross Premium (PKR)"><MoneyInput value={f.gross_premium} onChange={(_, raw) => setNum("gross_premium", raw)}/></Field>
+            <Field label="Net Premium (PKR)"><MoneyInput value={f.net_premium} onChange={(_, raw) => setNum("net_premium", raw)}/></Field>
+            <Field label="Commission %"><Input type="number" step="0.001" value={Number(f.commission_percentage) || ""} onChange={(e) => setNum("commission_percentage", e.target.value)}/></Field>
+            <Field label="Marketing Budget %"><Input type="number" step="0.001" value={Number(f.marketing_budget_percentage) || ""} onChange={(e) => setNum("marketing_budget_percentage", e.target.value)}/></Field>
+            <Field label="Loading (PKR)"><MoneyInput value={f.loading} onChange={(_, raw) => setNum("loading", raw)}/></Field>
+            <Field label="B2B Commission (PKR)"><MoneyInput value={f.b2b_commission} onChange={(_, raw) => setNum("b2b_commission", raw)}/></Field>
             <Field label="Name of B2B Commission Taker"><B2BTakerField value={(f.b2b_taker_name as string) ?? ""} onChange={(v) => set("b2b_taker_name", v)}/></Field>
             <div className="sm:col-span-2 lg:col-span-3">
               <Field label="Notes"><Textarea rows={3} value={f.notes ?? ""} onChange={(e) => set("notes", e.target.value)}/></Field>
@@ -603,8 +679,8 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
   const content = (
     <div className="space-y-4 text-sm">
         <div className="grid sm:grid-cols-4 gap-3">
-          <Field label="Total Policy Amount *"><Input type="number" step="0.01" value={totalPolicy} onChange={e => setTotalPolicy(Number(e.target.value) || 0)}/></Field>
-          <Field label="Total Posting Amount *"><Input type="number" step="0.01" value={totalPost} onChange={e => setTotalPost(Number(e.target.value) || 0)}/></Field>
+          <Field label="Total Policy Amount *"><MoneyInput value={totalPolicy} onChange={(v) => setTotalPolicy(v)}/></Field>
+          <Field label="Total Posting Amount *"><MoneyInput value={totalPost} onChange={(v) => setTotalPost(v)}/></Field>
           <Field label="Posting From *"><DateField value={from} onChange={setFrom} placeholder="From date"/></Field>
           <Field label="Posting To *"><DateField value={to} onChange={setTo} placeholder="To date"/></Field>
         </div>
@@ -640,7 +716,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                       <td className="p-2"><DateField value={r.date_issued ?? ""} onChange={(v) => updateRow(r.id, { date_issued: v || null })} className="h-8" placeholder="Date"/></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.policy_number ?? ""} onBlur={e => updateRow(r.id, { policy_number: e.target.value })}/></td>
                       <td className="p-2"><Input type="number" step="0.01" className="h-8 text-right" defaultValue={r.premium ?? 0} onBlur={e => updateRow(r.id, { premium: Number(e.target.value) || 0 })}/></td>
-                      <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={r.commission_percentage ?? 0} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>
+                      <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={Number(r.commission_percentage) || ""} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>
                       <td className="p-2 text-right tabular-nums">{fmtPKR(commAmt)}</td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.payable_company ?? ""} onBlur={e => updateRow(r.id, { payable_company: e.target.value })}/></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.agent_name ?? ""} onBlur={e => updateRow(r.id, { agent_name: e.target.value })}/></td>
@@ -665,7 +741,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
               <div className="text-xs">
                 {status === "excess" && <span className="text-red-600">Excess: {fmtPKR(diff)}</span>}
                 {status === "deficit" && <span className="text-amber-600">Deficit: {fmtPKR(-diff)}</span>}
-                {status === "balanced" && <span className="text-emerald-600">Balanced ✓</span>}
+                {status === "balanced" && <span className="text-emerald-600">Matched ✓</span>}
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">Deal cannot progress to Won until posting is Balanced.</p>
@@ -679,7 +755,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base flex items-center gap-2">
           Travel Posting
-          <Badge variant="outline" className={badgeCls[status]}>{status.toUpperCase()}</Badge>
+          <Badge variant="outline" className={badgeCls[status]}>{status === "balanced" ? "MATCHED" : status.toUpperCase()}</Badge>
         </CardTitle>
         <Button size="sm" variant="outline" onClick={() => setFull(true)}><Maximize2 className="w-4 h-4 mr-1"/>Full Screen</Button>
       </CardHeader>

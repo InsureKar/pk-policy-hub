@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { fmtDate } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,9 +21,9 @@ import insureSLogo from "@/assets/logo.png";
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard | InsureS CRM" },
-      { name: "description", content: "InsureS insurance brokerage business overview and pipeline dashboard." },
-      { property: "og:title", content: "Dashboard | InsureS CRM" },
+      { title: "Dashboard | Insurekar CRM" },
+      { name: "description", content: "Insurekar insurance brokerage business overview and pipeline dashboard." },
+      { property: "og:title", content: "Dashboard | Insurekar CRM" },
       { property: "og:description", content: "Insurance brokerage business overview and pipeline dashboard." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -39,7 +41,7 @@ function DashboardPage() {
     queryKey: ["dashboard", user?.id],
     queryFn: async () => {
       const [{ data: deals }, { data: stages }, { data: companies }, { data: settings }, { data: targets }] = await Promise.all([
-        supabase.from("deals").select("id, gross_premium, net_premium, commission_percentage, marketing_budget_percentage, loading, b2b_commission, base_percentage, total_income, stage_id, insurance_company_id, created_at, policy_end_date, deal_type, assigned_do_id, team_lead_id" as any),
+        supabase.from("deals").select("id, deal_number, gross_premium, net_premium, commission_percentage, marketing_budget_percentage, loading, b2b_commission, base_percentage, total_income, stage_id, insurance_company_id, created_at, policy_end_date, deal_type, assigned_do_id, team_lead_id" as any),
         supabase.from("deal_stages").select("id, name, is_won, is_lost"),
         supabase.from("insurance_companies").select("id, name"),
         supabase.from("app_settings").select("key, value").eq("key", "tagged_premium_base_percentage").maybeSingle(),
@@ -49,6 +51,7 @@ function DashboardPage() {
     },
   });
 
+  const [drill, setDrill] = useState<{ title: string; deals: any[] } | null>(null);
   const data = useMemo(() => {
     if (!raw) return null;
     return {
@@ -149,25 +152,27 @@ function DashboardPage() {
   const ytdPct = myYtdTarget > 0 ? Math.round((myWonYtd / myYtdTarget) * 100) : 0;
   const monthOverMonth = monthPct - lastMonthPct;
 
-  const financialKpis: { label: string; value: string; icon: any }[] = [
-    { label: "Gross Premium", value: fmtPKR(totalGross), icon: Wallet },
-    { label: "Net Premium", value: fmtPKR(totalNet), icon: Coins },
-    { label: "Tagged Premium", value: fmtPKR(tagged), icon: BadgePercent },
+  const financialKpis: { label: string; value: string; icon: any; deals: any[] }[] = [
+    { label: "Gross Premium", value: fmtPKR(totalGross), icon: Wallet, deals: activeDeals },
+    { label: "Net Premium", value: fmtPKR(totalNet), icon: Coins, deals: activeDeals },
+    { label: "Tagged Premium", value: fmtPKR(tagged), icon: BadgePercent, deals: activeDeals },
   ];
-  if (canSeeIncome) financialKpis.push({ label: "Total Income", value: fmtPKR(totalIncome), icon: TrendingUp });
+  if (canSeeIncome) financialKpis.push({ label: "Total Income", value: fmtPKR(totalIncome), icon: TrendingUp, deals: activeDeals });
   const activityKpis = [
-    { label: "Total Deals", value: total.toString(), icon: Briefcase },
-    { label: "Won", value: won.toString(), icon: CheckCircle2 },
-    { label: "Lost", value: lost.toString(), icon: XCircle },
-    { label: "Active", value: active.toString(), icon: Activity },
+    { label: "Total Deals", value: total.toString(), icon: Briefcase, deals: data.deals },
+    { label: "Won", value: won.toString(), icon: CheckCircle2, deals: data.deals.filter(isWon) },
+    { label: "Lost", value: lost.toString(), icon: XCircle, deals: lostDeals },
+    { label: "Active", value: active.toString(), icon: Activity, deals: data.deals.filter((d) => !isWon(d) && !isLost(d)) },
   ];
+  const stageName = new Map(data.stages.map((s) => [s.id, s.name]));
+  const taggedOf = (d: any) => aggregateDealFinancials([d] as any, data.basePct).tagged_premium;
   const kpis = canSeeFinancials ? [...financialKpis, ...activityKpis.slice(0, 3)] : activityKpis;
 
   return (
     <div className="mx-auto max-w-[1500px] p-4 sm:p-6">
       <header className="mb-4 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <img src={insureSLogo} alt="InsureS" className="h-10 w-auto object-contain" />
+          <img src={insureSLogo} alt="Insurekar" className="h-10 w-auto object-contain" />
           <div>
             <h1 className="text-2xl font-semibold">Dashboard</h1>
             <p className="mt-0.5 text-sm text-muted-foreground">Business overview across fresh business, renewals, and combined performance</p>
@@ -230,7 +235,7 @@ function DashboardPage() {
         {kpis.map((k) => {
           const Icon = k.icon;
           return (
-            <Card key={k.label} className="shadow-sm">
+            <Card key={k.label} role="button" tabIndex={0} onClick={() => setDrill({ title: k.label, deals: k.deals })} onKeyDown={(e) => e.key === "Enter" && setDrill({ title: k.label, deals: k.deals })} className="shadow-sm cursor-pointer transition hover:border-primary/50 hover:shadow-md">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -299,16 +304,55 @@ function DashboardPage() {
               const count = data.deals.filter((d) => d.stage_id === s.id).length;
               const value = data.deals.filter((d) => d.stage_id === s.id).reduce((a, d) => a + Number(d.gross_premium || 0), 0);
               return (
-                <div key={s.id} className="rounded-md border p-3 bg-card">
+                <button type="button" key={s.id} onClick={() => setDrill({ title: `Pipeline · ${s.name}`, deals: data.deals.filter((d) => d.stage_id === s.id) })} className="rounded-md border p-3 bg-card text-left cursor-pointer transition hover:border-primary/50 hover:shadow-md">
                   <div className="text-xs text-muted-foreground">{s.name}</div>
                   <div className="text-lg font-semibold mt-1">{count}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">{fmtPKR(value)}</div>
-                </div>
+                </button>
               );
             })}
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!drill} onOpenChange={(o) => !o && setDrill(null)}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[1000px]">
+          <DialogHeader>
+            <DialogTitle>{drill?.title}</DialogTitle>
+            <DialogDescription>{drill?.deals.length ?? 0} deals · click a deal to open it</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[65vh] overflow-auto rounded-md border">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-muted/60">
+                <tr className="text-left">
+                  {["Deal", "Type", "Stage", ...(canSeeFinancials ? ["Gross", "Net", "Tagged"] : []), "Created"].map((h) => (
+                    <th key={h} className="whitespace-nowrap px-2 py-2 font-medium text-muted-foreground">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(drill?.deals ?? []).map((d: any) => (
+                  <tr key={d.id} className="border-t hover:bg-muted/30">
+                    <td className="whitespace-nowrap px-2 py-1.5"><Link to="/deals/$id" params={{ id: d.id }} className="font-medium text-primary hover:underline">{d.deal_number || "Open deal"}</Link></td>
+                    <td className="whitespace-nowrap px-2 py-1.5 capitalize">{d.deal_type ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{stageName.get(d.stage_id) ?? "—"}</td>
+                    {canSeeFinancials && <>
+                      <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">{fmtPKR(Number(d.gross_premium || 0))}</td>
+                      <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">{fmtPKR(Number(d.net_premium || 0))}</td>
+                      <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">{fmtPKR(taggedOf(d))}</td>
+                    </>}
+                    <td className="whitespace-nowrap px-2 py-1.5">{fmtDate(d.created_at)}</td>
+                  </tr>
+                ))}
+                {(drill?.deals.length ?? 0) === 0 && (
+                  <tr><td colSpan={7} className="px-2 py-6 text-center text-muted-foreground">No deals for this metric.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex justify-end"><Button variant="outline" onClick={() => setDrill(null)}>Close</Button></div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

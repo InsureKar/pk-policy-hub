@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import * as XLSX from "xlsx";
@@ -5,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtPKR } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -24,6 +27,9 @@ export type TravelTransferRow = {
   amount: number;
   tid: string;
   agent: string;
+  /** When checked, this transfer is marked as an agent payment with the chosen destination. */
+  agent_payment_destination: boolean;
+  payment_destination: "" | "company" | "insurance_company";
 };
 
 export const emptyTravelRow = (): TravelPolicyRow => ({
@@ -32,6 +38,7 @@ export const emptyTravelRow = (): TravelPolicyRow => ({
 });
 export const emptyTransferRow = (): TravelTransferRow => ({
   transfer_date: "", bank_name: "", amount: 0, tid: "", agent: "",
+  agent_payment_destination: false, payment_destination: "",
 });
 
 export const payableOf = (r: TravelPolicyRow) =>
@@ -61,7 +68,7 @@ const toDate = (v: any): string => {
     if (d) return `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
   }
   const d = new Date(v);
-  return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+  return isNaN(d.getTime()) ? "" : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 };
 
 export function TravelBulkPolicies({
@@ -84,12 +91,14 @@ export function TravelBulkPolicies({
   const totalPayableInsCo = rows.reduce((a, r) => a + payableToInsuranceCo(r), 0);
   const totalLoading = rows.reduce((a, r) => a + loadingOf(r), 0);
   const totalTransfers = transfers.reduce((a, t) => a + Number(t.amount || 0), 0);
-  const diff = Number((totalTransfers - totalPayable).toFixed(2));
-  const matchStatus = transfers.length === 0 ? "pending" : diff === 0 ? "matched" : diff > 0 ? "excess" : "short";
+  // Round to whole rupees before comparing so sub-rupee rounding noise
+  // never shows as "Excess by Rs 0". Top badge and bottom line share this result.
+  const diff = Math.round(totalTransfers - totalPayable);
+  const matchStatus = transfers.length === 0 ? "pending" : diff === 0 ? "matched" : diff > 0 ? "excess" : "deficit";
   const matchCls: Record<string, string> = {
     matched: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
     excess: "bg-red-500/15 text-red-600 border-red-500/30",
-    short: "bg-amber-500/15 text-amber-600 border-amber-500/30",
+    deficit: "bg-amber-500/15 text-amber-600 border-amber-500/30",
     pending: "bg-muted text-muted-foreground",
   };
 
@@ -187,6 +196,8 @@ export function TravelBulkPolicies({
               amount,
               tid: String(cells[cols.tid] ?? "").trim(),
               agent: String(cells[cols.agent] ?? "").trim(),
+              agent_payment_destination: false,
+              payment_destination: "",
             });
           }
         }
@@ -252,9 +263,9 @@ export function TravelBulkPolicies({
                     />
                     {dupErrors?.[i] && <p className="text-xs text-destructive mt-1.5">{dupErrors[i]}</p>}
                   </td>
-                  <td className="p-3 align-top min-w-fit"><Input type="number" step="0.01" min="0" className="h-10 text-right min-w-[110px]" value={r.premium} onChange={(e) => update(i, { premium: Number(e.target.value) || 0 })}/></td>
+                  <td className="p-3 align-top min-w-fit"><div className="min-w-[150px]"><MoneyInput className="h-10" value={r.premium} onChange={(v) => update(i, { premium: v })}/></div></td>
                   <td className="p-3 align-top min-w-fit">
-                    <Input type="number" step="0.01" min="0" max={canExceed45 ? undefined : 45} className="h-10 text-right min-w-[110px]" value={r.commission_percentage}
+                    <Input type="number" step="0.01" min="0" max={canExceed45 ? undefined : 45} className="h-10 text-right min-w-[110px]" value={r.commission_percentage || ""}
                       onChange={(e) => update(i, { commission_percentage: Number(e.target.value) || 0 })}
                       onBlur={(e) => {
                         const v = Number(e.target.value) || 0;
@@ -305,6 +316,7 @@ export function TravelBulkPolicies({
                   <th className="text-right p-3 whitespace-nowrap min-w-fit">Amount</th>
                   <th className="text-left p-3 whitespace-nowrap min-w-fit">TID</th>
                   <th className="text-left p-3 whitespace-nowrap min-w-fit">Agent</th>
+                  <th className="text-left p-3 whitespace-nowrap min-w-fit">Agent Payment Destination</th>
                   <th className="min-w-fit"></th>
                 </tr>
               </thead>
@@ -314,9 +326,29 @@ export function TravelBulkPolicies({
                     <td className="p-3 whitespace-nowrap">{i + 1}</td>
                     <td className="p-3 min-w-fit"><Input type="date" className="h-10 min-w-[140px]" value={t.transfer_date} onChange={(e) => updateT(i, { transfer_date: e.target.value })}/></td>
                     <td className="p-3 min-w-fit"><Input className="h-10 min-w-[160px]" value={t.bank_name} onChange={(e) => updateT(i, { bank_name: e.target.value })}/></td>
-                    <td className="p-3 min-w-fit"><Input type="number" step="0.01" min="0" className="h-10 text-right min-w-[120px]" value={t.amount} onChange={(e) => updateT(i, { amount: Number(e.target.value) || 0 })}/></td>
+                    <td className="p-3 min-w-fit"><div className="min-w-[150px]"><MoneyInput className="h-10" value={t.amount} onChange={(v) => updateT(i, { amount: v })}/></div></td>
                     <td className="p-3 min-w-fit"><Input className="h-10 min-w-[140px]" value={t.tid} onChange={(e) => updateT(i, { tid: e.target.value })}/></td>
                     <td className="p-3 min-w-fit"><Input className="h-10 min-w-[120px]" value={t.agent} onChange={(e) => updateT(i, { agent: e.target.value })}/></td>
+                    <td className="p-3 min-w-fit">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={t.agent_payment_destination}
+                          onCheckedChange={(v) => updateT(i, { agent_payment_destination: v === true, payment_destination: v === true ? (t.payment_destination || "company") : "" })}
+                          aria-label="Agent Payment Destination"
+                        />
+                        <Select
+                          value={t.payment_destination || undefined}
+                          disabled={!t.agent_payment_destination}
+                          onValueChange={(v) => updateT(i, { payment_destination: v as "company" | "insurance_company" })}
+                        >
+                          <SelectTrigger className="h-10 min-w-[220px]"><SelectValue placeholder="Select Destination"/></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="company">Paid to Company (receivable)</SelectItem>
+                            <SelectItem value="insurance_company">Paid directly to Insurance Company</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </td>
                     <td className="p-3 min-w-fit"><Button size="sm" variant="ghost" onClick={() => setTransfers(transfers.filter((_, idx) => idx !== i))}>×</Button></td>
                   </tr>
                 ))}
@@ -325,7 +357,7 @@ export function TravelBulkPolicies({
                 <tr>
                   <td className="p-3" colSpan={3}>Total Transferred</td>
                   <td className="p-3 text-right tabular-nums">{fmtPKR(totalTransfers)}</td>
-                  <td colSpan={3}></td>
+                  <td colSpan={4}></td>
                 </tr>
               </tfoot>
             </table>
@@ -335,7 +367,7 @@ export function TravelBulkPolicies({
             <p className="text-sm">
               {matchStatus === "matched" && <span className="text-emerald-600">Transfers match Payable to own company ✓</span>}
               {matchStatus === "excess" && <span className="text-red-600">Excess by {fmtPKR(diff)}</span>}
-              {matchStatus === "short" && <span className="text-amber-600">Short by {fmtPKR(-diff)}</span>}
+              {matchStatus === "deficit" && <span className="text-amber-600">Deficit by {fmtPKR(-diff)}</span>}
               {matchStatus === "pending" && <span className="text-muted-foreground">Add transfers totalling {fmtPKR(totalPayable)}</span>}
             </p>
           </div>

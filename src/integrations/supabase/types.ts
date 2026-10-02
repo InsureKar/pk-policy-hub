@@ -59,6 +59,10 @@ export type Database = {
           entity_type: string
           id: string
           metadata: Json
+          module: string | null
+          new_value: Json | null
+          old_value: Json | null
+          summary: string | null
         }
         Insert: {
           action: string
@@ -68,6 +72,10 @@ export type Database = {
           entity_type: string
           id?: string
           metadata?: Json
+          module?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          summary?: string | null
         }
         Update: {
           action?: string
@@ -77,6 +85,10 @@ export type Database = {
           entity_type?: string
           id?: string
           metadata?: Json
+          module?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          summary?: string | null
         }
         Relationships: [
           {
@@ -1618,6 +1630,48 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dedupe_key: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_read: boolean
+          kind: string
+          message: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dedupe_key?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          kind?: string
+          message?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dedupe_key?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          kind?: string
+          message?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payables: {
         Row: {
           category: Database["public"]["Enums"]["payable_category"]
@@ -2305,9 +2359,46 @@ export type Database = {
           },
         ]
       }
+      task_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: string | null
+          id: string
+          task_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          task_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_activity_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assigned_to: string | null
+          attachment_name: string | null
+          attachment_path: string | null
           client_id: string | null
           completed_at: string | null
           created_at: string
@@ -2315,6 +2406,7 @@ export type Database = {
           deal_id: string | null
           description: string | null
           due_date: string | null
+          due_time: string | null
           id: string
           priority: string
           status: string
@@ -2323,6 +2415,8 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
           client_id?: string | null
           completed_at?: string | null
           created_at?: string
@@ -2330,6 +2424,7 @@ export type Database = {
           deal_id?: string | null
           description?: string | null
           due_date?: string | null
+          due_time?: string | null
           id?: string
           priority?: string
           status?: string
@@ -2338,6 +2433,8 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
           client_id?: string | null
           completed_at?: string | null
           created_at?: string
@@ -2345,6 +2442,7 @@ export type Database = {
           deal_id?: string | null
           description?: string | null
           due_date?: string | null
+          due_time?: string | null
           id?: string
           priority?: string
           status?: string
@@ -2920,10 +3018,12 @@ export type Database = {
       travel_posting_transfers: {
         Row: {
           agent: string | null
+          agent_payment_destination: boolean
           amount: number
           bank_name: string | null
           created_at: string
           id: string
+          payment_destination: string | null
           posting_id: string
           remarks: string | null
           sr_no: number
@@ -2932,10 +3032,12 @@ export type Database = {
         }
         Insert: {
           agent?: string | null
+          agent_payment_destination?: boolean
           amount?: number
           bank_name?: string | null
           created_at?: string
           id?: string
+          payment_destination?: string | null
           posting_id: string
           remarks?: string | null
           sr_no?: number
@@ -2944,10 +3046,12 @@ export type Database = {
         }
         Update: {
           agent?: string | null
+          agent_payment_destination?: boolean
           amount?: number
           bank_name?: string | null
           created_at?: string
           id?: string
+          payment_destination?: string | null
           posting_id?: string
           remarks?: string | null
           sr_no?: number
@@ -3515,6 +3619,7 @@ export type Database = {
         Args: { _min: Database["public"]["Enums"]["permission_level"] }
         Returns: boolean
       }
+      generate_my_reminders: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3522,6 +3627,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_team_lead_of: { Args: { _user: string }; Returns: boolean }
       module_allows: {
         Args: {
           _min: Database["public"]["Enums"]["permission_level"]
@@ -3540,6 +3646,16 @@ export type Database = {
       perm_key_level: { Args: { _key: string; _user: string }; Returns: string }
       perm_rank: {
         Args: { _l: Database["public"]["Enums"]["permission_level"] }
+        Returns: number
+      }
+      send_notification: {
+        Args: {
+          _entity_id?: string
+          _entity_type?: string
+          _message: string
+          _title: string
+          _user_ids: string[]
+        }
         Returns: number
       }
       travel_policy_conflict: {

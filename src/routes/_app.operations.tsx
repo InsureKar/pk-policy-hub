@@ -19,10 +19,12 @@ const tabs = [
 ];
 
 function OperationsLayout() {
-  const { hasRole, loading, allow } = useAuth();
+  const { hasRole, loading, allow, access } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   if (loading) return null;
-  if (!hasRole(["admin", "management", "team_lead", "do"])) {
+  const tabPerm = (to: string) => (to === "/operations/reimbursements" ? "operations.reimbursements" : to === "/operations/underwriting" ? "operations.underwriting" : undefined);
+  const grantedAny = tabs.some((t) => { const k = (t as any).perm ?? tabPerm(t.to); return k && access[k] && access[k] !== "none"; });
+  if (!hasRole(["admin", "management", "team_lead", "do"]) && !grantedAny) {
     return <Navigate to="/dashboard" replace />;
   }
   const isAdmin = hasRole(["admin", "management"]);
@@ -33,7 +35,7 @@ function OperationsLayout() {
         <p className="text-sm text-muted-foreground mt-1">Payroll, expenses, reimbursements, and workforce analytics.</p>
       </div>
       <nav className="flex flex-wrap gap-1 border-b mb-6 overflow-x-auto">
-        {tabs.filter(t => (!t.adminOnly || isAdmin) && (!(t as any).perm || allow((t as any).perm))).map((t) => {
+        {tabs.filter(t => { const k = (t as any).perm ?? tabPerm(t.to); if (k && access[k] === "none") return false; if (k && access[k]) return true; return (!t.adminOnly || isAdmin) && (!(t as any).perm || allow((t as any).perm)); }).map((t) => {
           const active = t.exact ? pathname === t.to : pathname.startsWith(t.to);
           return (
             <Link key={t.to} to={t.to}

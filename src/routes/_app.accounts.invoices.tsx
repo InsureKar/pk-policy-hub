@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useRef } from "react";
@@ -230,7 +231,7 @@ function NewInvoiceDialog({ clients, types, creatorId, onDone }: { clients: any[
           </Select>
         </F>
         <F label="Total Amount (PKR) *">
-          <Input type="number" value={form.total_amount} onChange={(e) => setForm({ ...form, total_amount: e.target.value })}/>
+          <MoneyInput value={form.total_amount} onChange={(_, raw) => setForm({ ...form, total_amount: raw })}/>
         </F>
         <F label="Payment Mode / Schedule *">
           <Select value={form.payment_schedule} onValueChange={(v) => setForm({ ...form, payment_schedule: v })}>

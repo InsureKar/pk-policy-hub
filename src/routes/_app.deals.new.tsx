@@ -144,9 +144,10 @@ function NewDealPage() {
 
   const bulkTotals = useMemo(() => {
     if (isTravel) {
+      // Travel bulk policies: Net Premium is always the same as the entered Gross Premium.
       return travelRows.reduce((a, r) => ({
         gross: a.gross + Number(r.premium || 0),
-        net: a.net + payableOf(r),
+        net: a.net + Number(r.premium || 0),
         count: a.count + 1,
       }), { gross: 0, net: 0, count: 0 });
     }
@@ -287,14 +288,25 @@ function NewDealPage() {
     return Array.from({ length: count }, (_, i) => {
       const due = new Date(start);
       due.setMonth(due.getMonth() + Math.round(i * step));
-      return { label: labels[i], due: due.toISOString().slice(0, 10), amount: amounts[i], manual: false };
+      return { label: labels[i], due: `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`, amount: amounts[i], manual: false };
     });
   }, [form.payment_schedule, form.policy_start_date, effGross, manualSchedule, underwritten, isCustom, customRows]);
 
-  // Once a paid amount is recorded the period is settled, so nothing is due.
+  // ── Per-instalment payment status & collection details ──
+  type InsCollect = { status: "due" | "paid"; mode: string; date: string; ref: string; remarks: string };
+  const [insCollect, setInsCollect] = useState<Record<number, Partial<InsCollect>>>({});
+  const setCollect = (i: number, patch: Partial<InsCollect>) =>
+    setInsCollect((m) => ({ ...m, [i]: { ...m[i], ...patch } }));
+  /** Paid / Due state of a period; defaults to paid once an amount is recorded. */
+  const statusOf = (i: number): "due" | "paid" =>
+    insCollect[i]?.status ?? ((paidRows[i]?.paid_amount ?? 0) > 0 ? "paid" : "due");
+
+  // Once a period is settled, nothing remains due.
   const dueOf = (i: number) => {
     const paidAmt = paidRows[i]?.paid_amount ?? 0;
     if (manualSchedule && paidAmt > 0) return 0;
+    // Custom plan: the instalment is settled when its status is set to Paid.
+    if (isCustom && statusOf(i) === "paid") return 0;
     return instalments[i]?.amount ?? 0;
   };
   const scheduleTotal = instalments.reduce((a, _, i) => a + dueOf(i), 0);
@@ -415,18 +427,14 @@ function NewDealPage() {
   const removeInsReceipt = (i: number, path: string) =>
     setInsReceipts((m) => ({ ...m, [i]: (m[i] ?? []).filter((p) => p.path !== path) }));
 
-  // ── Per-instalment payment status & collection details ──
-  type InsCollect = { status: "due" | "paid"; mode: string; date: string; ref: string; remarks: string };
-  const [insCollect, setInsCollect] = useState<Record<number, Partial<InsCollect>>>({});
+  // ── Per-instalment collection details (status lives above, next to dueOf) ──
   const collectOf = (i: number): InsCollect => {
     const o = insCollect[i] ?? {};
     return {
-      status: o.status ?? ((paidRows[i]?.paid_amount ?? 0) > 0 ? "paid" : "due"),
+      status: statusOf(i),
       mode: o.mode ?? "", date: o.date ?? "", ref: o.ref ?? "", remarks: o.remarks ?? "",
     };
   };
-  const setCollect = (i: number, patch: Partial<InsCollect>) =>
-    setInsCollect((m) => ({ ...m, [i]: { ...m[i], ...patch } }));
 
 
   // Combined totals of all hand-written periods (shown below the quarter section).
@@ -458,19 +466,24 @@ function NewDealPage() {
      ? instalmentCalcs.reduce((a, c) => ({
          comm: a.comm + c.commission_before_tax, mkt: a.mkt + c.marketing_before_tax,
          loading: a.loading + c.loading, b2b: a.b2b + c.b2b_commission,
-       }), { comm: 0, mkt: 0, loading: 0, b2b: 0 })
+        }), { comm: 0, mkt: 0, loading: 0, b2b: 0 })
      : null;
 
-    if (!(effectiveGross > 0)) return toast.error("Gross premium is required");
+    // Payment proof and gross premium are only mandatory once the deal is moved to the Won stage.
+    const stageName = (lists?.stages ?? []).find((s: any) => s.id === form.stage_id)?.name ?? "";
+    const isWonStage = /won/i.test(stageName);
+    if (isWonStage && !(effectiveGross > 0)) return toast.error("Gross premium is required for a Won deal");
     if (!Number.isFinite(form.net_premium) || form.net_premium < 0) return toast.error("Net premium must be a positive number");
     if (cnError) return toast.error(cnError);
     // Per-instalment schedules capture their collection details and receipts inside each period.
     const firstInsProof = Object.values(insReceipts).flat()[0]?.path ?? "";
-    if (perIns) {
-      if (!form.payment_proof_url && !firstInsProof)
-        return toast.error("Attach a payment receipt inside at least one instalment before saving");
-    } else if (!form.payment_proof_url) {
-      return toast.error("Payment proof is required before the deal can be saved");
+    if (isWonStage) {
+      if (perIns) {
+        if (!form.payment_proof_url && !firstInsProof)
+          return toast.error("Attach a payment receipt inside at least one instalment before saving a Won deal");
+      } else if (!form.payment_proof_url) {
+        return toast.error("Payment proof is required before a Won deal can be saved");
+      }
     }
 
     const isTravelBulk = form.policy_type === "bulk" && isTravel;
@@ -490,8 +503,9 @@ function NewDealPage() {
       }
       const payable = travelRows.reduce((a, r) => a + payableOf(r), 0);
       const transferred = travelTransfers.reduce((a, t) => a + Number(t.amount || 0), 0);
-      if (transferred > 0 && Math.abs(transferred - payable) > 0.01) {
-        return toast.error("Amount transfer total must match Payable to Insurance Company");
+      // Same whole-rupee comparison as the MATCHED badge, so a matched screen always saves.
+      if (transferred > 0 && Math.round(transferred - payable) !== 0) {
+        return toast.error("Amount transfer total must match Payable to own company");
       }
     } else if (form.policy_type === "bulk") {
       await Promise.all(bulkRows.map((r, i) => checkDuplicate(i, r.policy_number)));
@@ -591,8 +605,13 @@ function NewDealPage() {
             payment_receive_date: collectOf(i).date || null,
             transaction_reference: collectOf(i).ref.trim() || null,
             payment_remarks: collectOf(i).remarks.trim() || null,
-            tagged_month: paid ? paid.getMonth() + 1 : null,
-            tagged_year: paid ? paid.getFullYear() : null,
+            // A paid instalment is tagged to the month it was marked paid.
+            tagged_month: collectOf(i).status === "paid"
+              ? (paid ?? new Date()).getMonth() + 1
+              : paid ? paid.getMonth() + 1 : null,
+            tagged_year: collectOf(i).status === "paid"
+              ? (paid ?? new Date()).getFullYear()
+              : paid ? paid.getFullYear() : null,
             created_by: user.id,
 
           };
@@ -648,6 +667,8 @@ function NewDealPage() {
               posting_id: posting.id, sr_no: idx + 1,
               transfer_date: t.transfer_date || null, bank_name: t.bank_name || null,
               amount: t.amount, tid: t.tid || null, agent: t.agent || null,
+              agent_payment_destination: !!t.agent_payment_destination,
+              payment_destination: t.agent_payment_destination ? t.payment_destination || null : null,
             })) as any,
           );
           if (tErr) toast.error("Deal created, but transfer details failed: " + tErr.message);
@@ -771,7 +792,7 @@ function NewDealPage() {
                 {manualSchedule && (
                   <div className="max-w-xs">
                     <p className="text-sm mb-1">Underwritten Business (Underwritten Premium)</p>
-                    <MoneyInput value={underwritten} onChange={setUnderwritten} showWords={false}/>
+                    <MoneyInput value={underwritten} onChange={setUnderwritten}/>
                     <p className="text-[11px] text-muted-foreground mt-1">
                       Divided evenly across the periods as the amount due. Once a paid amount is
                       entered, that period's amount due becomes zero and its net premium follows the paid amount.
@@ -818,11 +839,11 @@ function NewDealPage() {
                           <td className="p-2 text-right tabular-nums">
                             {isCustom ? (
                               <div className="max-w-[200px] ml-auto">
-                                <MoneyInput value={ins.amount} onChange={(v) => setCustomRow(i, { amount: v })} showWords={false}/>
+                                <MoneyInput value={ins.amount} onChange={(v) => setCustomRow(i, { amount: v })}/>
                               </div>
                             ) : ins.manual ? (
                               <div className="max-w-[200px] ml-auto">
-                                <MoneyInput value={firstPayment} onChange={(v) => setFirstPayment(v)} showWords={false}/>
+                                <MoneyInput value={firstPayment} onChange={(v) => setFirstPayment(v)}/>
                               </div>
                             ) : (
                               <span>{fmtPKR(dueOf(i))} <span className="text-xs text-muted-foreground">(auto)</span></span>
@@ -832,7 +853,7 @@ function NewDealPage() {
                             <DateField value={row.paid_date} onChange={(v)=>setPaid(i, { paid_date: v })} placeholder="Paid date"/>
                           </td>
                           <td className="p-2 min-w-[150px]">
-                            <MoneyInput value={row.paid_amount} onChange={(v)=>setPaid(i, { paid_amount: v })} showWords={false}/>
+                            <MoneyInput value={row.paid_amount} onChange={(v)=>setPaid(i, { paid_amount: v })}/>
                           </td>
                           <td className="p-2 min-w-[130px]">
                             <Select value={collectOf(i).status} onValueChange={(v) => setCollect(i, { status: v as "due" | "paid" })}>
@@ -860,17 +881,17 @@ function NewDealPage() {
                               <div className="text-xs font-medium mb-2">{ins.label} — Premium &amp; Commission <span className="text-muted-foreground font-normal">(hand written for this period)</span></div>
                               <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs">
                                 <div><p className="mb-1 text-muted-foreground">Gross Premium</p>
-                                  <MoneyInput value={breakdownOf(i).gross} onChange={(v) => setBreakdown(i, { gross: v })} showWords={false} /></div>
+                                  <MoneyInput value={breakdownOf(i).gross} onChange={(v) => setBreakdown(i, { gross: v })} /></div>
                                 <div><p className="mb-1 text-muted-foreground">Net Premium</p>
-                                  <MoneyInput value={breakdownOf(i).net} onChange={(v) => setBreakdown(i, { net: v })} showWords={false} /></div>
+                                  <MoneyInput value={breakdownOf(i).net} onChange={(v) => setBreakdown(i, { net: v })} /></div>
                                 <div><p className="mb-1 text-muted-foreground">Commission %</p>
-                                  <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).commission}
+                                  <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).commission || ""}
                                     onChange={(e) => setBreakdown(i, { commission: Number(e.target.value) || 0 })} /></div>
                                 <div><p className="mb-1 text-muted-foreground">Marketing Budget %</p>
-                                  <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).marketing}
+                                  <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).marketing || ""}
                                     onChange={(e) => setBreakdown(i, { marketing: Number(e.target.value) || 0 })} /></div>
                                 <div><p className="mb-1 text-muted-foreground">Loading</p>
-                                  <MoneyInput value={breakdownOf(i).loading} onChange={(v) => setBreakdown(i, { loading: v })} showWords={false} /></div>
+                                  <MoneyInput value={breakdownOf(i).loading} onChange={(v) => setBreakdown(i, { loading: v })} /></div>
                                 <div><p className="mb-1 text-muted-foreground">B2B Commission Type</p>
                                   <Select value={breakdownOf(i).b2b_type}
                                     onValueChange={(v) => setBreakdown(i, { b2b_type: v as "fixed" | "percentage" })}>
@@ -883,14 +904,14 @@ function NewDealPage() {
                                 {breakdownOf(i).b2b_type === "percentage" ? (
                                   <>
                                     <div><p className="mb-1 text-muted-foreground">B2B Commission %</p>
-                                      <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).b2b_pct}
+                                      <Input type="number" step="0.001" className="text-right" value={breakdownOf(i).b2b_pct || ""}
                                         onChange={(e) => setBreakdown(i, { b2b_pct: Number(e.target.value) || 0 })} /></div>
                                     <div><p className="mb-1 text-muted-foreground">B2B Commission (auto)</p>
                                       <Input readOnly tabIndex={-1} className="bg-muted/50 text-right" value={fmtPKR(b2bOf(i))} /></div>
                                   </>
                                 ) : (
                                   <div><p className="mb-1 text-muted-foreground">B2B Commission</p>
-                                    <MoneyInput value={breakdownOf(i).b2b} onChange={(v) => setBreakdown(i, { b2b: v })} showWords={false} /></div>
+                                    <MoneyInput value={breakdownOf(i).b2b} onChange={(v) => setBreakdown(i, { b2b: v })} /></div>
                                 )}
 
                                 <div className="col-span-2 md:col-span-6">
@@ -996,10 +1017,10 @@ function NewDealPage() {
                 {isCustom && (
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-[11px] text-muted-foreground">
-                      Add as many instalments as you need and set each due date and amount yourself.
+                      Add up to 4 instalments and set each due date and amount yourself.
                     </p>
-                    <Button type="button" variant="outline" size="sm"
-                      onClick={() => setCustomRows((rs) => [...rs, { due: "", amount: 0 }])}>
+                    <Button type="button" variant="outline" size="sm" disabled={customRows.length >= 4}
+                      onClick={() => setCustomRows((rs) => rs.length >= 4 ? rs : [...rs, { due: "", amount: 0 }])}>
                       Add Instalment
                     </Button>
                   </div>
@@ -1009,7 +1030,7 @@ function NewDealPage() {
                     <p className="text-sm font-medium">Underwritten</p>
                     <div>
                       <p className="text-sm mb-1">Underwritten Business (Underwritten Premium)</p>
-                      <MoneyInput value={underwritten} onChange={setUnderwritten} showWords={false}/>
+                      <MoneyInput value={underwritten} onChange={setUnderwritten}/>
                     </div>
                     <div className="grid gap-1 text-xs">
                       <Row k="Total Underwritten" v={fmtPKR(underwritten)} strong />
@@ -1116,8 +1137,8 @@ function NewDealPage() {
                             />
                             {dupErrors[i] && <p className="text-xs text-destructive mt-1">{dupErrors[i]}</p>}
                           </td>
-                          <td className="p-2"><Input type="number" step="0.01" className="text-right" value={r.gross_premium} onChange={e=>updateBulkRow(i,"gross_premium",Number(e.target.value)||0)}/></td>
-                          <td className="p-2"><Input type="number" step="0.01" className="text-right" value={r.net_premium} onChange={e=>updateBulkRow(i,"net_premium",Number(e.target.value)||0)}/></td>
+                          <td className="p-2"><MoneyInput value={r.gross_premium} onChange={(v)=>updateBulkRow(i,"gross_premium",v)}/></td>
+                          <td className="p-2"><MoneyInput value={r.net_premium} onChange={(v)=>updateBulkRow(i,"net_premium",v)}/></td>
                           <td className="p-2"><Input value={r.remarks} onChange={e=>updateBulkRow(i,"remarks",e.target.value)}/></td>
                           <td className="p-2"><Button size="sm" variant="ghost" onClick={()=>removeBulkRow(i)} disabled={bulkRows.length===1}>×</Button></td>
                         </tr>
@@ -1175,12 +1196,12 @@ function NewDealPage() {
               </Field>
               {canSeeFinancials && (
                 <>
-                  <Field label="Commission %"><Input type="number" step="0.001" value={form.commission_percentage} onChange={(e)=>setNum("commission_percentage", e.target.value)}/></Field>
+                  <Field label="Commission %"><Input type="number" step="0.001" value={form.commission_percentage || ""} onChange={(e)=>setNum("commission_percentage", e.target.value)}/></Field>
                   {canSeeMarketing && (
-                    <Field label="Marketing Budget %"><Input type="number" step="0.001" value={form.marketing_budget_percentage} onChange={(e)=>setNum("marketing_budget_percentage", e.target.value)}/></Field>
+                    <Field label="Marketing Budget %"><Input type="number" step="0.001" value={form.marketing_budget_percentage || ""} onChange={(e)=>setNum("marketing_budget_percentage", e.target.value)}/></Field>
                   )}
 
-                  <Field label="Loading (PKR)"><Input type="number" step="0.01" value={form.loading} onChange={(e)=>setNum("loading", e.target.value)}/></Field>
+                  <Field label="Loading (PKR)"><MoneyInput value={form.loading} onChange={(_, raw)=>setNum("loading", raw)}/></Field>
                   <Field label="Payment Destination">
                     <Select value={form.payment_destination} onValueChange={(v)=>set("payment_destination", v as "company" | "insurance_company")}>
                       <SelectTrigger><SelectValue/></SelectTrigger>
@@ -1277,11 +1298,11 @@ function NewDealPage() {
                 </Field>
                 {form.b2b_commission_type === "percentage" ? (
                   <>
-                    <Field label="B2B Commission %"><Input type="number" step="0.001" value={form.b2b_commission_percentage} onChange={(e)=>setNum("b2b_commission_percentage", e.target.value)}/></Field>
+                    <Field label="B2B Commission %"><Input type="number" step="0.001" value={form.b2b_commission_percentage || ""} onChange={(e)=>setNum("b2b_commission_percentage", e.target.value)}/></Field>
                     <Field label="B2B Commission Amount (auto)"><Input readOnly tabIndex={-1} value={fmtPKR(b2bAmount)} className="bg-muted/50"/></Field>
                   </>
                 ) : (
-                  <Field label="B2B Commission (PKR)"><Input type="number" step="0.01" value={form.b2b_commission} onChange={(e)=>setNum("b2b_commission", e.target.value)}/></Field>
+                  <Field label="B2B Commission (PKR)"><MoneyInput value={form.b2b_commission} onChange={(_, raw)=>setNum("b2b_commission", raw)}/></Field>
                 )}
                 <p className="sm:col-span-3 text-xs text-muted-foreground">
                   Tax deduction on this B2B commission is handled by the Accountant in Accounts → B2B Commission.

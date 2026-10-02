@@ -3,9 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { fmtPKR } from "@/lib/format";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { fmtPKR, fmtDate } from "@/lib/format";
+import { calculateDealFinancials } from "@/lib/calc";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 import { Circle } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 type Props = {
   defaultFrom?: string;
@@ -52,6 +55,7 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
   const [yearMonthDraft, setYearMonthDraft] = useState<string>("all"); // month picker inside year mode
   const [quarterDraft, setQuarterDraft] = useState<string>(String(Math.floor(now.getMonth() / 3) + 1));
   const [userDraft, setUserDraft] = useState<string>(lockUserId ?? "all");
+  const [drill, setDrill] = useState<{ title: string; subtitle: string; deals: any[] } | null>(null);
 
   const [applied, setApplied] = useState({
     mode: "year" as Mode,
@@ -64,44 +68,83 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
   const { data } = useQuery({
     queryKey: ["pipeline-funnel"],
     queryFn: async () => {
-      const [deals, stages, profiles, inst] = await Promise.all([
-        supabase.from("deals").select("id, gross_premium, stage_id, assigned_do_id, team_lead_id, created_at, deal_type"),
+      const [deals, stages, profiles, inst, clients, companies, types] = await Promise.all([
+        supabase.from("deals").select("id, deal_number, client_id, insurance_company_id, insurance_type_id, gross_premium, net_premium, tagged_premium, policy_start_date, payment_receive_date, stage_id, assigned_do_id, team_lead_id, created_at, deal_type, payment_schedule, base_percentage"),
         supabase.from("deal_stages").select("id, name, sort_order, is_won, is_lost").order("sort_order"),
         supabase.from("profiles").select("id, full_name"),
-        supabase.from("deal_installments" as any).select("deal_id, amount, gross_premium, paid_amount, payment_status"),
+        supabase.from("deal_installments" as any).select("deal_id, amount, gross_premium, net_premium, commission_percentage, marketing_budget, loading, b2b_commission, paid_amount, paid_date, payment_receive_date, due_date, payment_status"),
+        supabase.from("clients").select("id, company_name, full_name"),
+        supabase.from("insurance_companies").select("id, name"),
+        supabase.from("insurance_types").select("id, name"),
       ]);
       return {
         deals: deals.data ?? [],
         stages: stages.data ?? [],
         profiles: profiles.data ?? [],
         installments: (inst.data ?? []) as any[],
+        clients: clients.data ?? [],
+        companies: companies.data ?? [],
+        types: types.data ?? [],
       };
     },
 
   });
+
+  const nameOf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of (data?.profiles ?? []) as any[]) m.set(p.id, p.full_name);
+    return m;
+  }, [data?.profiles]);
+
+  const clientOf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of (data?.clients ?? []) as any[]) m.set(c.id, c.company_name || c.full_name || "—");
+    return m;
+  }, [data?.clients]);
+
+  const companyOf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of (data?.companies ?? []) as any[]) m.set(c.id, c.name);
+    return m;
+  }, [data?.companies]);
+
+  const typeOf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const t of (data?.types ?? []) as any[]) m.set(t.id, t.name);
+    return m;
+  }, [data?.types]);
+
+  const stageNameOf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const s of (data?.stages ?? []) as any[]) m.set(s.id, s.name);
+    return m;
+  }, [data?.stages]);
 
   const visibleProfiles = useMemo(
     () => (data?.profiles ?? []).filter((p: any) => scope.all || scope.ids.includes(p.id)),
     [data, scope.all, scope.ids],
   );
 
-  const filteredDeals = useMemo(() => {
-    const { start, end } = rangeFor(applied.mode, applied.year, applied.month, applied.quarter);
-    return (data?.deals ?? []).filter((d: any) => {
-      if (!isVisibleRow(d, scope)) return false;
-      const dt = new Date(d.created_at);
-      if (dt < start || dt > end) return false;
-      if (applied.userId !== "all") {
-        if (!scope.all && !scope.ids.includes(applied.userId)) return false;
-        if (d.assigned_do_id !== applied.userId && d.team_lead_id !== applied.userId) return false;
-      }
-      return true;
-    });
-  }, [data, applied, scope]);
+  const range = useMemo(
+    () => rangeFor(applied.mode, applied.year, applied.month, applied.quarter),
+    [applied],
+  );
 
-  const stages = data?.stages ?? [];
-  const wonIds = new Set(stages.filter((s: any) => s.is_won).map((s: any) => s.id));
-  const lostIds = new Set(stages.filter((s: any) => s.is_lost).map((s: any) => s.id));
+  /** Custom ("set your own plan") deals are reported per instalment. */
+  const customDealIds = useMemo(
+    () => new Set(
+      (data?.deals ?? [])
+        .filter((d: any) => String(d.payment_schedule ?? "").toLowerCase().startsWith("custom"))
+        .map((d: any) => d.id),
+    ),
+    [data?.deals],
+  );
+
+  const baseOf = useMemo(() => {
+    const m = new Map<string, number | undefined>();
+    for (const d of (data?.deals ?? []) as any[]) m.set(d.id, d.base_percentage ?? undefined);
+    return m;
+  }, [data?.deals]);
 
   // Instalment-based deals: only the instalments actually marked paid count as won
   // business; everything still due is reported as Outstanding Premium.
@@ -118,8 +161,79 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
     return m;
   }, [data?.installments]);
 
-  /** Won value of a deal — instalment deals count only their paid instalments. */
+  /** The date a paid instalment belongs to — its actual payment date. */
+  const paidDateOf = (r: any) => {
+    const raw = r.paid_date || r.payment_receive_date || r.due_date;
+    if (!raw) return null;
+    const s = String(raw);
+    const d = /^\d{4}-\d{2}-\d{2}/.test(s) ? new Date(`${s.slice(0, 10)}T00:00:00`) : new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  /**
+   * Custom plans: each paid instalment keeps its own commission and its own
+   * Tagged Premium, and is reported in the month of its own payment date.
+   */
+  const customPaidTagged = useMemo(() => {
+    const m = new Map<string, { tagged: number; date: Date | null }[]>();
+    for (const r of (data?.installments ?? [])) {
+      if (!customDealIds.has(r.deal_id)) continue;
+      const isPaid = r.payment_status === "paid" || Number(r.paid_amount || 0) > 0;
+      if (!isPaid) continue;
+      const gross = Number(r.gross_premium || 0);
+      const mktPct = gross > 0 ? (Number(r.marketing_budget || 0) / gross) * 100 : 0;
+      const f = calculateDealFinancials({
+        gross_premium: gross,
+        net_premium: Number(r.net_premium || 0),
+        commission_percentage: Number(r.commission_percentage || 0),
+        marketing_budget_percentage: mktPct,
+        loading: Number(r.loading || 0),
+        b2b_commission: Number(r.b2b_commission || 0),
+        base_percentage: baseOf.get(r.deal_id),
+      });
+      const list = m.get(r.deal_id) ?? [];
+      list.push({ tagged: f.tagged_premium, date: paidDateOf(r) });
+      m.set(r.deal_id, list);
+    }
+    return m;
+  }, [data?.installments, customDealIds, baseOf]);
+
+  /** Tagged Premium of the custom instalments paid inside the selected period. */
+  const customWonInRange = (dealId: string) =>
+    (customPaidTagged.get(dealId) ?? []).reduce(
+      (a, x) => a + (x.date && x.date >= range.start && x.date <= range.end ? x.tagged : 0),
+      0,
+    );
+
+  const filteredDeals = useMemo(() => {
+    return (data?.deals ?? []).filter((d: any) => {
+      if (!isVisibleRow(d, scope)) return false;
+      const dt = new Date(d.created_at);
+      const inPeriod = dt >= range.start && dt <= range.end;
+      // Custom plans are also included when one of their instalments was paid
+      // inside the selected period, whatever the date the deal was created.
+      const paidInPeriod = customDealIds.has(d.id) && customWonInRange(d.id) > 0;
+      if (!inPeriod && !paidInPeriod) return false;
+      if (applied.userId !== "all") {
+        if (!scope.all && !scope.ids.includes(applied.userId)) return false;
+        if (d.assigned_do_id !== applied.userId && d.team_lead_id !== applied.userId) return false;
+      }
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, applied, scope, range, customDealIds, customPaidTagged]);
+
+  const stages = data?.stages ?? [];
+  const wonIds = new Set(stages.filter((s: any) => s.is_won).map((s: any) => s.id));
+  const lostIds = new Set(stages.filter((s: any) => s.is_lost).map((s: any) => s.id));
+
+  /**
+   * Won value of a deal — custom plans report the Tagged Premium of the
+   * instalments paid inside the selected period; other instalment deals keep
+   * counting their paid amounts, and plain deals their gross premium.
+   */
   const wonValue = (d: any) => {
+    if (customDealIds.has(d.id)) return customWonInRange(d.id);
     const e = insByDeal.get(d.id);
     return e ? e.paid : Number(d.gross_premium || 0);
   };
@@ -254,25 +368,31 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
                   const list = sec.deals.filter((d: any) => d.stage_id === s.id);
                   const total = list.reduce((a: number, d: any) => a + (s.is_won ? wonValue(d) : Number(d.gross_premium || 0)), 0);
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={s.id}
-                      className={`min-w-[130px] flex-1 border-r px-3 py-2 last:border-r-0 ${s.is_won ? "bg-success/10" : s.is_lost ? "bg-destructive/5" : ""}`}
+                      onClick={() => setDrill({ title: `${sec.label} · ${s.name}`, subtitle: `${periodLabel} · ${fmtPKR(total)}`, deals: list })}
+                      className={`min-w-[130px] flex-1 cursor-pointer border-r px-3 py-2 text-left transition-colors last:border-r-0 hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${s.is_won ? "bg-success/10" : s.is_lost ? "bg-destructive/5" : ""}`}
                     >
                       <div className="text-xs text-muted-foreground">{s.name}</div>
                       <div className={`mt-2 text-base font-semibold tabular-nums ${s.is_won ? "text-success" : s.is_lost ? "text-destructive" : ""}`}>{fmtPKR(total)}</div>
                       <div className="mt-0.5 text-xs text-muted-foreground">{list.length} deals</div>
-                    </div>
+                    </button>
                   );
                 })}
                 {(() => {
                   const list = sec.deals.filter((d: any) => dueValue(d) > 0);
                   const outstanding = list.reduce((a: number, d: any) => a + dueValue(d), 0);
                   return (
-                    <div className="min-w-[150px] flex-1 border-l px-3 py-2 bg-warning/5">
+                    <button
+                      type="button"
+                      onClick={() => setDrill({ title: `${sec.label} · Outstanding Premium`, subtitle: `${periodLabel} · ${fmtPKR(outstanding)}`, deals: list })}
+                      className="min-w-[150px] flex-1 cursor-pointer border-l bg-warning/5 px-3 py-2 text-left transition-colors hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
                       <div className="text-xs text-muted-foreground">Outstanding Premium</div>
                       <div className="mt-2 text-base font-semibold tabular-nums text-brand-orange">{fmtPKR(outstanding)}</div>
                       <div className="mt-0.5 text-xs text-muted-foreground">{list.length} {list.length === 1 ? "deal" : "deals"} with due instalments</div>
-                    </div>
+                    </button>
                   );
                 })()}
                 </div>
@@ -285,6 +405,54 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
           <div className="text-center text-sm text-muted-foreground py-8">No pipeline stages configured.</div>
         )}
       </div>
+
+      <Dialog open={!!drill} onOpenChange={(o) => !o && setDrill(null)}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[1200px]">
+          <DialogHeader>
+            <DialogTitle>{drill?.title}</DialogTitle>
+            <DialogDescription>{drill?.subtitle} · {drill?.deals.length ?? 0} deals</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[65vh] overflow-auto rounded-md border">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-muted/60">
+                <tr className="text-left">
+                  {["Deal", "Client", "Type", "Assigned", "Team Lead", "Insurer", "Product", "Stage", "Gross", "Net", "Tagged", "Paid", "Outstanding", "Deal Date", "Policy Date", "Payment Date"].map((h) => (
+                    <th key={h} className="whitespace-nowrap px-2 py-2 font-medium text-muted-foreground">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(drill?.deals ?? []).map((d: any) => (
+                  <tr key={d.id} className="border-t">
+                    <td className="whitespace-nowrap px-2 py-1.5"><Link to="/deals/$id" params={{ id: d.id }} className="font-medium text-primary hover:underline">{d.deal_number || "Open deal"}</Link></td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{clientOf.get(d.client_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 capitalize">{d.deal_type ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{nameOf.get(d.assigned_do_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{nameOf.get(d.team_lead_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{companyOf.get(d.insurance_company_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{typeOf.get(d.insurance_type_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{stageNameOf.get(d.stage_id) ?? "—"}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">{fmtPKR(d.gross_premium)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">{fmtPKR(d.net_premium)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">{fmtPKR(customDealIds.has(d.id) ? customWonInRange(d.id) : d.tagged_premium)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">{fmtPKR(wonValue(d))}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums text-brand-orange">{fmtPKR(dueValue(d))}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{fmtDate(d.created_at)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{fmtDate(d.policy_start_date)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5">{fmtDate(d.payment_receive_date)}</td>
+                  </tr>
+                ))}
+                {(drill?.deals.length ?? 0) === 0 && (
+                  <tr><td colSpan={16} className="px-2 py-6 text-center text-muted-foreground">No deals in this metric for the selected filters.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setDrill(null)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

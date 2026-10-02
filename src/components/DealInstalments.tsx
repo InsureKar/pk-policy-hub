@@ -44,6 +44,8 @@ interface Row {
   paid_date: string;
   paid_amount: number;
   b2b_taker_name?: string;
+  gross_premium: number;
+  commission_percentage: number;
 }
 
 /**
@@ -100,11 +102,13 @@ export function DealInstalments({
       return {
         installment_number: i + 1,
         label: labels[i],
-        due_date: s?.due_date ?? due.toISOString().slice(0, 10),
+        due_date: s?.due_date ?? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,"0")}-${String(due.getDate()).padStart(2,"0")}`,
         amount: showUnderwriting ? amounts[i] : s ? Number(s.amount) : amounts[i],
         paid_date: s?.paid_date ?? "",
         paid_amount: s ? Number(s.paid_amount) : 0,
         b2b_taker_name: s?.b2b_taker_name ?? "",
+        gross_premium: Number(s?.gross_premium ?? 0),
+        commission_percentage: Number(s?.commission_percentage ?? 0),
       };
     }));
   }, [count, startDate, netPremium, saved, uw, showUnderwriting]);
@@ -117,6 +121,10 @@ export function DealInstalments({
 
   // Once a paid amount is recorded the period is settled, so nothing remains due.
   const dueOf = (r: Row) => (showUnderwriting && r.paid_amount > 0 ? 0 : r.amount);
+
+  // Only the next unpaid period is editable; paid and later periods stay locked.
+  const firstUnpaid = rows.findIndex((r) => !(r.paid_amount > 0));
+  const rowEditable = (i: number) => canEdit && i === firstUnpaid;
 
   if (!count) return null;
 
@@ -136,6 +144,8 @@ export function DealInstalments({
         paid_date: r.paid_date || null,
         paid_amount: r.paid_amount,
         b2b_taker_name: r.b2b_taker_name?.trim() || null,
+        gross_premium: r.gross_premium,
+        commission_percentage: r.commission_percentage,
         underwritten_amount: showUnderwriting ? tagged[i] ?? 0 : 0,
         // A paid instalment is tagged to the month the payment was received.
         tagged_month: paid ? paid.getMonth() + 1 : null,
@@ -164,6 +174,8 @@ export function DealInstalments({
             <th className="text-left p-2">Due Date</th>
             <th className="text-right p-2">Amount Due</th>
             
+            <th className="text-right p-2">Premium Amount</th>
+            <th className="text-right p-2">Commission %</th>
             <th className="text-left p-2">Paid Date</th>
             <th className="text-right p-2">Paid Amount</th>
             <th className="text-left p-2">B2B Taker Name</th>
@@ -180,16 +192,25 @@ export function DealInstalments({
                 <td className="p-2 text-right tabular-nums">
                   {fmtPKR(dueOf(r))} <span className="text-xs text-muted-foreground">(auto)</span>
                 </td>
+                <td className="p-2 min-w-[150px]">
+                  <MoneyInput value={r.gross_premium} onChange={(v) => setRow(i, { gross_premium: v })}
+                    disabled={!rowEditable(i)} showWords={false} />
+                </td>
+                <td className="p-2 min-w-[100px]">
+                  <input type="number" step="0.001" className="w-full rounded-md border bg-background px-2 py-1 text-right disabled:opacity-50"
+                    value={r.commission_percentage || ""} disabled={!rowEditable(i)}
+                    onChange={(e) => setRow(i, { commission_percentage: Number(e.target.value) || 0 })} />
+                </td>
                 <td className="p-2 min-w-[170px]">
                   <DateField value={r.paid_date} onChange={(v) => setRow(i, { paid_date: v })}
-                    disabled={!canEdit} placeholder="Paid date" />
+                    disabled={!rowEditable(i)} placeholder="Paid date" />
                 </td>
                 <td className="p-2 min-w-[150px]">
                   <MoneyInput value={r.paid_amount} onChange={(v) => setRow(i, { paid_amount: v })}
-                    disabled={!canEdit} showWords={false} />
+                    disabled={!rowEditable(i)} showWords={false} />
                 </td>
                 <td className="p-2 min-w-[180px]">
-                  {canEdit ? (
+                  {rowEditable(i) ? (
                     <B2BTakerField
                       value={r.b2b_taker_name ?? ""}
                       onChange={(v) => setRow(i, { b2b_taker_name: v })}
@@ -210,6 +231,8 @@ export function DealInstalments({
             <td className="p-2" colSpan={2}>Total</td>
             <td className="p-2 text-right tabular-nums">{fmtPKR(totalDue)}</td>
             
+            <td className="p-2" />
+            <td className="p-2" />
             <td className="p-2" />
             <td className="p-2 text-right tabular-nums">{fmtPKR(totalPaid)}</td>
             <td className="p-2" />

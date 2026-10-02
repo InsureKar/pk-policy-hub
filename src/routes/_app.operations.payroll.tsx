@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/MoneyInput";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
@@ -164,10 +165,10 @@ function PayrollPage() {
             <div className="grid grid-cols-2 gap-3">
               <F label="Department"><Input value={empDialog.department ?? ""} onChange={e => setEmpDialog({ ...empDialog, department: e.target.value })}/></F>
               <F label="Designation"><Input value={empDialog.designation ?? ""} onChange={e => setEmpDialog({ ...empDialog, designation: e.target.value })}/></F>
-              <F label="Monthly Salary"><Input type="number" value={empDialog.monthly_salary ?? 0} onChange={e => setEmpDialog({ ...empDialog, monthly_salary: e.target.value })}/></F>
-              <F label="Salary Tax %"><Input type="number" step="0.01" value={empDialog.salary_tax_percentage ?? 0} onChange={e => setEmpDialog({ ...empDialog, salary_tax_percentage: e.target.value })}/></F>
-              <F label="Default Allowances"><Input type="number" value={empDialog.default_allowances ?? 0} onChange={e => setEmpDialog({ ...empDialog, default_allowances: e.target.value })}/></F>
-              <F label="Default Deductions"><Input type="number" value={empDialog.default_deductions ?? 0} onChange={e => setEmpDialog({ ...empDialog, default_deductions: e.target.value })}/></F>
+              <F label="Monthly Salary"><MoneyInput value={empDialog.monthly_salary} onChange={(_, raw) => setEmpDialog({ ...empDialog, monthly_salary: raw })}/></F>
+              <F label="Salary Tax %"><Input type="number" step="0.01" value={Number(empDialog.salary_tax_percentage) || ""} onChange={e => setEmpDialog({ ...empDialog, salary_tax_percentage: e.target.value })}/></F>
+              <F label="Default Allowances"><MoneyInput value={empDialog.default_allowances} onChange={(_, raw) => setEmpDialog({ ...empDialog, default_allowances: raw })}/></F>
+              <F label="Default Deductions"><MoneyInput value={empDialog.default_deductions} onChange={(_, raw) => setEmpDialog({ ...empDialog, default_deductions: raw })}/></F>
               <F label="Joining Date"><DateField value={empDialog.joining_date ?? ""} onChange={(v) => setEmpDialog({ ...empDialog, joining_date: v })}/></F>
               <F label="Employment Status">
                 <Select value={empDialog.employment_status ?? "active"} onValueChange={v => setEmpDialog({ ...empDialog, employment_status: v })}>
