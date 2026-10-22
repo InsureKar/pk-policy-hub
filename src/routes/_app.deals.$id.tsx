@@ -552,9 +552,12 @@ function DealInvoicesAndTravel({ dealId, stage, isTravel }: { dealId: string; st
     queryKey: ["travel-posting", dealId],
     queryFn: async () => {
       const p = await supabase.from("travel_postings").select("*").eq("deal_id", dealId).maybeSingle();
-      if (!p.data) return { header: null, rows: [] as any[] };
-      const rows = await supabase.from("travel_posting_rows").select("*").eq("posting_id", p.data.id).order("sr_no");
-      return { header: p.data, rows: rows.data ?? [] };
+      if (!p.data) return { header: null, rows: [] as any[], transfers: [] as any[] };
+      const [rows, trans] = await Promise.all([
+        supabase.from("travel_posting_rows").select("*").eq("posting_id", p.data.id).order("sr_no"),
+        supabase.from("travel_posting_transfers").select("*").eq("posting_id", p.data.id).order("sr_no"),
+      ]);
+      return { header: p.data, rows: rows.data ?? [], transfers: trans.data ?? [] };
     },
   });
 
@@ -601,10 +604,40 @@ function DealInvoicesAndTravel({ dealId, stage, isTravel }: { dealId: string; st
   );
 }
 
-function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { header: any; rows: any[] } | null }) {
+function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { header: any; rows: any[]; transfers?: any[] } | null }) {
   const qc = useQueryClient();
   const header = posting?.header;
   const rows = posting?.rows ?? [];
+  const transfers = posting?.transfers ?? [];
+  const ownPayable = (r: any) => Number(r.premium || 0) - Number(r.premium || 0) * Number(r.commission_percentage || 0) / 100;
+  const totalOwnPayable = rows.reduce((a, r) => a + ownPayable(r), 0);
+  const totalTransferred = transfers.reduce((a, t) => a + Number(t.amount || 0), 0);
+  const tDiff = Math.round(totalTransferred - totalOwnPayable);
+  const tStatus = transfers.length === 0 ? "pending" : tDiff === 0 ? "matched" : tDiff > 0 ? "excess" : "deficit";
+  const destLabel = (t: any) => !t.agent_payment_destination ? "—" : t.payment_destination === "insurance_company" ? "Paid directly to Insurance Company" : t.payment_destination === "company" ? "Paid to Company (receivable)" : "—";
+
+  const exportExcel = async () => {
+    const XLSX = await import("xlsx");
+    const policySheet = [
+      ["Sr. No", "Travel Agent", "Date of Issued", "Policy No.", "Premium", "Commission %", "Commission Amount", "Payable to own company", "Payable to Insurance Co.", "Loading", "Agent Name", "Remarks"],
+      ...rows.map((r) => {
+        const prem = Number(r.premium || 0);
+        const ins = prem - prem * 0.45;
+        return [r.sr_no, r.travel_agent ?? "", r.date_issued ?? "", r.policy_number ?? "", prem, Number(r.commission_percentage || 0),
+          prem * Number(r.commission_percentage || 0) / 100, ownPayable(r), ins, ownPayable(r) - ins, r.agent_name ?? "", r.remarks ?? ""];
+      }),
+      ["Totals", "", "", "", totalPremium, "", rows.reduce((a, r) => a + Number(r.premium || 0) * Number(r.commission_percentage || 0) / 100, 0), totalOwnPayable],
+    ];
+    const transferSheet = [
+      ["Sr. No", "Date", "Bank Name", "Amount", "TID", "Agent", "Agent Payment Destination"],
+      ...transfers.map((t, i) => [t.sr_no ?? i + 1, t.transfer_date ?? "", t.bank_name ?? "", Number(t.amount || 0), t.tid ?? "", t.agent ?? "", destLabel(t)]),
+      ["Total Transferred", "", "", totalTransferred],
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(policySheet), "Policies");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(transferSheet), "Amount Transfers");
+    XLSX.writeFile(wb, `travel-posting-${dealId.slice(0, 8)}.xlsx`);
+  };
   const [totalPolicy, setTotalPolicy] = useState(header?.total_policy_amount ?? 0);
   const [totalPost, setTotalPost] = useState(header?.total_posting_amount ?? 0);
   const [from, setFrom] = useState(header?.posting_from ?? "");
