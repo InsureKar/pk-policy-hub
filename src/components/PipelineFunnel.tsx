@@ -198,6 +198,31 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
     return m;
   }, [data?.installments, customDealIds, baseOf]);
 
+  /**
+   * Quarterly / Bi-Annual / other instalment deals: each paid instalment's
+   * paid amount (unchanged calculation) reported under its own paid date.
+   */
+  const planPaidDated = useMemo(() => {
+    const m = new Map<string, { value: number; date: Date | null }[]>();
+    for (const r of (data?.installments ?? [])) {
+      if (customDealIds.has(r.deal_id)) continue;
+      const isPaid = r.payment_status === "paid" || Number(r.paid_amount || 0) > 0;
+      if (!isPaid) continue;
+      const value = Number(r.paid_amount || 0) || Number(r.gross_premium || 0) || Number(r.amount || 0);
+      const list = m.get(r.deal_id) ?? [];
+      list.push({ value, date: paidDateOf(r) });
+      m.set(r.deal_id, list);
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.installments, customDealIds]);
+
+  const planPaidInRange = (dealId: string) =>
+    (planPaidDated.get(dealId) ?? []).reduce(
+      (a, x) => a + (x.date && x.date >= range.start && x.date <= range.end ? x.value : 0),
+      0,
+    );
+
   /** Tagged Premium of the custom instalments paid inside the selected period. */
   const customWonInRange = (dealId: string) =>
     (customPaidTagged.get(dealId) ?? []).reduce(
@@ -210,9 +235,11 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
       if (!isVisibleRow(d, scope)) return false;
       const dt = new Date(d.created_at);
       const inPeriod = dt >= range.start && dt <= range.end;
-      // Custom plans are also included when one of their instalments was paid
-      // inside the selected period, whatever the date the deal was created.
-      const paidInPeriod = customDealIds.has(d.id) && customWonInRange(d.id) > 0;
+      // Instalment deals are also included when one of their instalments was
+      // paid inside the selected period, whatever the date the deal was created.
+      const paidInPeriod = customDealIds.has(d.id)
+        ? customWonInRange(d.id) > 0
+        : planPaidInRange(d.id) > 0;
       if (!inPeriod && !paidInPeriod) return false;
       if (applied.userId !== "all") {
         if (!scope.all && !scope.ids.includes(applied.userId)) return false;
