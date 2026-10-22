@@ -552,9 +552,12 @@ function DealInvoicesAndTravel({ dealId, stage, isTravel }: { dealId: string; st
     queryKey: ["travel-posting", dealId],
     queryFn: async () => {
       const p = await supabase.from("travel_postings").select("*").eq("deal_id", dealId).maybeSingle();
-      if (!p.data) return { header: null, rows: [] as any[] };
-      const rows = await supabase.from("travel_posting_rows").select("*").eq("posting_id", p.data.id).order("sr_no");
-      return { header: p.data, rows: rows.data ?? [] };
+      if (!p.data) return { header: null, rows: [] as any[], transfers: [] as any[] };
+      const [rows, trans] = await Promise.all([
+        supabase.from("travel_posting_rows").select("*").eq("posting_id", p.data.id).order("sr_no"),
+        supabase.from("travel_posting_transfers").select("*").eq("posting_id", p.data.id).order("sr_no"),
+      ]);
+      return { header: p.data, rows: rows.data ?? [], transfers: trans.data ?? [] };
     },
   });
 
@@ -601,10 +604,40 @@ function DealInvoicesAndTravel({ dealId, stage, isTravel }: { dealId: string; st
   );
 }
 
-function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { header: any; rows: any[] } | null }) {
+function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { header: any; rows: any[]; transfers?: any[] } | null }) {
   const qc = useQueryClient();
   const header = posting?.header;
   const rows = posting?.rows ?? [];
+  const transfers = posting?.transfers ?? [];
+  const ownPayable = (r: any) => Number(r.premium || 0) - Number(r.premium || 0) * Number(r.commission_percentage || 0) / 100;
+  const totalOwnPayable = rows.reduce((a, r) => a + ownPayable(r), 0);
+  const totalTransferred = transfers.reduce((a, t) => a + Number(t.amount || 0), 0);
+  const tDiff = Math.round(totalTransferred - totalOwnPayable);
+  const tStatus = transfers.length === 0 ? "pending" : tDiff === 0 ? "matched" : tDiff > 0 ? "excess" : "deficit";
+  const destLabel = (t: any) => !t.agent_payment_destination ? "—" : t.payment_destination === "insurance_company" ? "Paid directly to Insurance Company" : t.payment_destination === "company" ? "Paid to Company (receivable)" : "—";
+
+  const exportExcel = async () => {
+    const XLSX = await import("xlsx");
+    const policySheet = [
+      ["Sr. No", "Travel Agent", "Date of Issued", "Policy No.", "Premium", "Commission %", "Commission Amount", "Payable to own company", "Payable to Insurance Co.", "Loading", "Agent Name", "Remarks"],
+      ...rows.map((r) => {
+        const prem = Number(r.premium || 0);
+        const ins = prem - prem * 0.45;
+        return [r.sr_no, r.travel_agent ?? "", r.date_issued ?? "", r.policy_number ?? "", prem, Number(r.commission_percentage || 0),
+          prem * Number(r.commission_percentage || 0) / 100, ownPayable(r), ins, ownPayable(r) - ins, r.agent_name ?? "", r.remarks ?? ""];
+      }),
+      ["Totals", "", "", "", totalPremium, "", rows.reduce((a, r) => a + Number(r.premium || 0) * Number(r.commission_percentage || 0) / 100, 0), totalOwnPayable],
+    ];
+    const transferSheet = [
+      ["Sr. No", "Date", "Bank Name", "Amount", "TID", "Agent", "Agent Payment Destination"],
+      ...transfers.map((t, i) => [t.sr_no ?? i + 1, t.transfer_date ?? "", t.bank_name ?? "", Number(t.amount || 0), t.tid ?? "", t.agent ?? "", destLabel(t)]),
+      ["Total Transferred", "", "", totalTransferred],
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(policySheet), "Policies");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(transferSheet), "Amount Transfers");
+    XLSX.writeFile(wb, `travel-posting-${dealId.slice(0, 8)}.xlsx`);
+  };
   const [totalPolicy, setTotalPolicy] = useState(header?.total_policy_amount ?? 0);
   const [totalPost, setTotalPost] = useState(header?.total_posting_amount ?? 0);
   const [from, setFrom] = useState(header?.posting_from ?? "");
@@ -745,6 +778,54 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">Deal cannot progress to Won until posting is Balanced.</p>
+
+            <div className="space-y-3 pt-4 mt-4 border-t">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium">Amount Transfer Details</h4>
+                <Badge variant="outline" className={badgeCls[tStatus === "matched" ? "balanced" : tStatus]}>{tStatus.toUpperCase()}</Badge>
+              </div>
+              <table className="w-full text-xs">
+                <thead className="text-muted-foreground">
+                  <tr>
+                    <th className="text-left p-2">Sr. No</th>
+                    <th className="text-left p-2">Date</th>
+                    <th className="text-left p-2">Bank Name</th>
+                    <th className="text-right p-2">Amount</th>
+                    <th className="text-left p-2">TID</th>
+                    <th className="text-left p-2">Agent</th>
+                    <th className="text-left p-2">Agent Payment Destination</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transfers.length === 0 && (
+                    <tr className="border-t"><td colSpan={7} className="p-2 text-muted-foreground">No transfers saved.</td></tr>
+                  )}
+                  {transfers.map((t, i) => (
+                    <tr key={t.id} className="border-t">
+                      <td className="p-2">{t.sr_no ?? i + 1}</td>
+                      <td className="p-2">{t.transfer_date ? fmtDate(t.transfer_date) : "—"}</td>
+                      <td className="p-2">{t.bank_name || "—"}</td>
+                      <td className="p-2 text-right tabular-nums">{fmtPKR(Number(t.amount || 0))}</td>
+                      <td className="p-2">{t.tid || "—"}</td>
+                      <td className="p-2">{t.agent || "—"}</td>
+                      <td className="p-2">{destLabel(t)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="border-t font-medium">
+                  <tr>
+                    <td className="p-2" colSpan={3}>Total Transferred</td>
+                    <td className="p-2 text-right tabular-nums">{fmtPKR(totalTransferred)}</td>
+                    <td colSpan={3}></td>
+                  </tr>
+                </tfoot>
+              </table>
+              <p className="text-xs">
+                {tStatus === "matched" && <span className="text-emerald-600">Transfers match Payable to own company ✓</span>}
+                {tStatus === "excess" && <span className="text-red-600">Excess by {fmtPKR(tDiff)}</span>}
+                {tStatus === "deficit" && <span className="text-amber-600">Deficit by {fmtPKR(-tDiff)}</span>}
+              </p>
+            </div>
           </div>
         )}
     </div>
@@ -757,7 +838,10 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
           Travel Posting
           <Badge variant="outline" className={badgeCls[status]}>{status === "balanced" ? "MATCHED" : status.toUpperCase()}</Badge>
         </CardTitle>
-        <Button size="sm" variant="outline" onClick={() => setFull(true)}><Maximize2 className="w-4 h-4 mr-1"/>Full Screen</Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" disabled={!header} onClick={exportExcel}>Export to Excel</Button>
+          <Button size="sm" variant="outline" onClick={() => setFull(true)}><Maximize2 className="w-4 h-4 mr-1"/>Full Screen</Button>
+        </div>
       </CardHeader>
       <CardContent>{content}</CardContent>
       <Dialog open={full} onOpenChange={setFull}>
