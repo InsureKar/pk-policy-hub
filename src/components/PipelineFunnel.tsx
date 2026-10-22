@@ -233,7 +233,11 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
   const filteredDeals = useMemo(() => {
     return (data?.deals ?? []).filter((d: any) => {
       if (!isVisibleRow(d, scope)) return false;
-      const dt = new Date(d.created_at);
+      // Single-payment deals (Annually / no schedule) are placed in the month
+      // their payment was received; until then, by their creation date.
+      const single = !customDealIds.has(d.id) && !planPaidDated.has(d.id) && !insByDeal.has(d.id);
+      const recv = single && d.payment_receive_date ? new Date(`${String(d.payment_receive_date).slice(0, 10)}T00:00:00`) : null;
+      const dt = recv && !isNaN(recv.getTime()) ? recv : new Date(d.created_at);
       const inPeriod = dt >= range.start && dt <= range.end;
       // Instalment deals are also included when one of their instalments was
       // paid inside the selected period, whatever the date the deal was created.
@@ -248,7 +252,7 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, applied, scope, range, customDealIds, customPaidTagged, planPaidDated]);
+  }, [data, applied, scope, range, customDealIds, customPaidTagged, planPaidDated, insByDeal]);
 
   const stages = data?.stages ?? [];
   const wonIds = new Set(stages.filter((s: any) => s.is_won).map((s: any) => s.id));
