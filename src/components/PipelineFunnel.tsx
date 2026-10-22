@@ -248,7 +248,7 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, applied, scope, range, customDealIds, customPaidTagged]);
+  }, [data, applied, scope, range, customDealIds, customPaidTagged, planPaidDated]);
 
   const stages = data?.stages ?? [];
   const wonIds = new Set(stages.filter((s: any) => s.is_won).map((s: any) => s.id));
@@ -261,8 +261,8 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
    */
   const wonValue = (d: any) => {
     if (customDealIds.has(d.id)) return customWonInRange(d.id);
-    const e = insByDeal.get(d.id);
-    return e ? e.paid : Number(d.gross_premium || 0);
+    if (planPaidDated.has(d.id) || insByDeal.has(d.id)) return planPaidInRange(d.id);
+    return Number(d.gross_premium || 0);
   };
   const dueValue = (d: any) => insByDeal.get(d.id)?.due ?? 0;
 
