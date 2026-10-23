@@ -41,6 +41,7 @@ function RefundsPage() {
     export: allow("refunds.export", "add") || allow("refunds.export", "edit"),
   };
   const [q, setQ] = useState("");
+  const [userFilter, setUserFilter] = useState("all");
   const [status, setStatus] = useState("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -66,10 +67,17 @@ function RefundsPage() {
     },
   });
 
+  const userNames = useMemo(() => {
+    const names = new Set<string>();
+    (data?.rows ?? []).forEach((r) => { if (r.agent_name) names.add(r.agent_name); if (r.do_name) names.add(r.do_name); });
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [data]);
+
   const rows = useMemo(() => {
     const s = q.trim().toLowerCase();
     return (data?.rows ?? []).filter((r) => {
       if (status !== "all" && r.status !== status) return false;
+      if (userFilter !== "all" && r.agent_name !== userFilter && r.do_name !== userFilter) return false;
       if (from && (!r.refund_process_date || r.refund_process_date < from)) return false;
       if (to && (!r.refund_process_date || r.refund_process_date > to)) return false;
       if (!s) return true;
