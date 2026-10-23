@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { refreshCorrectedInstalmentTotals } from "@/lib/deal-instalment-rollup";
+import { calculateDealFinancials } from "@/lib/calc";
 
 const enums: Record<string, string[]> = {
   deal_type: ["fresh", "renewal"], policy_type_kind: ["single", "bulk"],
@@ -36,10 +39,29 @@ export function DealRecordEditor({ table, title, record, defaults = {}, fields, 
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
   const [file, setFile] = useState<File | null>(null);
+  const { data: choices } = useQuery({
+    queryKey: ["deal-correction-choices"], enabled: open && canCorrectDealRecords(roles),
+    queryFn: async () => {
+      const tables = ["profiles", "teams", "clients", "insurance_companies", "insurance_types", "lead_sources", "deal_stages", "receivables", "installments", "invoices", "policies", "commission_payables", "tax_records", "expenses"];
+      const pairs = await Promise.all(tables.map(async (t) => {
+        const { data, error } = await (supabase as any).from(t).select("*");
+        if (error) throw error;
+        return [t, (data ?? []).map((r: any) => ({ id: r.id, label: r.full_name || r.company_name || r.name || r.receivable_number || r.invoice_number || r.policy_number || r.payable_number || r.label || r.expense_code || `${r.tax_type ?? t} ${r.period_date ?? ""}` }))] as const;
+      }));
+      return Object.fromEntries(pairs) as Record<string, { id: string; label: string }[]>;
+    },
+  });
   useEffect(() => { if (open) { setForm({ ...defaults, ...record }); setFile(null); } }, [open]);
   if (!canCorrectDealRecords(roles)) return null;
   const columns = (dealRecordFields[table] ?? []).filter((f) =>
-    !(f.key in defaults) && (!fields || fields.includes(f.key)));
+    !(f.key in defaults) && (!fields || fields.includes(f.key)) &&
+    !(table === "deal_installments" && ["commission", "tagged_month", "tagged_year"].includes(f.key)));
+  const relation: Record<string, string> = {
+    client_id: "clients", company_id: "insurance_companies", insurance_company_id: "insurance_companies", insurance_company_id_payment: "insurance_companies",
+    insurance_type_id: "insurance_types", source_id: "lead_sources", stage_id: "deal_stages", team_id: "teams",
+    assigned_do_id: "profiles", team_lead_id: "profiles", received_by: "profiles", owner_id: "profiles", b2b_taker_id: "profiles", beneficiary_id: "profiles", deducted_from: "profiles", payee_profile_id: "profiles",
+    receivable_id: "receivables", installment_id: "installments", parent_invoice_id: "invoices", policy_id: "policies", commission_payable_id: "commission_payables", tax_record_id: "tax_records", expense_id: "expenses",
+  };
 
   const save = async () => {
     if (!user) return;
@@ -69,6 +91,8 @@ export function DealRecordEditor({ table, title, record, defaults = {}, fields, 
       if (!record && table === "deal_installments") payload.created_by = user.id;
       if (table === "deal_installments") {
         const row = { ...record, ...defaults, ...payload };
+        const gross = Number(row.gross_premium ?? 0);
+        payload.commission = calculateDealFinancials({ gross_premium: gross, commission_percentage: row.commission_percentage }).commission_before_tax;
         if (row.payment_status === "paid") {
           if (!row.paid_date) throw new Error("Enter the paid date before saving a paid instalment.");
           const receipts = await supabase.from("deal_documents").select("file_name").eq("deal_id", row.deal_id).eq("doc_type", "b2b_commission_receipt");
@@ -86,6 +110,7 @@ export function DealRecordEditor({ table, title, record, defaults = {}, fields, 
         : await (supabase as any).from(table).insert(payload).select("id").single();
       if (result.error) throw result.error;
       if (!result.data) throw new Error("This record could not be saved with your current access.");
+      if (table === "deal_installments") await refreshCorrectedInstalmentTotals(String(defaults.deal_id ?? record?.deal_id));
       toast.success(`${title} saved`); setOpen(false); onSaved();
     } catch (e: any) { toast.error(e.message ?? "Could not save record"); }
     finally { setBusy(false); }
@@ -102,6 +127,9 @@ export function DealRecordEditor({ table, title, record, defaults = {}, fields, 
             const id = `${table}-${f.key}`;
             return <div key={f.key} className="space-y-1.5"><Label htmlFor={id}>{label(f.key)}</Label>
               {f.type === "bool" ? <Checkbox id={id} checked={!!form[f.key]} onCheckedChange={(v) => setForm((s) => ({ ...s, [f.key]: v === true }))} />
+                : relation[f.key] ? <Select value={form[f.key] || "__empty"} onValueChange={(v) => setForm((s) => ({ ...s, [f.key]: v === "__empty" ? null : v }))}>
+                  <SelectTrigger id={id}><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="__empty">—</SelectItem>{(choices?.[relation[f.key]] ?? []).map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
+                </Select>
                 : enums[f.type] ? <Select value={form[f.key] || "__empty"} onValueChange={(v) => setForm((s) => ({ ...s, [f.key]: v === "__empty" ? null : v }))}>
                   <SelectTrigger id={id}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="__empty">—</SelectItem>{enums[f.type].map((v) => <SelectItem key={v} value={v}>{label(v)}</SelectItem>)}</SelectContent>
                 </Select>
@@ -129,6 +157,7 @@ export function DealRecordDelete({ table, title, record, onSaved }: { table: str
       const { data, error } = await (supabase as any).from(table).delete().eq("id", record.id).select("id");
       if (error) throw error;
       if (!data?.length) throw new Error("This record could not be deleted with your current access.");
+      if (table === "deal_installments") await refreshCorrectedInstalmentTotals(record.deal_id);
       toast.success(`${title} deleted`); onSaved();
     } catch (e: any) { toast.error(e.message ?? "Could not delete record"); }
     finally { setBusy(false); }
