@@ -23,6 +23,7 @@ describe.skipIf(!process.env.POSTING_STATUS_TEST_DB_URL)("Travel Posting status 
       INSERT INTO public.travel_postings DEFAULT VALUES;
     `);
     await sql.unsafe(readFileSync("drizzle/migrations/0005_private_travel_posting_sent_status.sql", "utf8"));
+    await sql`INSERT INTO public.travel_posting_delivery_status(posting_id,sent_status) SELECT id,'sent' FROM public.travel_postings`;
   });
   afterAll(async () => { await sql.end(); });
   const rolledBack = new Error("rollback test changes");
