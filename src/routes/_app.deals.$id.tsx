@@ -353,6 +353,7 @@ function DealDetail() {
       )}
 
       <DealInvoicesAndTravel dealId={id} stage={stage} isTravel={(type ?? "").toLowerCase() === "travel"} />
+      {(d as any).policy_type === "bulk" && (type ?? "").toLowerCase() !== "travel" && <BulkPoliciesSection dealId={id} />}
 
       <StageHistory dealId={id} stages={data.stages} profiles={data.profiles} />
 
@@ -605,6 +606,83 @@ function DealInvoicesAndTravel({ dealId, stage, isTravel }: { dealId: string; st
 
       {isTravel && <TravelPostingSection dealId={dealId} posting={posting ?? null}/>}
     </>
+  );
+}
+
+function BulkPoliciesSection({ dealId }: { dealId: string }) {
+  const qc = useQueryClient();
+  const key = ["deal-bulk-policies", dealId];
+  const { data: rows = [] } = useQuery({
+    queryKey: key,
+    queryFn: async () => (await supabase.from("deal_policies").select("*").eq("deal_id", dealId).order("row_number")).data ?? [],
+  });
+  const empty = { cover_note_number: "", policy_number: "", gross_premium: 0, net_premium: 0, remarks: "" };
+  const [draft, setDraft] = useState<typeof empty>(empty);
+  const refresh = () => qc.invalidateQueries({ queryKey: key });
+  const save = async (id: string, patch: Record<string, any>) => {
+    const { error } = await supabase.from("deal_policies").update(patch).eq("id", id);
+    if (error) toast.error(error.message); else refresh();
+  };
+  const add = async () => {
+    if (!draft.cover_note_number.trim() && !draft.policy_number.trim()) return toast.error("Enter a cover note or policy number");
+    const next = rows.reduce((m: number, r: any) => Math.max(m, r.row_number), 0) + 1;
+    const { error } = await supabase.from("deal_policies").insert({
+      ...draft, cover_note_number: draft.cover_note_number.trim() || null,
+      policy_number: draft.policy_number.trim() || null, deal_id: dealId, row_number: next,
+    });
+    if (error) toast.error(error.message); else { setDraft(empty); refresh(); toast.success("Row added"); }
+  };
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("deal_policies").delete().eq("id", id);
+    if (error) toast.error(error.message); else refresh();
+  };
+  const tg = rows.reduce((a: number, r: any) => a + Number(r.gross_premium || 0), 0);
+  const tn = rows.reduce((a: number, r: any) => a + Number(r.net_premium || 0), 0);
+  return (
+    <Card className="mt-4">
+      <CardHeader><CardTitle className="text-base">Bulk Cover Note Details</CardTitle></CardHeader>
+      <CardContent className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-xs text-muted-foreground">
+            <tr>
+              <th className="text-left p-2">#</th><th className="text-left p-2">Cover Note</th>
+              <th className="text-left p-2">Policy No.</th><th className="text-right p-2">Gross Premium</th>
+              <th className="text-right p-2">Net Premium</th><th className="text-left p-2">Remarks</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr><td colSpan={7} className="p-2 text-muted-foreground">No bulk cover notes saved for this deal yet. Add them below.</td></tr>
+            )}
+            {rows.map((r: any, i: number) => (
+              <tr key={r.id} className="border-t">
+                <td className="p-2">{i + 1}</td>
+                <td className="p-2"><Input defaultValue={r.cover_note_number ?? ""} onBlur={(e) => e.target.value !== (r.cover_note_number ?? "") && save(r.id, { cover_note_number: e.target.value || null })}/></td>
+                <td className="p-2"><Input defaultValue={r.policy_number ?? ""} onBlur={(e) => e.target.value !== (r.policy_number ?? "") && save(r.id, { policy_number: e.target.value || null })}/></td>
+                <td className="p-2 text-right tabular-nums">{fmtPKR(Number(r.gross_premium))}</td>
+                <td className="p-2 text-right tabular-nums">{fmtPKR(Number(r.net_premium))}</td>
+                <td className="p-2"><Input defaultValue={r.remarks ?? ""} onBlur={(e) => e.target.value !== (r.remarks ?? "") && save(r.id, { remarks: e.target.value || null })}/></td>
+                <td className="p-2"><Button size="sm" variant="ghost" onClick={() => remove(r.id)}>×</Button></td>
+              </tr>
+            ))}
+            <tr className="border-t">
+              <td className="p-2">+</td>
+              <td className="p-2"><Input value={draft.cover_note_number} onChange={(e) => setDraft({ ...draft, cover_note_number: e.target.value })}/></td>
+              <td className="p-2"><Input value={draft.policy_number} onChange={(e) => setDraft({ ...draft, policy_number: e.target.value })}/></td>
+              <td className="p-2"><MoneyInput value={draft.gross_premium} onChange={(v) => setDraft({ ...draft, gross_premium: v })}/></td>
+              <td className="p-2"><MoneyInput value={draft.net_premium} onChange={(v) => setDraft({ ...draft, net_premium: v })}/></td>
+              <td className="p-2"><Input value={draft.remarks} onChange={(e) => setDraft({ ...draft, remarks: e.target.value })}/></td>
+              <td className="p-2"><Button size="sm" variant="outline" onClick={add}>Add</Button></td>
+            </tr>
+          </tbody>
+          <tfoot className="border-t font-medium">
+            <tr><td className="p-2" colSpan={3}>Totals ({rows.length})</td>
+              <td className="p-2 text-right tabular-nums">{fmtPKR(tg)}</td>
+              <td className="p-2 text-right tabular-nums">{fmtPKR(tn)}</td><td colSpan={2}></td></tr>
+          </tfoot>
+        </table>
+      </CardContent>
+    </Card>
   );
 }
 
