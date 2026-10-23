@@ -14,6 +14,8 @@ import { instalmentCount, instalmentLabels } from "@/components/DealInstalments"
 import { toast } from "sonner";
 import B2BTakerField from "@/components/B2BTakerField";
 import { openStorageDoc } from "@/lib/openStorageDoc";
+import { canEditDealInstalment } from "@/lib/deal-correction-access";
+import { DealRecordEditor, DealRecordDelete } from "@/components/DealRecordEditor";
 
 const PAYMENT_MODES = ["IBFT", "Cheque", "Cash", "Pay Order", "Online Payment"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -182,7 +184,11 @@ export function DealCustomInstalments({
   const collected = rows.reduce((a, r) => a + (r.status === "paid" ? r.amount : 0), 0);
 
   const addRow = () =>
-    setRows((rs) => rs.length >= 4 ? rs : [...rs, blank(rs.length ? rs[rs.length - 1].installment_number + 1 : 1, rs[rs.length - 1])]);
+    setRows((rs) => {
+      if (rs.length >= 4) return rs;
+      const n = [1, 2, 3, 4].find((n) => !rs.some((r) => r.installment_number === n));
+      return n ? [...rs, blank(n, rs[rs.length - 1])].sort((a, b) => a.installment_number - b.installment_number) : rs;
+    });
 
   const removeRow = async (i: number) => {
     const r = rows[i];
@@ -190,6 +196,16 @@ export function DealCustomInstalments({
       if (!window.confirm("Remove this instalment permanently?")) return;
       const { error } = await supabase.from("deal_installments" as any).delete().eq("id", r.id);
       if (error) return toast.error(error.message);
+    }
+    const remaining = rows.filter((_, idx) => idx !== i);
+    if (canSeeSensitive) {
+      const agg = remaining.reduce((a, row) => {
+        const c = calculateDealFinancials({ gross_premium: row.gross, net_premium: row.net, commission_percentage: row.commission, marketing_budget_percentage: row.marketing, loading: row.loading, b2b_commission: b2bOf(row), base_percentage: basePercentage ?? undefined });
+        return { gross: a.gross + c.gross_premium, net: a.net + c.net_premium, comm: a.comm + c.commission_before_tax, mkt: a.mkt + c.marketing_before_tax, loading: a.loading + c.loading, b2b: a.b2b + c.b2b_commission };
+      }, { gross: 0, net: 0, comm: 0, mkt: 0, loading: 0, b2b: 0 });
+      const result = await supabase.from("deals").update({ gross_premium: agg.gross, net_premium: agg.net, commission_percentage: agg.gross > 0 ? agg.comm / agg.gross * 100 : 0, marketing_budget_percentage: agg.gross > 0 ? agg.mkt / agg.gross * 100 : 0, loading: agg.loading, b2b_commission: agg.b2b }).eq("id", dealId);
+      if (result.error) toast.error("Instalment removed, but totals could not refresh: " + result.error.message);
+      qc.invalidateQueries({ queryKey: ["deal", dealId] });
     }
     setRows((rs) => rs.filter((_, idx) => idx !== i));
     qc.invalidateQueries({ queryKey: ["deal-installments", dealId] });
@@ -231,7 +247,7 @@ export function DealCustomInstalments({
       payment_remarks: r.remarks.trim() || null,
       tagged_month: tagged.m,
       tagged_year: tagged.y,
-      created_by: auth.user?.id ?? null,
+      ...(r.id ? {} : { created_by: auth.user?.id ?? null }),
     };
   };
 
@@ -350,7 +366,7 @@ export function DealCustomInstalments({
   // be edited. Paid instalments and later unpaid ones stay locked. Newly added
   // (unsaved) rows remain editable so users can append instalments.
   const firstUnpaidSaved = rows.findIndex((r) => r.id && (r.saved_status ?? r.status) !== "paid");
-  const rowEditable = (i: number) => canEdit && (!rows[i]?.id || i === firstUnpaidSaved);
+  const rowEditable = (i: number) => canEditDealInstalment(canSeeSensitive, canEdit, !rows[i]?.id, i, firstUnpaidSaved);
 
   return (
     <Card className="mt-4">
@@ -384,12 +400,12 @@ export function DealCustomInstalments({
                       </button>
                     </td>
                     <td className="p-2 min-w-[170px]">
-                      {canEdit && !r.id
+                      {canSeeSensitive || (canEdit && !r.id)
                         ? <DateField value={r.due_date} onChange={(v) => setRow(i, { due_date: v })} placeholder="Due date" />
                         : (r.due_date || "—")}
                     </td>
                     <td className="p-2 text-right min-w-[150px]">
-                      {canEdit && !r.id
+                      {canSeeSensitive || (canEdit && !r.id)
                         ? <div className="max-w-[200px] ml-auto"><MoneyInput value={r.amount} onChange={(v) => setRow(i, { amount: v })} /></div>
                         : <span className="tabular-nums">{fmtPKR(r.amount)}</span>}
                     </td>
@@ -430,7 +446,7 @@ export function DealCustomInstalments({
                     </td>
                     {canEdit && (
                       <td className="p-2 text-right">
-                        {!r.id && !fixedCount && (
+                        {((!r.id && !fixedCount) || canSeeSensitive) && (
                           <Button type="button" variant="ghost" size="sm" onClick={() => removeRow(i)}>Remove</Button>
                         )}
                       </td>
@@ -525,6 +541,8 @@ export function DealCustomInstalments({
                                 <li key={d.id} className="rounded border px-2 py-1 text-xs truncate">
                                   <button type="button" className="text-primary hover:underline truncate" title="View receipt"
                                     onClick={() => openStorageDoc(d.storage_path)}>{d.file_name.replace(`${r.label} — `, "")}</button>
+                                  <DealRecordEditor table="deal_documents" title="Receipt" record={d} defaults={{ deal_id: dealId }} onSaved={() => qc.invalidateQueries()} />
+                                  <DealRecordDelete table="deal_documents" title="Receipt" record={d} onSaved={() => qc.invalidateQueries()} />
                                 </li>
                               ))}
                               {(pendingReceipts[i] ?? []).map((p) => (

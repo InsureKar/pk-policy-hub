@@ -15,6 +15,13 @@
       "when": 1792753461806,
       "tag": "0001_travel_row_payable_overrides",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792760391806,
+      "tag": "0002_admin_management_deal_record_corrections",
+      "breakpoints": true
     }
   ]
 }
