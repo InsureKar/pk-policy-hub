@@ -12,7 +12,7 @@ export function DealLinkedRecords({ dealId, clientId }: { dealId: string; client
   const { data, error } = useQuery({
     queryKey: ["deal-linked-records", dealId], enabled: allowed,
     queryFn: async () => {
-      const tables = ["receivables", "invoices", "payables", "commission_payables", "tax_records", "policies"];
+      const tables = ["deal_installments", "receivables", "invoices", "payables", "commission_payables", "tax_records", "policies"];
       const groups = await Promise.all(tables.map(async (table) => {
         const result = await (supabase as any).from(table).select("*").eq("deal_id", dealId);
         if (result.error) throw result.error;
@@ -31,7 +31,7 @@ export function DealLinkedRecords({ dealId, clientId }: { dealId: string; client
     },
   });
   if (!allowed) return null;
-  const names: Record<string, string> = { receivables: "Receivable", invoices: "Invoice", payables: "Payable", commission_payables: "Commission Payable", tax_records: "Tax Record", policies: "Policy", payments: "Accounting Payment", installments: "Accounting Instalment", documents: "Policy Document" };
+  const names: Record<string, string> = { deal_installments: "Deal Instalment", receivables: "Receivable", invoices: "Invoice", payables: "Payable", commission_payables: "Commission Payable", tax_records: "Tax Record", policies: "Policy", payments: "Accounting Payment", installments: "Accounting Instalment", documents: "Policy Document" };
   const refresh = () => { qc.invalidateQueries(); };
   return <section className="mt-6 space-y-4 border-t pt-4">
     <h2 className="text-base font-semibold">Linked Records — Admin &amp; Management</h2>

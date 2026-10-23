@@ -66,6 +66,21 @@ export function DealRecordEditor({ table, title, record, defaults = {}, fields, 
       if (!record && table === "documents") payload.uploaded_by = user.id;
       if (!record && table === "payments") payload.recorded_by = user.id;
       if (!record && table === "receivables") payload.created_by = user.id;
+      if (!record && table === "deal_installments") payload.created_by = user.id;
+      if (table === "deal_installments") {
+        const row = { ...record, ...defaults, ...payload };
+        if (row.payment_status === "paid") {
+          if (!row.paid_date) throw new Error("Enter the paid date before saving a paid instalment.");
+          const receipts = await supabase.from("deal_documents").select("file_name").eq("deal_id", row.deal_id).eq("doc_type", "b2b_commission_receipt");
+          if (receipts.error) throw receipts.error;
+          if (!receipts.data?.some((d) => d.file_name.startsWith(`${row.label} — `))) throw new Error("Upload the payment receipt before saving a paid instalment.");
+          const date = new Date(`${String(row.paid_date).slice(0, 10)}T00:00:00`);
+          payload.tagged_month = date.getMonth() + 1;
+          payload.tagged_year = date.getFullYear();
+        } else if (payload.payment_status === "due") {
+          payload.tagged_month = null; payload.tagged_year = null;
+        }
+      }
       const result = record
         ? await (supabase as any).from(table).update(payload).eq("id", record.id).select("id").maybeSingle()
         : await (supabase as any).from(table).insert(payload).select("id").single();
