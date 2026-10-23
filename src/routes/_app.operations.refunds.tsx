@@ -41,6 +41,7 @@ function RefundsPage() {
     export: allow("refunds.export", "add") || allow("refunds.export", "edit"),
   };
   const [q, setQ] = useState("");
+  const [userFilter, setUserFilter] = useState("all");
   const [status, setStatus] = useState("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -66,16 +67,23 @@ function RefundsPage() {
     },
   });
 
+  const userNames = useMemo(() => {
+    const names = new Set<string>(data?.profs ? [...data.profs.values()].filter(Boolean) : []);
+    (data?.rows ?? []).forEach((r) => { if (r.agent_name) names.add(r.agent_name); if (r.do_name) names.add(r.do_name); });
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [data]);
+
   const rows = useMemo(() => {
     const s = q.trim().toLowerCase();
     return (data?.rows ?? []).filter((r) => {
       if (status !== "all" && r.status !== status) return false;
+      if (userFilter !== "all" && r.agent_name !== userFilter && r.do_name !== userFilter) return false;
       if (from && (!r.refund_process_date || r.refund_process_date < from)) return false;
       if (to && (!r.refund_process_date || r.refund_process_date > to)) return false;
       if (!s) return true;
       return [r.name, r.policy_no, r.agent_name, r.do_name].some((v) => String(v ?? "").toLowerCase().includes(s));
     });
-  }, [data, q, status, from, to]);
+  }, [data, q, userFilter, status, from, to]);
 
   if (loading) return null;
   if (!can.view) return <Navigate to="/dashboard" replace />;
@@ -102,8 +110,14 @@ function RefundsPage() {
         {can.add && <Button size="sm" onClick={() => setAdding(true)}><Plus className="w-4 h-4 mr-1" />Add Refund</Button>}
         {can.export && <Button size="sm" variant="outline" onClick={exportXlsx}><Download className="w-4 h-4 mr-1" />Export</Button>}
       </div>
-      <Card><CardContent className="p-4 grid gap-3 md:grid-cols-4">
+      <Card><CardContent className="p-4 grid gap-3 md:grid-cols-5">
         <div><Label className="text-xs">Search</Label><Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, policy, agent, DO" /></div>
+        <div><Label className="text-xs">User</Label>
+          <Select value={userFilter} onValueChange={setUserFilter}><SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="all">All Users</SelectItem>
+              {userNames.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+            </SelectContent>
+          </Select></div>
         <div><Label className="text-xs">Status</Label>
           <Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="paid">Paid</SelectItem><SelectItem value="not_paid">Not Paid</SelectItem></SelectContent>
@@ -147,7 +161,7 @@ function RefundsPage() {
         </Table>
       </CardContent></Card>
       {editing && <UpdateDialog row={editing} remarks={data?.remarks.get(editing.id) ?? ""} can={can} onClose={() => setEditing(null)} onSaved={refresh} />}
-      {adding && <AddDialog onClose={() => setAdding(false)} onSaved={refresh} />}
+      {adding && <AddDialog userNames={Array.from(new Set((data?.profs ? [...data.profs.values()] : []).filter(Boolean))).sort((a, b) => a.localeCompare(b))} onClose={() => setAdding(false)} onSaved={refresh} />}
       {importOpen && <ImportDialog existing={(data?.rows ?? []).map((r) => normPolicy(r.policy_no))} onClose={() => setImportOpen(false)} onSaved={refresh} />}
     </div>
   );
@@ -206,7 +220,16 @@ function UpdateDialog({ row, remarks, can, onClose, onSaved }: any) {
   );
 }
 
-function AddDialog({ onClose, onSaved }: any) {
+function AddDialog({ userNames, onClose, onSaved }: any) {
+  const userSelect = (k: string, l: string) => (
+    <div><Label>{l}</Label>
+      <Select value={f[k] || "__none__"} onValueChange={(v) => setF({ ...f, [k]: v === "__none__" ? "" : v })}>
+        <SelectTrigger><SelectValue placeholder="Select user" /></SelectTrigger>
+        <SelectContent><SelectItem value="__none__">None</SelectItem>
+          {userNames.map((n: string) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+        </SelectContent>
+      </Select></div>
+  );
   const [f, setF] = useState<any>({ name: "", policy_no: "", agent_name: "", premium: 0, do_name: "", refunded: 0, refund_process_date: "" });
   const [saving, setSaving] = useState(false);
   const save = async () => {
@@ -224,7 +247,7 @@ function AddDialog({ onClose, onSaved }: any) {
       <DialogContent>
         <DialogHeader><DialogTitle>Add Refund</DialogTitle></DialogHeader>
         <div className="grid gap-3 md:grid-cols-2">
-          {t("name", "Name *")}{t("policy_no", "Policy No. *")}{t("agent_name", "Agent Name")}{t("do_name", "DO Name")}
+          {t("name", "Name *")}{t("policy_no", "Policy No. *")}{userSelect("agent_name", "Agent Name")}{userSelect("do_name", "DO Name")}
           <div><Label>Premium</Label><MoneyInput value={f.premium} onChange={(n) => setF({ ...f, premium: n })} /></div>
           <div><Label>Refunded</Label><MoneyInput value={f.refunded} onChange={(n) => setF({ ...f, refunded: n })} /></div>
           <div className="md:col-span-2"><Label>Refund Process Date</Label><DateField value={f.refund_process_date} onChange={(v) => setF({ ...f, refund_process_date: v })} /></div>
