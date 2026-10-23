@@ -220,7 +220,16 @@ function UpdateDialog({ row, remarks, can, onClose, onSaved }: any) {
   );
 }
 
-function AddDialog({ onClose, onSaved }: any) {
+function AddDialog({ userNames, onClose, onSaved }: any) {
+  const userSelect = (k: string, l: string) => (
+    <div><Label>{l}</Label>
+      <Select value={f[k] || "__none__"} onValueChange={(v) => setF({ ...f, [k]: v === "__none__" ? "" : v })}>
+        <SelectTrigger><SelectValue placeholder="Select user" /></SelectTrigger>
+        <SelectContent><SelectItem value="__none__">None</SelectItem>
+          {userNames.map((n: string) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+        </SelectContent>
+      </Select></div>
+  );
   const [f, setF] = useState<any>({ name: "", policy_no: "", agent_name: "", premium: 0, do_name: "", refunded: 0, refund_process_date: "" });
   const [saving, setSaving] = useState(false);
   const save = async () => {
@@ -238,7 +247,7 @@ function AddDialog({ onClose, onSaved }: any) {
       <DialogContent>
         <DialogHeader><DialogTitle>Add Refund</DialogTitle></DialogHeader>
         <div className="grid gap-3 md:grid-cols-2">
-          {t("name", "Name *")}{t("policy_no", "Policy No. *")}{t("agent_name", "Agent Name")}{t("do_name", "DO Name")}
+          {t("name", "Name *")}{t("policy_no", "Policy No. *")}{userSelect("agent_name", "Agent Name")}{userSelect("do_name", "DO Name")}
           <div><Label>Premium</Label><MoneyInput value={f.premium} onChange={(n) => setF({ ...f, premium: n })} /></div>
           <div><Label>Refunded</Label><MoneyInput value={f.refunded} onChange={(n) => setF({ ...f, refunded: n })} /></div>
           <div className="md:col-span-2"><Label>Refund Process Date</Label><DateField value={f.refund_process_date} onChange={(v) => setF({ ...f, refund_process_date: v })} /></div>
