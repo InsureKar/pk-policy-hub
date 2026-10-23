@@ -677,7 +677,7 @@ function NewDealPage() {
     } else if (form.policy_type === "bulk" && data) {
       const rows = bulkRows.map((r, idx) => ({ ...r, deal_id: data.id, row_number: idx + 1 }));
       const { error: bErr } = await supabase.from("deal_policies").insert(rows);
-      if (bErr) toast.error("Deal created, but bulk rows failed: " + bErr.message);
+      if (bErr) toast.error("Deal created, but bulk cover notes failed to save: " + bErr.message + " — add them on the deal page.", { duration: 15000 });
     }
     toast.success("Deal created");
     nav({ to: "/deals/$id", params: { id: data!.id } });
