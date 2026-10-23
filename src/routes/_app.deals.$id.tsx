@@ -28,7 +28,6 @@ import B2BTakerField from "@/components/B2BTakerField";
 import { openStorageDoc } from "@/lib/openStorageDoc";
 import { downloadAllDocs } from "@/lib/downloadAllDocs";
 import { DealRecordEditor, DealRecordDelete } from "@/components/DealRecordEditor";
-import { DealLinkedRecords } from "@/components/DealLinkedRecords";
 import { TravelPostingStatus } from "@/components/TravelPostingStatus";
 
 export const Route = createFileRoute("/_app/deals/$id")({
@@ -412,7 +411,6 @@ function DealDetail() {
           </CardContent>
         </Card>
       )}
-      <DealLinkedRecords dealId={id} clientId={d.client_id} />
     </div>
   );
 }

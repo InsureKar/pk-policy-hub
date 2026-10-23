@@ -19,6 +19,7 @@ import { DateField } from "@/components/DateField";
 import { SubHeadTabs } from "@/components/SubHeadTabs";
 import { DealAmountTable } from "@/components/DealAmountTable";
 import { DeleteButton } from "@/components/DeleteButton";
+import { InlineRecordEdit } from "@/components/DealRecordEditor";
 
 export const Route = createFileRoute("/_app/accounts/receivables")({
   component: ReceivablesPage,
@@ -219,7 +220,7 @@ function ReceivablesPage() {
                       {r.status !== "paid" && r.status !== "cancelled" && (
                         <RecordPaymentDialog receivable={r}/>
                       )}
-                      <DeleteButton table="receivables" id={r.id} label="receivable" invalidate={["accounts-receivables"]} />
+                      <InlineRecordEdit table="receivables" title="Receivable" record={r} /><DeleteButton table="receivables" id={r.id} label="receivable" invalidate={["accounts-receivables"]} />
                     </TableCell>
                   )}
                 </TableRow>

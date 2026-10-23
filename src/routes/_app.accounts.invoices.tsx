@@ -17,6 +17,7 @@ import { Printer, FileText, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { DateField } from "@/components/DateField";
 import { DeleteButton } from "@/components/DeleteButton";
+import { InlineRecordEdit } from "@/components/DealRecordEditor";
 
 export const Route = createFileRoute("/_app/accounts/invoices")({
   component: InvoicesPage,
@@ -116,7 +117,7 @@ function InvoicesPage() {
                   <TableCell className="text-right tabular-nums">{fmtPKR(r.total_amount)}</TableCell>
                   <TableCell className="text-right">
                     <Button size="sm" variant="ghost" onClick={() => setSelected(r)}><FileText className="w-4 h-4 mr-1"/>View</Button>
-                    <DeleteButton table="invoices" id={r.id} label="invoice" invalidate={["accounts-invoices"]} />
+                    <InlineRecordEdit table="invoices" title="Invoice" record={r} /><DeleteButton table="invoices" id={r.id} label="invoice" invalidate={["accounts-invoices"]} />
                   </TableCell>
                 </TableRow>
               );
