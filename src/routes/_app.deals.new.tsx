@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useSaveGuard } from "@/lib/use-save-guard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -24,11 +26,20 @@ import B2BTakerField from "@/components/B2BTakerField";
 
 export const Route = createFileRoute("/_app/deals/new")({
   component: NewDealPage,
+  head: () => ({ meta: [
+    { title: "New Deal | Insurekar CRM" },
+    { name: "description", content: "Create an insurance deal in Insurekar CRM." },
+    { property: "og:title", content: "New Deal | Insurekar CRM" },
+    { property: "og:description", content: "Create an insurance deal in Insurekar CRM." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 function NewDealPage() {
   const nav = useNavigate();
   const { user, hasRole } = useAuth();
+  const saveGuard = useSaveGuard();
+  const submissionKey = useRef<string | null>(null);
   // Premium & Commission inputs stay available to every user creating a deal.
   const canSeeFinancials = true;
   const canSeeMarketing = true;
@@ -456,7 +467,18 @@ function NewDealPage() {
 
 
   const submit = async () => {
-    if (!user) return;
+    if (!user || !saveGuard.begin()) return;
+    try {
+    // A lost response must never turn a retry into a second deal or linked insert.
+    if (submissionKey.current) {
+      const previous = await supabase.from("deals").select("id").eq("submission_key", submissionKey.current).maybeSingle();
+      if (previous.error) throw previous.error;
+      if (previous.data) {
+        toast.success("Deal already saved");
+        await nav({ to: "/deals/$id", params: { id: previous.data.id } });
+        return;
+      }
+    }
     if (!form.client_id) return toast.error("Please pick a client");
    const effectiveGross = effGross;
    const effectiveNet = effNet;
@@ -562,8 +584,17 @@ function NewDealPage() {
       payment_year: paymentYear,
       underwritten_premium: manualSchedule || isCustom ? underwritten : 0,
     };
-    const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
-    if (error) { toast.error(error.message); return; }
+    submissionKey.current ??= crypto.randomUUID();
+    const result = await supabase.rpc("create_deal_once", { _submission_key: submissionKey.current, _payload: payload });
+    if (result.error) throw result.error;
+    const response = result.data as { id?: string; replayed?: boolean } | null;
+    if (!response?.id) throw new Error("The deal save could not be confirmed. Please retry.");
+    const data = { id: response.id };
+    if (response.replayed) {
+      toast.success("Deal already saved");
+      await nav({ to: "/deals/$id", params: { id: data.id } });
+      return;
+    }
     if (data && proofs.length) {
       const { error: dErr } = await supabase.from("deal_documents").insert(
         proofs.map((p) => ({
@@ -680,7 +711,10 @@ function NewDealPage() {
       if (bErr) toast.error("Deal created, but bulk cover notes failed to save: " + bErr.message + " — add them on the deal page.", { duration: 15000 });
     }
     toast.success("Deal created");
-    nav({ to: "/deals/$id", params: { id: data!.id } });
+    await nav({ to: "/deals/$id", params: { id: data.id } });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : (error as { message?: string })?.message ?? "Could not confirm the deal save. Please retry.");
+    } finally { saveGuard.end(); }
   };
 
   const clientLabel = (c: { company_name: string; full_name: string | null; client_type: string | null }) =>
@@ -1317,8 +1351,8 @@ function NewDealPage() {
           </Card>
 
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={()=>nav({ to: "/deals" })}>Cancel</Button>
-            <Button onClick={submit}>Create Deal</Button>
+            <Button variant="ghost" disabled={saveGuard.saving} onClick={()=>nav({ to: "/deals" })}>Cancel</Button>
+            <Button disabled={saveGuard.saving} aria-busy={saveGuard.saving} onClick={submit}>{saveGuard.saving && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />}{saveGuard.saving ? "Saving Deal…" : "Create Deal"}</Button>
           </div>
         </div>
 

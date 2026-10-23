@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { refreshCorrectedInstalmentTotals } from "@/lib/deal-instalment-rollup";
 import { calculateDealFinancials } from "@/lib/calc";
+import { useSaveGuard } from "@/lib/use-save-guard";
+import { Loader2 } from "lucide-react";
 
 const enums: Record<string, string[]> = {
   deal_type: ["fresh", "renewal"], policy_type_kind: ["single", "bulk"],
@@ -36,7 +38,8 @@ export function DealRecordEditor({ table, title, record, defaults = {}, fields, 
 }) {
   const { roles, user } = useAuth();
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const saveGuard = useSaveGuard();
+  const busy = saveGuard.saving;
   const [form, setForm] = useState<Record<string, any>>({});
   const [file, setFile] = useState<File | null>(null);
   const { data: choices } = useQuery({
@@ -64,8 +67,7 @@ export function DealRecordEditor({ table, title, record, defaults = {}, fields, 
   };
 
   const save = async () => {
-    if (!user) return;
-    setBusy(true);
+    if (!user || !saveGuard.begin()) return;
     try {
       const payload: Record<string, any> = record ? {} : { ...defaults };
       for (const field of columns) {
@@ -117,7 +119,7 @@ export function DealRecordEditor({ table, title, record, defaults = {}, fields, 
       if (table === "deal_installments") await refreshCorrectedInstalmentTotals(String(defaults.deal_id ?? record?.deal_id));
       toast.success(`${title} saved`); setOpen(false); onSaved();
     } catch (e: any) { toast.error(e.message ?? "Could not save record"); }
-    finally { setBusy(false); }
+    finally { saveGuard.end(); }
   };
   return <>
     <Button variant="outline" size="sm" onClick={() => setOpen(true)} aria-label={`${record ? "Edit" : "Add"} ${title}`}>
@@ -144,7 +146,7 @@ export function DealRecordEditor({ table, title, record, defaults = {}, fields, 
           })}
           {["deal_documents", "documents"].includes(table) && <div className="space-y-1.5"><Label htmlFor={`${table}-file`}>Upload file</Label><Input id={`${table}-file`} type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>}
         </div>
-        <div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setOpen(false)}>Cancel</Button><Button disabled={busy} onClick={save}>{busy ? "Saving…" : "Save Changes"}</Button></div>
+        <div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setOpen(false)}>Cancel</Button><Button disabled={busy} aria-busy={busy} onClick={save}>{busy && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />}{busy ? (table === "deals" ? "Saving Deal…" : "Saving…") : "Save Changes"}</Button></div>
       </DialogContent>
     </Dialog>
   </>;

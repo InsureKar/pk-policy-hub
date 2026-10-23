@@ -768,6 +768,7 @@ export type Database = {
           received_by: string | null
           source_id: string | null
           stage_id: string | null
+          submission_key: string | null
           tagged_premium: number | null
           tagged_premium_percentage: number | null
           team_id: string | null
@@ -830,6 +831,7 @@ export type Database = {
           received_by?: string | null
           source_id?: string | null
           stage_id?: string | null
+          submission_key?: string | null
           tagged_premium?: number | null
           tagged_premium_percentage?: number | null
           team_id?: string | null
@@ -892,6 +894,7 @@ export type Database = {
           received_by?: string | null
           source_id?: string | null
           stage_id?: string | null
+          submission_key?: string | null
           tagged_premium?: number | null
           tagged_premium_percentage?: number | null
           team_id?: string | null
@@ -3616,6 +3619,10 @@ export type Database = {
         Returns: boolean
       }
       can_view_uw: { Args: { _req: string }; Returns: boolean }
+      create_deal_once: {
+        Args: { _payload: Json; _submission_key: string }
+        Returns: Json
+      }
       current_user_team: { Args: never; Returns: string }
       deal_policy_conflict: {
         Args: { _exclude_row?: string; _policy_number: string }

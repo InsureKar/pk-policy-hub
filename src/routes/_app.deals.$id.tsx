@@ -21,7 +21,8 @@ import { DealInstalments } from "@/components/DealInstalments";
 import { DealCustomInstalments } from "@/components/DealCustomInstalments";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { ArrowLeft, Maximize2, Pencil } from "lucide-react";
+import { ArrowLeft, Loader2, Maximize2, Pencil } from "lucide-react";
+import { useSaveGuard } from "@/lib/use-save-guard";
 import { cn } from "@/lib/utils";
 import B2BTakerField from "@/components/B2BTakerField";
 import { openStorageDoc } from "@/lib/openStorageDoc";
@@ -47,6 +48,7 @@ function DealDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const { hasRole, can } = useAuth();
+  const paymentGuard = useSaveGuard();
   // Premium & Income calculations are restricted to Admin and Management.
   const canSeeFinancials = hasRole(["admin", "management"]);
   const canManageDeal = canSeeFinancials;
@@ -174,7 +176,9 @@ function DealDetail() {
     if (error) toast.error(error.message); else { toast.success("Stage updated"); qc.invalidateQueries({ queryKey: ["deal", id] }); }
   };
 
-  const savePayment = async () => {
+  const savePayment = async (afterSave?: () => Promise<void>) => {
+    if (!paymentGuard.begin()) return;
+    try {
     // Mandatory validation
     if (!pay.insurance_company_id) return toast.error("Insurance company is required");
     if (!pay.payment_receive_date) return toast.error("Payment receive date is required");
@@ -195,6 +199,9 @@ function DealDetail() {
     if (error) return toast.error(error.message);
     toast.success("Payment information saved");
     qc.invalidateQueries({ queryKey: ["deal", id] });
+    await afterSave?.();
+    } catch (error) { toast.error((error as { message?: string })?.message ?? "Could not save payment information. Please retry."); }
+    finally { paymentGuard.end(); }
   };
 
   const isTravelDeal = (type ?? "").toLowerCase() === "travel";
@@ -323,9 +330,8 @@ function DealDetail() {
               </Field>
             </div>
             <div className="sm:col-span-2 lg:col-span-3 flex justify-end gap-2">
-              <Button onClick={savePayment}>Save Payment Info</Button>
-              <Button variant="secondary" onClick={async () => {
-                await savePayment();
+              <Button disabled={paymentGuard.saving} aria-busy={paymentGuard.saving} onClick={() => savePayment()}>{paymentGuard.saving && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />}{paymentGuard.saving ? "Saving Deal…" : "Save Payment Info"}</Button>
+              <Button variant="secondary" disabled={paymentGuard.saving} onClick={() => savePayment(async () => {
                 if (!c) return;
                 const recipient = (c as any).email || prompt("Recipient email:");
                 if (!recipient) return;
@@ -337,7 +343,7 @@ function DealDetail() {
                 });
                 if (error) toast.error("Email log failed: " + error.message);
                 else toast.success("Payment saved & email logged. Configure email sending in Settings > Emails to deliver.");
-              }}>Save & Send Email</Button>
+              })}>Save & Send Email</Button>
             </div>
           </CardContent>
         </Card>
@@ -413,6 +419,7 @@ function DealDetail() {
 /** Admin & Management can edit any deal's core fields. */
 function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
+  const saveGuard = useSaveGuard();
   const [f, setF] = useState<any>({});
   useEffect(() => { if (open) setF({ ...deal }); }, [open, deal]);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
@@ -420,6 +427,8 @@ function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSav
   const clientLabel = (c: any) => (c.client_type === "individual" ? (c.full_name || c.company_name) : c.company_name) || "—";
 
   const save = async () => {
+    if (!saveGuard.begin()) return;
+    try {
     const { error } = await supabase.from("deals").update({
       client_id: f.client_id || null,
       insurance_company_id: f.insurance_company_id || null,
@@ -446,12 +455,14 @@ function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSav
     toast.success("Deal updated");
     setOpen(false);
     onSaved();
+    } catch (error) { toast.error((error as { message?: string })?.message ?? "Could not save the deal. Please retry."); }
+    finally { saveGuard.end(); }
   };
 
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}><Pencil className="w-4 h-4 mr-1"/>Edit Deal</Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => !saveGuard.saving && setOpen(v)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Edit Deal — {deal.deal_number}</DialogTitle></DialogHeader>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 py-2">
@@ -522,8 +533,8 @@ function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSav
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={save}>Save Changes</Button>
+            <Button variant="outline" disabled={saveGuard.saving} onClick={() => setOpen(false)}>Cancel</Button>
+            <Button disabled={saveGuard.saving} aria-busy={saveGuard.saving} onClick={save}>{saveGuard.saving && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />}{saveGuard.saving ? "Saving Deal…" : "Save Changes"}</Button>
           </div>
         </DialogContent>
       </Dialog>
