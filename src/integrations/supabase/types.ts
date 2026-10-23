@@ -2234,6 +2234,44 @@ export type Database = {
           },
         ]
       }
+      refund_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_name: string
+          id: string
+          refund_id: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_name: string
+          id?: string
+          refund_id: string
+          storage_path: string
+          uploaded_by?: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          id?: string
+          refund_id?: string
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_documents_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: false
+            referencedRelation: "refunds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refund_remarks: {
         Row: {
           refund_id: string
