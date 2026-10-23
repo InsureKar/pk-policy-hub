@@ -2234,6 +2234,92 @@ export type Database = {
           },
         ]
       }
+      refund_remarks: {
+        Row: {
+          refund_id: string
+          remarks: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          refund_id: string
+          remarks?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          refund_id?: string
+          remarks?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_remarks_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: true
+            referencedRelation: "refunds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refunds: {
+        Row: {
+          agent_name: string | null
+          created_at: string
+          created_by: string | null
+          do_name: string | null
+          do_user_id: string | null
+          id: string
+          import_batch: string | null
+          name: string
+          policy_no: string
+          premium: number
+          refund_process_date: string | null
+          refunded: number
+          sr_no: number
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          agent_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          do_name?: string | null
+          do_user_id?: string | null
+          id?: string
+          import_batch?: string | null
+          name: string
+          policy_no: string
+          premium?: number
+          refund_process_date?: string | null
+          refunded?: number
+          sr_no?: number
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          agent_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          do_name?: string | null
+          do_user_id?: string | null
+          id?: string
+          import_batch?: string | null
+          name?: string
+          policy_no?: string
+          premium?: number
+          refund_process_date?: string | null
+          refunded?: number
+          sr_no?: number
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       reimbursements: {
         Row: {
           amount: number
@@ -3637,6 +3723,7 @@ export type Database = {
       }
     }
     Functions: {
+      can_see_refund: { Args: { _do: string }; Returns: boolean }
       can_view_ticket: {
         Args: { _t: Database["public"]["Tables"]["tickets"]["Row"] }
         Returns: boolean
@@ -3684,6 +3771,7 @@ export type Database = {
         Args: { _l: Database["public"]["Enums"]["permission_level"] }
         Returns: number
       }
+      refund_allows: { Args: { _key: string }; Returns: boolean }
       send_notification: {
         Args: {
           _entity_id?: string

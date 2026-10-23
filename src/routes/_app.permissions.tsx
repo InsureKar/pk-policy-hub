@@ -76,6 +76,7 @@ function PermissionsPage() {
   const granLevelFor = (key: string): AccessLevel => {
     const row = data?.gran.find(g => g.user_id === userId && g.perm_key === key);
     if (row) return row.level as AccessLevel;
+    if (PERM_DEFS[key]?.defaultLevel) return PERM_DEFS[key].defaultLevel!;
     const mod = PERM_DEFS[key]?.module;
     const m = mod ? levelFor(mod) : "add";
     return m === "none" ? "none" : m === "view" ? "view" : m === "edit" ? "edit" : "full";
