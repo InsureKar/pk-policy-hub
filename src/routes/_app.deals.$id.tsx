@@ -26,9 +26,18 @@ import { cn } from "@/lib/utils";
 import B2BTakerField from "@/components/B2BTakerField";
 import { openStorageDoc } from "@/lib/openStorageDoc";
 import { downloadAllDocs } from "@/lib/downloadAllDocs";
+import { DealRecordEditor, DealRecordDelete } from "@/components/DealRecordEditor";
+import { DealLinkedRecords } from "@/components/DealLinkedRecords";
 
 export const Route = createFileRoute("/_app/deals/$id")({
   component: DealDetail,
+  head: () => ({ meta: [
+    { title: "Deal Details & Corrections | Insurekar CRM" },
+    { name: "description", content: "Review and correct authorized insurance deal records in Insurekar CRM." },
+    { property: "og:title", content: "Deal Details & Corrections | Insurekar CRM" },
+    { property: "og:description", content: "Review authorized insurance deals, instalments, documents and linked records." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 const PAYMENT_SCHEDULES = ["Annual", "Half-Yearly", "Quarterly", "Monthly"] as const;
@@ -203,7 +212,7 @@ function DealDetail() {
             </Select>
             {canManageDeal && (
               <>
-                <EditDealDialog deal={d} lists={data} onSaved={() => qc.invalidateQueries({ queryKey: ["deal", id] })} />
+                <DealRecordEditor table="deals" title="Deal" record={d} onSaved={() => qc.invalidateQueries()} />
                 <Button variant="destructive" size="sm" onClick={deleteDeal}>Delete Deal</Button>
               </>
             )}
@@ -368,11 +377,14 @@ function DealDetail() {
 
       {d.notes && <Card className="mt-4"><CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader><CardContent className="text-sm whitespace-pre-wrap">{d.notes}</CardContent></Card>}
 
-      {(data.documents?.length ?? 0) > 0 && (
+      {((data.documents?.length ?? 0) > 0 || canManageDeal) && (
         <Card className="mt-4">
           <CardHeader className="flex flex-row items-center justify-between gap-2">
             <CardTitle className="text-base">Documents &amp; Receipts</CardTitle>
-            <DownloadAllButton docs={data.documents} zipName={`deal-${d.deal_number ?? id.slice(0, 8)}-documents.zip`} />
+            <div className="flex flex-wrap gap-2">
+              <DownloadAllButton docs={data.documents} zipName={`deal-${d.deal_number ?? id.slice(0, 8)}-documents.zip`} />
+              <DealRecordEditor table="deal_documents" title="Document or Receipt" defaults={{ deal_id: id }} onSaved={() => qc.invalidateQueries()} />
+            </div>
           </CardHeader>
           <CardContent className="space-y-1.5 text-sm">
             {data.documents.map((doc: any) => (
@@ -383,12 +395,17 @@ function DealDetail() {
                     {(doc.doc_type ?? "document").replace(/_/g, " ")} · {fmtDate(doc.created_at)}
                   </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => openStorageDoc(doc.storage_path)}>View</Button>
+                <div className="flex flex-wrap items-center gap-1">
+                  <Button size="sm" variant="outline" onClick={() => openStorageDoc(doc.storage_path)}>View</Button>
+                  <DealRecordEditor table="deal_documents" title="Document or Receipt" record={doc} defaults={{ deal_id: id }} onSaved={() => qc.invalidateQueries()} />
+                  <DealRecordDelete table="deal_documents" title="Document or Receipt" record={doc} onSaved={() => qc.invalidateQueries()} />
+                </div>
               </div>
             ))}
           </CardContent>
         </Card>
       )}
+      <DealLinkedRecords dealId={id} clientId={d.client_id} />
     </div>
   );
 }
@@ -662,7 +679,7 @@ function BulkPoliciesSection({ dealId }: { dealId: string }) {
                 <td className="p-2 text-right tabular-nums">{fmtPKR(Number(r.gross_premium))}</td>
                 <td className="p-2 text-right tabular-nums">{fmtPKR(Number(r.net_premium))}</td>
                 <td className="p-2"><Input defaultValue={r.remarks ?? ""} onBlur={(e) => e.target.value !== (r.remarks ?? "") && save(r.id, { remarks: e.target.value || null })}/></td>
-                <td className="p-2"><Button size="sm" variant="ghost" onClick={() => remove(r.id)}>×</Button></td>
+                <td className="p-2"><div className="flex items-center gap-1"><Button size="sm" variant="ghost" onClick={() => remove(r.id)}>×</Button><DealRecordEditor table="deal_policies" title="Bulk Policy" record={r} defaults={{ deal_id: dealId }} onSaved={refresh} /></div></td>
               </tr>
             ))}
             <tr className="border-t">
@@ -794,6 +811,8 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
     else qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
   };
 
+  const refreshPosting = () => qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
+
   const [full, setFull] = useState(false);
 
   const content = (
@@ -847,7 +866,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                         : fmtPKR(insPayable(r))}<div className="text-[10px] text-muted-foreground">Loading: {fmtPKR(ownPayable(r) - insPayable(r))}</div></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.agent_name ?? ""} onBlur={e => updateRow(r.id, { agent_name: e.target.value })}/></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.remarks ?? ""} onBlur={e => updateRow(r.id, { remarks: e.target.value })}/></td>
-                      <td className="p-2"><Button size="sm" variant="ghost" onClick={() => deleteRow(r.id)}>×</Button></td>
+                      <td className="p-2"><div className="flex items-center gap-1"><Button size="sm" variant="ghost" onClick={() => deleteRow(r.id)}>×</Button><DealRecordEditor table="travel_posting_rows" title="Travel Policy" record={r} defaults={{ posting_id: header.id }} onSaved={refreshPosting} /></div></td>
                     </tr>
                   );
                 })}
@@ -877,6 +896,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
             <div className="space-y-3 pt-4 mt-4 border-t">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium">Amount Transfer Details</h4>
+                <DealRecordEditor table="travel_posting_transfers" title="Transfer" defaults={{ posting_id: header.id }} onSaved={refreshPosting} />
                 <Badge variant="outline" className={badgeCls[tStatus === "matched" ? "balanced" : tStatus]}>{tStatus.toUpperCase()}</Badge>
               </div>
               <table className="w-full text-xs">
@@ -889,6 +909,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                     <th className="text-left p-2">TID</th>
                     <th className="text-left p-2">Agent</th>
                     <th className="text-left p-2">Agent Payment Destination</th>
+                    {canEditPayables && <th className="p-2">Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -904,6 +925,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                       <td className="p-2">{t.tid || "—"}</td>
                       <td className="p-2">{t.agent || "—"}</td>
                       <td className="p-2">{destLabel(t)}</td>
+                      {canEditPayables && <td className="p-2"><div className="flex items-center gap-1"><DealRecordEditor table="travel_posting_transfers" title="Transfer" record={t} defaults={{ posting_id: header.id }} onSaved={refreshPosting} /><DealRecordDelete table="travel_posting_transfers" title="Transfer" record={t} onSaved={refreshPosting} /></div></td>}
                     </tr>
                   ))}
                 </tbody>
@@ -934,6 +956,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
           <Badge variant="outline" className={badgeCls[status]}>{status === "balanced" ? "MATCHED" : status.toUpperCase()}</Badge>
         </CardTitle>
         <div className="flex gap-2">
+          {header && <DealRecordDelete table="travel_postings" title="Travel Posting" record={header} onSaved={refreshPosting} />}
           <Button size="sm" variant="outline" disabled={!header} onClick={exportExcel}>Export to Excel</Button>
           <Button size="sm" variant="outline" onClick={() => setFull(true)}><Maximize2 className="w-4 h-4 mr-1"/>Full Screen</Button>
         </div>
