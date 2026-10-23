@@ -12,4 +12,4 @@
 # Deal save protection
 - [x] Add immediate loading and synchronous submission locks to creation and existing deal updates.
 - [x] Add atomic database idempotency for new deals without changing existing records or access rules.
-- [x] Test retries, slow responses and simultaneous submissions; verify the existing success destination. Database concurrency verified on isolated PostgreSQL; authenticated UI failures, retries and replay navigation verified with intercepted writes to preserve CRM data. Live new-deal creation was intentionally not performed.
+- [x] Test retries, slow responses and simultaneous submissions; verify the existing success destination. Database concurrency verified on isolated PostgreSQL; authenticated UI failures, retries and replay navigation verified with intercepted writes to preserve CRM data. Live new-deal creation was intentionally not performed.- [x] Refunds module under Operations (import, update, permissions, own-only access)
