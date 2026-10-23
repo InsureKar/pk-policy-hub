@@ -613,7 +613,9 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
   const header = posting?.header;
   const rows = posting?.rows ?? [];
   const transfers = posting?.transfers ?? [];
-  const ownPayable = (r: any) => Number(r.premium || 0) - Number(r.premium || 0) * Number(r.commission_percentage || 0) / 100;
+  const { hasRole: hasRoleTP } = useAuth();
+  const canEditPayables = hasRoleTP(["admin", "management"]);
+  const ownPayable = (r: any) => r.payable_own != null ? Number(r.payable_own) : Number(r.premium || 0) - Number(r.premium || 0) * Number(r.commission_percentage || 0) / 100;
   const totalOwnPayable = rows.reduce((a, r) => a + ownPayable(r), 0);
   const totalTransferred = transfers.reduce((a, t) => a + Number(t.amount || 0), 0);
   const tDiff = Math.round(totalTransferred - totalOwnPayable);
@@ -656,7 +658,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
   }, [header]);
 
   const totalPremium = rows.reduce((a, r) => a + Number(r.premium || 0), 0);
-  const insPayable = (r: any) => Number(r.premium || 0) * 0.55;
+  const insPayable = (r: any) => r.payable_insurance != null ? Number(r.payable_insurance) : Number(r.premium || 0) * 0.55;
   const totalInsPayable = rows.reduce((a, r) => a + insPayable(r), 0);
   // Posting amount is reconciled against Payable to own company (premium − commission), to the whole rupee.
   const diff = Math.round(totalOwnPayable - Number(totalPost || 0));
@@ -759,8 +761,12 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                       <td className="p-2"><Input type="number" step="0.01" className="h-8 text-right" defaultValue={r.premium ?? 0} onBlur={e => updateRow(r.id, { premium: Number(e.target.value) || 0 })}/></td>
                       <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={Number(r.commission_percentage) || ""} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>
                       <td className="p-2 text-right tabular-nums">{fmtPKR(commAmt)}</td>
-                      <td className="p-2 text-right tabular-nums">{fmtPKR(ownPayable(r))}</td>
-                      <td className="p-2 text-right tabular-nums">{fmtPKR(insPayable(r))}<div className="text-[10px] text-muted-foreground">Loading: {fmtPKR(ownPayable(r) - insPayable(r))}</div></td>
+                      <td className="p-2 text-right tabular-nums">{canEditPayables
+                        ? <Input type="number" step="0.01" className="h-8 text-right min-w-[110px]" key={`po-${r.id}-${r.payable_own}`} defaultValue={Math.round(ownPayable(r) * 100) / 100} onBlur={e => { const v = e.target.value.trim(); if (v !== "" && Number(v) === Math.round(ownPayable(r) * 100) / 100) return; updateRow(r.id, { payable_own: v === "" ? null : Number(v) }); }}/>
+                        : fmtPKR(ownPayable(r))}</td>
+                      <td className="p-2 text-right tabular-nums">{canEditPayables
+                        ? <Input type="number" step="0.01" className="h-8 text-right min-w-[110px]" key={`pi-${r.id}-${r.payable_insurance}`} defaultValue={Math.round(insPayable(r) * 100) / 100} onBlur={e => { const v = e.target.value.trim(); if (v !== "" && Number(v) === Math.round(insPayable(r) * 100) / 100) return; updateRow(r.id, { payable_insurance: v === "" ? null : Number(v) }); }}/>
+                        : fmtPKR(insPayable(r))}<div className="text-[10px] text-muted-foreground">Loading: {fmtPKR(ownPayable(r) - insPayable(r))}</div></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.agent_name ?? ""} onBlur={e => updateRow(r.id, { agent_name: e.target.value })}/></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.remarks ?? ""} onBlur={e => updateRow(r.id, { remarks: e.target.value })}/></td>
                       <td className="p-2"><Button size="sm" variant="ghost" onClick={() => deleteRow(r.id)}>×</Button></td>

@@ -2958,6 +2958,8 @@ export type Database = {
           date_issued: string | null
           id: string
           payable_company: string | null
+          payable_insurance: number | null
+          payable_own: number | null
           policy_number: string | null
           policy_number_norm: string | null
           posting_id: string
@@ -2974,6 +2976,8 @@ export type Database = {
           date_issued?: string | null
           id?: string
           payable_company?: string | null
+          payable_insurance?: number | null
+          payable_own?: number | null
           policy_number?: string | null
           policy_number_norm?: string | null
           posting_id: string
@@ -2990,6 +2994,8 @@ export type Database = {
           date_issued?: string | null
           id?: string
           payable_company?: string | null
+          payable_insurance?: number | null
+          payable_own?: number | null
           policy_number?: string | null
           policy_number_norm?: string | null
           posting_id?: string
