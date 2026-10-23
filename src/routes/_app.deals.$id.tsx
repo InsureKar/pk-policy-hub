@@ -25,6 +25,7 @@ import { ArrowLeft, Maximize2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import B2BTakerField from "@/components/B2BTakerField";
 import { openStorageDoc } from "@/lib/openStorageDoc";
+import { downloadAllDocs } from "@/lib/downloadAllDocs";
 
 export const Route = createFileRoute("/_app/deals/$id")({
   component: DealDetail,
@@ -867,4 +868,14 @@ function KV({ k, v }: { k: string; v: React.ReactNode }) {
 }
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>;
+}
+
+function DownloadAllButton({ docs, zipName }: { docs: any[]; zipName: string }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button size="sm" variant="outline" disabled={busy} onClick={async () => {
+      setBusy(true);
+      try { await downloadAllDocs(docs, zipName); } finally { setBusy(false); }
+    }}>{busy ? "Preparing…" : `Download All (${docs.length})`}</Button>
+  );
 }
