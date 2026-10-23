@@ -83,7 +83,7 @@ function RefundsPage() {
       if (!s) return true;
       return [r.name, r.policy_no, r.agent_name, r.do_name].some((v) => String(v ?? "").toLowerCase().includes(s));
     });
-  }, [data, q, status, from, to]);
+  }, [data, q, userFilter, status, from, to]);
 
   if (loading) return null;
   if (!can.view) return <Navigate to="/dashboard" replace />;
@@ -110,8 +110,14 @@ function RefundsPage() {
         {can.add && <Button size="sm" onClick={() => setAdding(true)}><Plus className="w-4 h-4 mr-1" />Add Refund</Button>}
         {can.export && <Button size="sm" variant="outline" onClick={exportXlsx}><Download className="w-4 h-4 mr-1" />Export</Button>}
       </div>
-      <Card><CardContent className="p-4 grid gap-3 md:grid-cols-4">
+      <Card><CardContent className="p-4 grid gap-3 md:grid-cols-5">
         <div><Label className="text-xs">Search</Label><Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, policy, agent, DO" /></div>
+        <div><Label className="text-xs">User</Label>
+          <Select value={userFilter} onValueChange={setUserFilter}><SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="all">All Users</SelectItem>
+              {userNames.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+            </SelectContent>
+          </Select></div>
         <div><Label className="text-xs">Status</Label>
           <Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="paid">Paid</SelectItem><SelectItem value="not_paid">Not Paid</SelectItem></SelectContent>
@@ -155,7 +161,7 @@ function RefundsPage() {
         </Table>
       </CardContent></Card>
       {editing && <UpdateDialog row={editing} remarks={data?.remarks.get(editing.id) ?? ""} can={can} onClose={() => setEditing(null)} onSaved={refresh} />}
-      {adding && <AddDialog onClose={() => setAdding(false)} onSaved={refresh} />}
+      {adding && <AddDialog userNames={Array.from(new Set((data?.profs ? [...data.profs.values()] : []).filter(Boolean))).sort((a, b) => a.localeCompare(b))} onClose={() => setAdding(false)} onSaved={refresh} />}
       {importOpen && <ImportDialog existing={(data?.rows ?? []).map((r) => normPolicy(r.policy_no))} onClose={() => setImportOpen(false)} onSaved={refresh} />}
     </div>
   );
