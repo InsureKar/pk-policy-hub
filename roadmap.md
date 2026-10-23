@@ -1,8 +1,8 @@
 # Deal correction access
 ## Travel Posting status
-- [ ] Add private Admin/Management Sent/Unsent storage with Unsent defaults and no changes to financial records.
-- [ ] Show status controls and All/Sent/Unsent filters in posting list and details.
-- [ ] Verify role restrictions, status persistence and unaffected posting edits.
+- [x] Add private Admin/Management Sent/Unsent storage with Unsent defaults and no changes to financial records.
+- [x] Show status controls and All/Sent/Unsent filters in posting list and details.
+- [x] Verify role restrictions, status persistence and unaffected posting edits — isolated database tests passed; authenticated manager changed status, reloaded it, restored Unsent and filtered the list.
 
 - [x] Enable admin/management corrections across deal fields and instalments without changing ordinary-user locks.
 - [x] Provide correction/add/delete controls for linked bulk, travel, documents and accounting records with guarded payment reversals.
