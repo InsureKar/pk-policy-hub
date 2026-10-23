@@ -14,6 +14,7 @@ import { instalmentCount, instalmentLabels } from "@/components/DealInstalments"
 import { toast } from "sonner";
 import B2BTakerField from "@/components/B2BTakerField";
 import { openStorageDoc } from "@/lib/openStorageDoc";
+import { canEditDealInstalment } from "@/lib/deal-correction-access";
 
 const PAYMENT_MODES = ["IBFT", "Cheque", "Cash", "Pay Order", "Online Payment"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -350,7 +351,7 @@ export function DealCustomInstalments({
   // be edited. Paid instalments and later unpaid ones stay locked. Newly added
   // (unsaved) rows remain editable so users can append instalments.
   const firstUnpaidSaved = rows.findIndex((r) => r.id && (r.saved_status ?? r.status) !== "paid");
-  const rowEditable = (i: number) => canEdit && (!rows[i]?.id || i === firstUnpaidSaved);
+  const rowEditable = (i: number) => canEditDealInstalment(canSeeSensitive, canEdit, !rows[i]?.id, i, firstUnpaidSaved);
 
   return (
     <Card className="mt-4">
@@ -384,12 +385,12 @@ export function DealCustomInstalments({
                       </button>
                     </td>
                     <td className="p-2 min-w-[170px]">
-                      {canEdit && !r.id
+                      {canSeeSensitive || (canEdit && !r.id)
                         ? <DateField value={r.due_date} onChange={(v) => setRow(i, { due_date: v })} placeholder="Due date" />
                         : (r.due_date || "—")}
                     </td>
                     <td className="p-2 text-right min-w-[150px]">
-                      {canEdit && !r.id
+                      {canSeeSensitive || (canEdit && !r.id)
                         ? <div className="max-w-[200px] ml-auto"><MoneyInput value={r.amount} onChange={(v) => setRow(i, { amount: v })} /></div>
                         : <span className="tabular-nums">{fmtPKR(r.amount)}</span>}
                     </td>
@@ -430,7 +431,7 @@ export function DealCustomInstalments({
                     </td>
                     {canEdit && (
                       <td className="p-2 text-right">
-                        {!r.id && !fixedCount && (
+                        {((!r.id && !fixedCount) || canSeeSensitive) && (
                           <Button type="button" variant="ghost" size="sm" onClick={() => removeRow(i)}>Remove</Button>
                         )}
                       </td>

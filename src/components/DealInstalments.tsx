@@ -9,6 +9,8 @@ import { MoneyInput } from "@/components/MoneyInput";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import B2BTakerField from "@/components/B2BTakerField";
+import { useAuth } from "@/lib/auth";
+import { canEditDealInstalment } from "@/lib/deal-correction-access";
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -67,6 +69,8 @@ export function DealInstalments({
   canEdit?: boolean;
 }) {
   const qc = useQueryClient();
+  const { hasRole } = useAuth();
+  const canCorrect = hasRole(["admin", "management"]);
   const count = instalmentCount(schedule);
   const showUnderwriting = count === 4 || count === 2;
 
@@ -124,7 +128,7 @@ export function DealInstalments({
 
   // Only the next unpaid period is editable; paid and later periods stay locked.
   const firstUnpaid = rows.findIndex((r) => !(r.paid_amount > 0));
-  const rowEditable = (i: number) => canEdit && i === firstUnpaid;
+  const rowEditable = (i: number) => canEditDealInstalment(canCorrect, canEdit, false, i, firstUnpaid);
 
   if (!count) return null;
 
@@ -188,9 +192,9 @@ export function DealInstalments({
             return (
               <tr key={r.installment_number} className="border-t align-top">
                 <td className="p-2 whitespace-nowrap">{r.label}</td>
-                <td className="p-2">{fmtDate(r.due_date)}</td>
+                <td className="p-2">{canCorrect ? <DateField value={r.due_date} onChange={(v) => setRow(i, { due_date: v })} placeholder="Due date" /> : fmtDate(r.due_date)}</td>
                 <td className="p-2 text-right tabular-nums">
-                  {fmtPKR(dueOf(r))} <span className="text-xs text-muted-foreground">(auto)</span>
+                  {canCorrect ? <MoneyInput value={r.amount} onChange={(v) => setRow(i, { amount: v })} /> : <>{fmtPKR(dueOf(r))} <span className="text-xs text-muted-foreground">(auto)</span></>}
                 </td>
                 <td className="p-2 min-w-[150px]">
                   <MoneyInput value={r.gross_premium} onChange={(v) => setRow(i, { gross_premium: v })}
