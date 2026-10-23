@@ -656,8 +656,11 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
   }, [header]);
 
   const totalPremium = rows.reduce((a, r) => a + Number(r.premium || 0), 0);
-  const diff = totalPremium - Number(totalPost || 0);
-  const status = Number(totalPost) === 0 ? "pending" : Math.abs(diff) < 0.01 ? "balanced" : diff > 0 ? "excess" : "deficit";
+  const insPayable = (r: any) => Number(r.premium || 0) * 0.55;
+  const totalInsPayable = rows.reduce((a, r) => a + insPayable(r), 0);
+  // Posting amount is reconciled against Payable to own company (premium − commission), to the whole rupee.
+  const diff = Math.round(totalOwnPayable - Number(totalPost || 0));
+  const status = Number(totalPost) === 0 ? "pending" : diff === 0 ? "balanced" : diff > 0 ? "excess" : "deficit";
   const badgeCls: Record<string,string> = {
     balanced: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
     excess: "bg-red-500/15 text-red-600 border-red-500/30",
@@ -737,7 +740,8 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                   <th className="text-right p-2">Premium</th>
                   <th className="text-right p-2">Comm %</th>
                   <th className="text-right p-2">Comm Amt</th>
-                  <th className="text-left p-2">Payable Co.</th>
+                  <th className="text-right p-2">Payable to own company</th>
+                  <th className="text-right p-2">Payable to Insurance Co.</th>
                   <th className="text-left p-2">Agent Name</th>
                   <th className="text-left p-2">Remarks</th>
                   <th></th>
@@ -755,7 +759,8 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                       <td className="p-2"><Input type="number" step="0.01" className="h-8 text-right" defaultValue={r.premium ?? 0} onBlur={e => updateRow(r.id, { premium: Number(e.target.value) || 0 })}/></td>
                       <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={Number(r.commission_percentage) || ""} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>
                       <td className="p-2 text-right tabular-nums">{fmtPKR(commAmt)}</td>
-                      <td className="p-2"><Input className="h-8" defaultValue={r.payable_company ?? ""} onBlur={e => updateRow(r.id, { payable_company: e.target.value })}/></td>
+                      <td className="p-2 text-right tabular-nums">{fmtPKR(ownPayable(r))}</td>
+                      <td className="p-2 text-right tabular-nums">{fmtPKR(insPayable(r))}<div className="text-[10px] text-muted-foreground">Loading: {fmtPKR(ownPayable(r) - insPayable(r))}</div></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.agent_name ?? ""} onBlur={e => updateRow(r.id, { agent_name: e.target.value })}/></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.remarks ?? ""} onBlur={e => updateRow(r.id, { remarks: e.target.value })}/></td>
                       <td className="p-2"><Button size="sm" variant="ghost" onClick={() => deleteRow(r.id)}>×</Button></td>
@@ -769,7 +774,9 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                   <td className="p-2 text-right tabular-nums">{fmtPKR(totalPremium)}</td>
                   <td></td>
                   <td className="p-2 text-right tabular-nums">{fmtPKR(rows.reduce((a,r)=>a+(Number(r.premium||0)*Number(r.commission_percentage||0)/100),0))}</td>
-                  <td colSpan={4}></td>
+                  <td className="p-2 text-right tabular-nums">{fmtPKR(totalOwnPayable)}</td>
+                  <td className="p-2 text-right tabular-nums">{fmtPKR(totalInsPayable)}<div className="text-[10px] font-normal text-muted-foreground">Loading: {fmtPKR(totalOwnPayable - totalInsPayable)}</div></td>
+                  <td colSpan={3}></td>
                 </tr>
               </tfoot>
             </table>
