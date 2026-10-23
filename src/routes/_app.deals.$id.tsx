@@ -29,6 +29,7 @@ import { openStorageDoc } from "@/lib/openStorageDoc";
 import { downloadAllDocs } from "@/lib/downloadAllDocs";
 import { DealRecordEditor, DealRecordDelete } from "@/components/DealRecordEditor";
 import { DealLinkedRecords } from "@/components/DealLinkedRecords";
+import { TravelPostingStatus } from "@/components/TravelPostingStatus";
 
 export const Route = createFileRoute("/_app/deals/$id")({
   component: DealDetail,
@@ -972,7 +973,10 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
           <Button size="sm" variant="outline" onClick={() => setFull(true)}><Maximize2 className="w-4 h-4 mr-1"/>Full Screen</Button>
         </div>
       </CardHeader>
-      <CardContent>{content}</CardContent>
+      <CardContent>
+        {header && <div className="mb-4"><TravelPostingStatus postingId={header.id} /></div>}
+        {content}
+      </CardContent>
       <Dialog open={full} onOpenChange={setFull}>
         <DialogContent className="max-w-[98vw] w-[98vw] h-[94vh] max-h-[94vh] overflow-auto">
           <DialogHeader>
@@ -981,6 +985,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
               <Badge variant="outline" className={badgeCls[status]}>{status.toUpperCase()}</Badge>
             </DialogTitle>
           </DialogHeader>
+          {header && <TravelPostingStatus postingId={header.id} />}
           {content}
         </DialogContent>
       </Dialog>
