@@ -2952,6 +2952,29 @@ export type Database = {
           },
         ]
       }
+      travel_posting_delivery_status: {
+        Row: {
+          posting_id: string
+          sent_status: string
+        }
+        Insert: {
+          posting_id: string
+          sent_status?: string
+        }
+        Update: {
+          posting_id?: string
+          sent_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_posting_delivery_status_posting_id_fkey"
+            columns: ["posting_id"]
+            isOneToOne: true
+            referencedRelation: "travel_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       travel_posting_rows: {
         Row: {
           agent_name: string | null
