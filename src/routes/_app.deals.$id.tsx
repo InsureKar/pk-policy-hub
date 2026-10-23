@@ -620,7 +620,7 @@ function BulkPoliciesSection({ dealId }: { dealId: string }) {
   const [draft, setDraft] = useState<typeof empty>(empty);
   const refresh = () => qc.invalidateQueries({ queryKey: key });
   const save = async (id: string, patch: Record<string, any>) => {
-    const { error } = await supabase.from("deal_policies").update(patch).eq("id", id);
+    const { error } = await supabase.from("deal_policies").update(patch as any).eq("id", id);
     if (error) toast.error(error.message); else refresh();
   };
   const add = async () => {
