@@ -29,6 +29,13 @@
       "when": 1792762064258,
       "tag": "0003_scope_payment_correction_guard_to_managers",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792762338219,
+      "tag": "0004_idempotent_deal_creation",
+      "breakpoints": true
     }
   ]
 }
