@@ -27,7 +27,8 @@ describe.skipIf(!process.env.REFUND_DOCUMENT_TEST_DB_URL)("Refund document permi
     `);
     await sql.unsafe(readFileSync("drizzle/migrations/0006_refunds_module.sql", "utf8"));
     await sql.unsafe(readFileSync("drizzle/migrations/0007_refund_document_uploads.sql", "utf8"));
-    await sql`INSERT INTO public.refunds(id,name,policy_no,do_user_id) VALUES(${refund},'Fixture','FIXTURE',${own})`;
+    await sql`INSERT INTO public.profiles(id,full_name) VALUES(${own},'Fixture DO')`;
+    await sql`INSERT INTO public.refunds(id,name,policy_no,do_name) VALUES(${refund},'Fixture','FIXTURE','Fixture DO')`;
     await sql`INSERT INTO public.refund_documents(refund_id,document_type,file_name,storage_path,uploaded_by) VALUES(${refund},'policy','test.pdf',${path},${own})`;
     await sql`INSERT INTO storage.objects(name,bucket_id,owner) VALUES(${path},'refund-documents',${other})`;
   });
@@ -38,6 +39,7 @@ describe.skipIf(!process.env.REFUND_DOCUMENT_TEST_DB_URL)("Refund document permi
       await sql.begin(async tx => {
         await tx.unsafe("SET LOCAL ROLE authenticated");
         await tx`SELECT set_config('request.jwt.claim.sub',${user},true)`;
+        await tx`SELECT set_config('request.jwt.claims',${JSON.stringify({ sub: user })},true)`;
         await run(tx);
         throw rollback;
       });
