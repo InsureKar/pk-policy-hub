@@ -368,7 +368,10 @@ function DealDetail() {
 
       {(data.documents?.length ?? 0) > 0 && (
         <Card className="mt-4">
-          <CardHeader><CardTitle className="text-base">Documents &amp; Receipts</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
+            <CardTitle className="text-base">Documents &amp; Receipts</CardTitle>
+            <DownloadAllButton docs={data.documents} zipName={`deal-${d.deal_number ?? id.slice(0, 8)}-documents.zip`} />
+          </CardHeader>
           <CardContent className="space-y-1.5 text-sm">
             {data.documents.map((doc: any) => (
               <div key={doc.id} className="flex items-center justify-between gap-3 rounded border px-3 py-2">
