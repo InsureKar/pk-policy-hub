@@ -68,7 +68,7 @@ function RefundsPage() {
   });
 
   const userNames = useMemo(() => {
-    const names = new Set<string>();
+    const names = new Set<string>(data?.profs ? [...data.profs.values()].filter(Boolean) : []);
     (data?.rows ?? []).forEach((r) => { if (r.agent_name) names.add(r.agent_name); if (r.do_name) names.add(r.do_name); });
     return Array.from(names).sort((a, b) => a.localeCompare(b));
   }, [data]);
