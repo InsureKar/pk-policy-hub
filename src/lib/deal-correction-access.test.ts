@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { canCorrectDealRecords, canEditDealInstalment } from "./deal-correction-access";
+import { canCorrectDealRecords, canEditDealInstalment, dealPlanPeriodLimit } from "./deal-correction-access";
 
 describe("deal record corrections", () => {
+  it("preserves the Custom four-instalment limit", () => expect(dealPlanPeriodLimit("Custom")).toBe(4));
+  it("preserves the four quarters", () => expect(dealPlanPeriodLimit("Quarterly")).toBe(4));
+  it("preserves the two halves", () => expect(dealPlanPeriodLimit("Bi-Annually")).toBe(2));
   it("gives admin full corrections", () => expect(canCorrectDealRecords(["admin"])).toBe(true));
   it("gives management full corrections", () => expect(canCorrectDealRecords(["management"])).toBe(true));
   it("does not expand normal-user or team-lead corrections", () => {

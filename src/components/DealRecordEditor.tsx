@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { canCorrectDealRecords } from "@/lib/deal-correction-access";
+import { canCorrectDealRecords, dealPlanPeriodLimit } from "@/lib/deal-correction-access";
 import { dealRecordFields } from "@/lib/deal-record-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,9 +91,13 @@ export function DealRecordEditor({ table, title, record, defaults = {}, fields, 
       if (!record && table === "deal_installments") payload.created_by = user.id;
       if (table === "deal_installments") {
         const row = { ...record, ...defaults, ...payload };
+        const plan = await supabase.from("deals").select("payment_schedule").eq("id", row.deal_id).single();
+        if (plan.error) throw plan.error;
+        const limit = dealPlanPeriodLimit(plan.data.payment_schedule);
+        if (limit && (Number(row.installment_number) < 1 || Number(row.installment_number) > limit)) throw new Error(`This payment plan allows periods 1 to ${limit}.`);
         const gross = Number(row.gross_premium ?? 0);
         payload.commission = calculateDealFinancials({ gross_premium: gross, commission_percentage: row.commission_percentage }).commission_before_tax;
-        if (row.payment_status === "paid") {
+        if (row.payment_status === "paid" && /^(custom|quarter|bi-annual|bi annual|half)/.test(String(plan.data.payment_schedule ?? "").toLowerCase())) {
           if (!row.paid_date) throw new Error("Enter the paid date before saving a paid instalment.");
           const receipts = await supabase.from("deal_documents").select("file_name").eq("deal_id", row.deal_id).eq("doc_type", "b2b_commission_receipt");
           if (receipts.error) throw receipts.error;
