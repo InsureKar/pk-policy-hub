@@ -1,4 +1,8 @@
 # Deal correction access
+# Refund documents
+- [ ] Add refusal letter and policy uploads to saved refunds using existing edit and view rights.
+- [ ] Verify attachment storage, permission policies and upload/view flow.
+
 ## Travel Posting status
 - [x] Add private Admin/Management Sent/Unsent storage with Unsent defaults and no changes to financial records.
 - [x] Show status controls and All/Sent/Unsent filters in posting list and details.
