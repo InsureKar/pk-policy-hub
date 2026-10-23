@@ -19,9 +19,10 @@ import { fmtDate, fmtPKR } from "@/lib/format";
 import { toast } from "sonner";
 import { Download, FileDown, Plus, Upload } from "lucide-react";
 import { normPolicy, parseRefundSheet, type ParsedRow } from "@/lib/refunds";
+import { RefundDocuments } from "@/components/RefundDocuments";
 
 export const Route = createFileRoute("/_app/operations/refunds")({
-  head: () => ({ meta: [{ title: "Refunds — Insurekar CRM" }, { name: "description", content: "Refund management for operations." }] }),
+  head: () => ({ meta: [{ title: "Refunds — Insurekar CRM" }, { name: "description", content: "Refund management and supporting documents for operations." }, { property: "og:title", content: "Refunds — Insurekar CRM" }, { property: "og:description", content: "Refund management and supporting documents for operations." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: RefundsPage,
 });
 
@@ -182,7 +183,7 @@ function UpdateDialog({ row, remarks, can, onClose, onSaved }: any) {
   };
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{readOnly ? "Refund" : "Update Refund"} — {row.policy_no}</DialogTitle></DialogHeader>
         <div className="grid gap-3">
           <div className="text-sm text-muted-foreground">{row.name} · Premium {fmtPKR(row.premium)}</div>
@@ -194,6 +195,7 @@ function UpdateDialog({ row, remarks, can, onClose, onSaved }: any) {
               <SelectContent><SelectItem value="not_paid">Not Paid</SelectItem><SelectItem value="paid">Paid</SelectItem></SelectContent>
             </Select></div>
           {can.remarks && <div><Label>Remarks</Label><Textarea value={f.remarks} onChange={(e) => setF({ ...f, remarks: e.target.value })} disabled={!can.edit} /></div>}
+          <RefundDocuments refundId={row.id} canUpload={can.edit} />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Close</Button>
