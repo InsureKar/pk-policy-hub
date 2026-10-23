@@ -32,6 +32,8 @@ export interface PermDef {
   label: string;
   /** Existing coarse module used as the fallback when no granular row exists. */
   module: AppModule;
+  /** Level used when no granular row exists (instead of the module fallback). */
+  defaultLevel?: AccessLevel;
 }
 
 export interface PermGroup {
@@ -120,6 +122,18 @@ export const PERMISSION_GROUPS: PermGroup[] = [
       { key: "operations.commissions", label: "Commissions", module: "operations" },
       { key: "operations.performance", label: "Employee Performance", module: "operations" },
       { key: "operations.reimbursements", label: "Reimbursements", module: "operations" },
+    ],
+  },
+  {
+    label: "Refunds",
+    items: [
+      { key: "refunds.view", label: "Refunds — View", module: "operations", defaultLevel: "view" },
+      { key: "refunds.import", label: "Upload/Import Refund Sheet", module: "operations", defaultLevel: "none" },
+      { key: "refunds.add", label: "Add Refund", module: "operations", defaultLevel: "none" },
+      { key: "refunds.edit", label: "Edit Refund", module: "operations", defaultLevel: "none" },
+      { key: "refunds.status", label: "Update Refund Status", module: "operations", defaultLevel: "none" },
+      { key: "refunds.remarks", label: "View Refund Remarks", module: "operations", defaultLevel: "none" },
+      { key: "refunds.export", label: "Export Refund Data", module: "operations", defaultLevel: "none" },
     ],
   },
   {
