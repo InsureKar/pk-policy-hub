@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Download, Plus } from "lucide-react";
 import { DateField } from "@/components/DateField";
 import { DeleteButton } from "@/components/DeleteButton";
+import { InlineRecordEdit } from "@/components/DealRecordEditor";
 
 export const Route = createFileRoute("/_app/accounts/payables")({
   component: PayablesPage,
@@ -171,7 +172,7 @@ function PayablesPage() {
                 <TableCell>{r.due_date ? fmtDate(r.due_date) : "—"}</TableCell>
                 <TableCell>{r.payment_date ? fmtDate(r.payment_date) : "—"}</TableCell>
                 <TableCell><StatusBadge status={r.status} /></TableCell>
-                {canManage && <TableCell className="text-right whitespace-nowrap">{r.status !== "paid" && r.status !== "cancelled" && <PayDialog payable={r} />}<DeleteButton table="payables" id={r.id} label="payable" invalidate={["accounts-payables-ledger"]} /></TableCell>}
+                {canManage && <TableCell className="text-right whitespace-nowrap">{r.status !== "paid" && r.status !== "cancelled" && <PayDialog payable={r} />}<InlineRecordEdit table="payables" title="Payable" record={r} /><DeleteButton table="payables" id={r.id} label="payable" invalidate={["accounts-payables-ledger"]} /></TableCell>}
               </TableRow>
             ))}
           </TableBody>

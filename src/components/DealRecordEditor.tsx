@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { refreshCorrectedInstalmentTotals } from "@/lib/deal-instalment-rollup";
 import { calculateDealFinancials } from "@/lib/calc";
 import { useSaveGuard } from "@/lib/use-save-guard";
@@ -168,4 +168,9 @@ export function DealRecordDelete({ table, title, record, onSaved }: { table: str
     } catch (e: any) { toast.error(e.message ?? "Could not delete record"); }
     finally { setBusy(false); }
   }}><Trash2 className="w-4 h-4 text-destructive" /></Button>;
+}
+/** Admin/Management edit button placed beside a record where it is listed. */
+export function InlineRecordEdit({ table, title, record }: { table: string; title: string; record: Record<string, any> }) {
+  const qc = useQueryClient();
+  return <DealRecordEditor table={table} title={title} record={record} onSaved={() => qc.invalidateQueries()} />;
 }
