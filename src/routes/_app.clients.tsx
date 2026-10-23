@@ -17,9 +17,18 @@ import { fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { DateField } from "@/components/DateField";
 import { DeleteButton } from "@/components/DeleteButton";
+import { changedClientFields } from "@/lib/client-edit";
 
 export const Route = createFileRoute("/_app/clients")({
   component: ClientsPage,
+  head: () => ({ meta: [
+    { title: "Clients | Insurekar CRM" },
+    { name: "description", content: "View and manage corporate and individual client information in Insurekar." },
+    { property: "og:title", content: "Clients | Insurekar CRM" },
+    { property: "og:description", content: "View and manage corporate and individual client information in Insurekar." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 const EMPTY = {
@@ -44,6 +53,20 @@ function ClientsPage() {
   const [tab, setTab] = useState("all");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ...EMPTY });
+  const [editing, setEditing] = useState<{ id: string; code: string; original: typeof EMPTY } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const editClient = (client: NonNullable<typeof data>["clients"][number]) => {
+    const values = { ...EMPTY };
+    for (const key of Object.keys(EMPTY) as (keyof typeof EMPTY)[]) {
+      Object.assign(values, { [key]: client[key] ?? EMPTY[key] });
+    }
+    values.phone = client.phone ?? client.poc_number ?? "";
+    values.email = client.email ?? client.poc_email ?? "";
+    values.address = client.address ?? client.poc_address ?? "";
+    setEditing({ id: client.id, code: String((client as any).client_code ?? ""), original: values });
+    setForm({ ...values });
+    setOpen(true);
+  };
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
@@ -56,7 +79,7 @@ function ClientsPage() {
   });
 
   const submit = async () => {
-    if (!user) return;
+    if (!user || saving) return;
     // Validation
     if (form.client_type === "corporate") {
       if (!form.company_name.trim()) return toast.error("Company name is required");
@@ -72,7 +95,6 @@ function ClientsPage() {
 
     const payload = {
       client_type: form.client_type,
-      created_by: user.id,
       phone: form.phone.trim(),
       email: form.email.trim() || null,
       city: form.city.trim(),
@@ -94,12 +116,37 @@ function ClientsPage() {
       poc_email: form.email.trim() || null,
       poc_address: form.address.trim() || null,
     };
-    const { error } = await supabase.from("clients").insert(payload);
-    if (error) return toast.error(error.message);
-    toast.success("Client created");
+    setSaving(true);
+    try {
+    if (editing) {
+      const changed = changedClientFields(editing.original, form);
+      const fields = new Set<string>(Object.keys(changed));
+      if (fields.has("client_type")) Object.keys(payload).forEach((key) => fields.add(key));
+      if (fields.has("full_name") || fields.has("company_name")) fields.add("company_name");
+      if (fields.has("full_name") && form.client_type === "individual") fields.add("poc_name");
+      if (fields.has("phone")) fields.add("poc_number");
+      if (fields.has("email")) fields.add("poc_email");
+      if (fields.has("address")) fields.add("poc_address");
+      const update = Object.fromEntries(Object.entries(payload).filter(([key]) => fields.has(key)));
+      if (Object.keys(update).length > 0) {
+        const { data: saved, error } = await supabase.from("clients").update(update).eq("id", editing.id).select("id").maybeSingle();
+        if (error) return toast.error(error.message);
+        if (!saved) return toast.error("You do not have permission to edit this client.");
+      }
+    } else {
+      const { error } = await supabase.from("clients").insert({ ...payload, created_by: user.id });
+      if (error) return toast.error(error.message);
+    }
+    toast.success(editing ? "Client updated" : "Client created");
     setOpen(false);
+    setEditing(null);
     setForm({ ...EMPTY });
     qc.invalidateQueries({ queryKey: ["clients"] });
+    } catch {
+      toast.error("Unable to save client. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const filtered = (data?.clients ?? []).filter((c) => {
@@ -114,16 +161,18 @@ function ClientsPage() {
     <div className="p-6 max-w-[1400px] mx-auto">
       <PageHeader title="Clients" subtitle="Corporates and individuals you own."
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2"/>New Client</Button></DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader><DialogTitle>New Client</DialogTitle></DialogHeader>
+          <Dialog open={open} onOpenChange={(value) => { if (!saving) setOpen(value); }}>
+            <DialogTrigger asChild><Button onClick={() => { setEditing(null); setForm({ ...EMPTY }); }}><Plus className="w-4 h-4 mr-2"/>New Client</Button></DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader><DialogTitle>{editing ? `Edit Client ${editing.code}` : "New Client"}</DialogTitle></DialogHeader>
+
+              <fieldset disabled={saving}>
 
               <div className="mb-4">
                 <Label className="text-xs">Client Type</Label>
                 <div className="grid grid-cols-2 gap-2 mt-1.5">
                   {(["corporate","individual"] as const).map((t)=>(
-                    <button
+                    <Button
                       key={t}
                       type="button"
                       onClick={()=>set("client_type", t)}
@@ -134,7 +183,7 @@ function ClientsPage() {
                       }`}
                     >
                       {t === "corporate" ? "Corporate" : "Individual"}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -166,9 +215,10 @@ function ClientsPage() {
                 )}
                 <F label="Notes" full><Textarea rows={3} value={form.notes} onChange={(e)=>set("notes", e.target.value)}/></F>
               </div>
+              </fieldset>
               <DialogFooter>
-                <Button variant="ghost" onClick={()=>setOpen(false)}>Cancel</Button>
-                <Button onClick={submit}>Create</Button>
+                <Button variant="ghost" disabled={saving} onClick={()=>setOpen(false)}>Cancel</Button>
+                <Button disabled={saving} onClick={submit}>{saving ? "Saving…" : editing ? "Save Changes" : "Create"}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -211,7 +261,7 @@ function ClientsPage() {
             <tbody>
               {filtered.map(c => (
                 <tr key={c.id} className="border-t hover:bg-muted/30">
-                  <td className="px-4 py-2.5 font-mono text-xs">{(c as any).client_code ?? "—"}</td>
+                  <td className="px-4 py-2.5 font-mono text-xs"><Button variant="link" className="h-auto p-0 font-mono text-xs" aria-label={`Edit client ${(c as any).client_code ?? c.company_name}`} onClick={() => editClient(c)}>{(c as any).client_code ?? "—"}</Button></td>
                   <td className="px-4 py-2.5 font-medium">{c.client_type === "individual" ? (c.full_name || c.company_name) : c.company_name}</td>
                   <td className="px-4 py-2.5 capitalize">{c.client_type}</td>
                   <td className="px-4 py-2.5">{c.phone || c.poc_number || "—"}</td>
