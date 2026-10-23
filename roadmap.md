@@ -1,7 +1,7 @@
 # Deal correction access
 # Refund documents
-- [ ] Add refusal letter and policy uploads to saved refunds using existing edit and view rights.
-- [ ] Verify attachment storage, permission policies and upload/view flow.
+- [x] Add refusal letter and policy uploads to saved refunds using existing edit and view rights.
+- [x] Verify attachment storage, permission policies and upload/view flow — eight tests passed; both files uploaded, persisted after reload and opened on a temporary refund; test records and files removed.
 
 ## Travel Posting status
 - [x] Add private Admin/Management Sent/Unsent storage with Unsent defaults and no changes to financial records.
