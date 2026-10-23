@@ -38,7 +38,7 @@ describe.skipIf(!url)("atomic deal submission (isolated PostgreSQL)", () => {
   const submit = (key: string, user = owner, notes = "shared") => sql.begin(async (tx) => {
     await tx.unsafe("SET LOCAL ROLE authenticated");
     await tx`SELECT set_config('request.jwt.claim.sub', ${user}, true)`;
-    const rows = await tx`SELECT public.create_deal_once(${key}::uuid, ${JSON.stringify({ client_id: client, created_by: user, notes })}::jsonb) AS result`;
+    const rows = await tx`SELECT public.create_deal_once(${key}::uuid, ${tx.json({ client_id: client, created_by: user, notes })}) AS result`;
     return rows[0].result as { id: string; replayed: boolean };
   });
   it("returns one original result for 20 simultaneous requests across two authorized users", async () => {
