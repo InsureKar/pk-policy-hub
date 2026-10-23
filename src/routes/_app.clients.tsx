@@ -127,7 +127,7 @@ function ClientsPage() {
       if (fields.has("phone")) fields.add("poc_number");
       if (fields.has("email")) fields.add("poc_email");
       if (fields.has("address")) fields.add("poc_address");
-      const update = Object.fromEntries(Object.entries(payload).filter(([key]) => fields.has(key)));
+      const update = Object.fromEntries(Object.entries(payload).filter(([key]) => fields.has(key))) as Partial<typeof payload>;
       if (Object.keys(update).length > 0) {
         const { data: saved, error } = await supabase.from("clients").update(update).eq("id", editing.id).select("id").maybeSingle();
         if (error) return toast.error(error.message);
