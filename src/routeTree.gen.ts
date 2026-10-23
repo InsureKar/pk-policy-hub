@@ -53,6 +53,7 @@ import { Route as AppOperationsDispatchRouteImport } from './routes/_app.operati
 import { Route as AppOperationsExpensesRouteImport } from './routes/_app.operations.expenses'
 import { Route as AppOperationsPayrollRouteImport } from './routes/_app.operations.payroll'
 import { Route as AppOperationsPerformanceRouteImport } from './routes/_app.operations.performance'
+import { Route as AppOperationsRefundsRouteImport } from './routes/_app.operations.refunds'
 import { Route as AppOperationsReimbursementsRouteImport } from './routes/_app.operations.reimbursements'
 import { Route as AppOperationsReportsRouteImport } from './routes/_app.operations.reports'
 import { Route as AppTicketsIndexRouteImport } from './routes/_app.tickets.index'
@@ -287,6 +288,11 @@ const AppOperationsPerformanceRoute =
     path: '/performance',
     getParentRoute: () => AppOperationsRoute,
   } as any)
+const AppOperationsRefundsRoute = AppOperationsRefundsRouteImport.update({
+  id: '/refunds',
+  path: '/refunds',
+  getParentRoute: () => AppOperationsRoute,
+} as any)
 const AppOperationsReimbursementsRoute =
   AppOperationsReimbursementsRouteImport.update({
     id: '/reimbursements',
@@ -393,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/operations/expenses': typeof AppOperationsExpensesRoute
   '/operations/payroll': typeof AppOperationsPayrollRoute
   '/operations/performance': typeof AppOperationsPerformanceRoute
+  '/operations/refunds': typeof AppOperationsRefundsRoute
   '/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/operations/reports': typeof AppOperationsReportsRoute
   '/tickets/$id': typeof AppTicketsIdRoute
@@ -447,6 +454,7 @@ export interface FileRoutesByTo {
   '/operations/expenses': typeof AppOperationsExpensesRoute
   '/operations/payroll': typeof AppOperationsPayrollRoute
   '/operations/performance': typeof AppOperationsPerformanceRoute
+  '/operations/refunds': typeof AppOperationsRefundsRoute
   '/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/operations/reports': typeof AppOperationsReportsRoute
   '/tickets/$id': typeof AppTicketsIdRoute
@@ -506,6 +514,7 @@ export interface FileRoutesById {
   '/_app/operations/expenses': typeof AppOperationsExpensesRoute
   '/_app/operations/payroll': typeof AppOperationsPayrollRoute
   '/_app/operations/performance': typeof AppOperationsPerformanceRoute
+  '/_app/operations/refunds': typeof AppOperationsRefundsRoute
   '/_app/operations/reimbursements': typeof AppOperationsReimbursementsRoute
   '/_app/operations/reports': typeof AppOperationsReportsRoute
   '/_app/tickets/$id': typeof AppTicketsIdRoute
@@ -565,6 +574,7 @@ export interface FileRouteTypes {
     | '/operations/expenses'
     | '/operations/payroll'
     | '/operations/performance'
+    | '/operations/refunds'
     | '/operations/reimbursements'
     | '/operations/reports'
     | '/tickets/$id'
@@ -619,6 +629,7 @@ export interface FileRouteTypes {
     | '/operations/expenses'
     | '/operations/payroll'
     | '/operations/performance'
+    | '/operations/refunds'
     | '/operations/reimbursements'
     | '/operations/reports'
     | '/tickets/$id'
@@ -677,6 +688,7 @@ export interface FileRouteTypes {
     | '/_app/operations/expenses'
     | '/_app/operations/payroll'
     | '/_app/operations/performance'
+    | '/_app/operations/refunds'
     | '/_app/operations/reimbursements'
     | '/_app/operations/reports'
     | '/_app/tickets/$id'
@@ -1011,6 +1023,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOperationsPerformanceRouteImport
       parentRoute: typeof AppOperationsRoute
     }
+    '/_app/operations/refunds': {
+      id: '/_app/operations/refunds'
+      path: '/refunds'
+      fullPath: '/operations/refunds'
+      preLoaderRoute: typeof AppOperationsRefundsRouteImport
+      parentRoute: typeof AppOperationsRoute
+    }
     '/_app/operations/reimbursements': {
       id: '/_app/operations/reimbursements'
       path: '/reimbursements'
@@ -1136,6 +1155,7 @@ interface AppOperationsRouteChildren {
   AppOperationsExpensesRoute: typeof AppOperationsExpensesRoute
   AppOperationsPayrollRoute: typeof AppOperationsPayrollRoute
   AppOperationsPerformanceRoute: typeof AppOperationsPerformanceRoute
+  AppOperationsRefundsRoute: typeof AppOperationsRefundsRoute
   AppOperationsReimbursementsRoute: typeof AppOperationsReimbursementsRoute
   AppOperationsReportsRoute: typeof AppOperationsReportsRoute
   AppOperationsIndexRoute: typeof AppOperationsIndexRoute
@@ -1150,6 +1170,7 @@ const AppOperationsRouteChildren: AppOperationsRouteChildren = {
   AppOperationsExpensesRoute: AppOperationsExpensesRoute,
   AppOperationsPayrollRoute: AppOperationsPayrollRoute,
   AppOperationsPerformanceRoute: AppOperationsPerformanceRoute,
+  AppOperationsRefundsRoute: AppOperationsRefundsRoute,
   AppOperationsReimbursementsRoute: AppOperationsReimbursementsRoute,
   AppOperationsReportsRoute: AppOperationsReportsRoute,
   AppOperationsIndexRoute: AppOperationsIndexRoute,
