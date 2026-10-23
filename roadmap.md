@@ -5,6 +5,6 @@
 - [ ] Verify admin/management saves and deletes end-to-end — blocked by declined administrator sign-in; current team-lead account has no visible deal rows.
 
 # Deal save protection
-- [ ] Add immediate loading and synchronous submission locks to creation and existing deal updates.
-- [ ] Add atomic database idempotency for new deals without changing existing records or access rules.
-- [ ] Test retries, slow responses and simultaneous submissions; verify the existing success destination.
+- [x] Add immediate loading and synchronous submission locks to creation and existing deal updates.
+- [x] Add atomic database idempotency for new deals without changing existing records or access rules.
+- [x] Test retries, slow responses and simultaneous submissions; verify the existing success destination. Database concurrency verified on isolated PostgreSQL; authenticated UI failures, retries and replay navigation verified with intercepted writes to preserve CRM data. Live new-deal creation was intentionally not performed.
