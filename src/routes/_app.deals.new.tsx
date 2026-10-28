@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useSaveGuard } from "@/lib/use-save-guard";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,7 +58,7 @@ function NewDealPage() {
         supabase.from("insurance_types").select("id, name").eq("active", true).order("name"),
         supabase.from("lead_sources").select("id, name").eq("active", true).order("name"),
         supabase.from("app_settings").select("key, value").eq("key", "tagged_premium_base_percentage").maybeSingle(),
-        supabase.from("profiles").select("id, full_name").order("full_name"),
+        supabase.from("profiles").select("id, full_name, team_id").order("full_name"),
       ]);
       return {
         clients: clients.data ?? [], stages: stages.data ?? [],
@@ -69,6 +69,25 @@ function NewDealPage() {
       };
     },
   });
+
+  // Team Leads: default assignee is themselves; they may pick any member of their own team.
+  const isTeamLeadCreator = hasRole(["team_lead"]) && !hasRole(["admin", "management", "do"]);
+  const { data: teamMembers } = useQuery({
+    queryKey: ["deal-form-team-members", user?.id, lists?.people.length],
+    enabled: !!user && !!lists && isTeamLeadCreator,
+    queryFn: async () => {
+      const [{ data: me }, { data: led }] = await Promise.all([
+        supabase.from("profiles").select("team_id").eq("id", user!.id).maybeSingle(),
+        supabase.from("teams").select("id").eq("lead_id", user!.id),
+      ]);
+      const teamIds = new Set<string>([...(me?.team_id ? [me.team_id] : []), ...((led ?? []).map((t: any) => t.id))]);
+      const all = (lists?.people ?? []) as Array<{ id: string; full_name: string | null; team_id: string | null }>;
+      const members = all.filter(p => p.id === user!.id || (p.team_id && teamIds.has(p.team_id)));
+      return members;
+    },
+  });
+  const [assignedTo, setAssignedTo] = useState<string>("");
+  useEffect(() => { if (isTeamLeadCreator && user && !assignedTo) setAssignedTo(user.id); }, [isTeamLeadCreator, user, assignedTo]);
 
   const [form, setForm] = useState({
     client_id: "", cover_note_number: "", policy_number: "",
@@ -547,6 +566,7 @@ function NewDealPage() {
     const payload: any = {
       ...form,
       created_by: user.id,
+      ...(isTeamLeadCreator ? { assigned_do_id: assignedTo || user.id } : {}),
       client_id: form.client_id || null,
       source_id: form.source_id || null,
       insurance_company_id: form.insurance_company_id || null,
@@ -741,6 +761,14 @@ function NewDealPage() {
                   <SelectContent>{lists?.clients.map(c=><SelectItem key={c.id} value={c.id}>{clientLabel(c)}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
+              {isTeamLeadCreator && (
+                <Field label="Deal Assigned To">
+                  <Select value={assignedTo} onValueChange={setAssignedTo}>
+                    <SelectTrigger><SelectValue placeholder="Select team member"/></SelectTrigger>
+                    <SelectContent>{(teamMembers ?? [{ id: user?.id ?? "", full_name: "Me" }]).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.full_name || "—"}{p.id === user?.id ? " (You)" : ""}</SelectItem>)}</SelectContent>
+                  </Select>
+                </Field>
+              )}
               <Field label="Stage">
                 <Select value={form.stage_id} onValueChange={(v)=>set("stage_id", v)}>
                   <SelectTrigger><SelectValue placeholder="Stage"/></SelectTrigger>
