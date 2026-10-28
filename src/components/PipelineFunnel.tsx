@@ -303,6 +303,17 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
     if (planPaidDated.has(d.id) || insByDeal.has(d.id)) return planPaidInRange(d.id);
     return Number(d.gross_premium || 0);
   };
+
+  /**
+   * Won Business value of a deal — the existing Tagged Premium: instalment
+   * plans report the Tagged Premium of the instalments paid inside the
+   * selected period; plain deals their stored Tagged Premium.
+   */
+  const wonTaggedOf = (d: any) => {
+    if (customDealIds.has(d.id)) return customWonInRange(d.id);
+    if (planPaidDated.has(d.id) || insByDeal.has(d.id)) return planPaidTaggedInRange(d.id);
+    return Number(d.tagged_premium || 0);
+  };
   const dueValue = (d: any) => insByDeal.get(d.id)?.due ?? 0;
 
   const overallTotal = filteredDeals.reduce((a: number, d: any) => a + Number(d.gross_premium || 0), 0);
