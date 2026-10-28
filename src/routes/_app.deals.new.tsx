@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useSaveGuard } from "@/lib/use-save-guard";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,8 +73,8 @@ function NewDealPage() {
   // Team Leads: default assignee is themselves; they may pick any member of their own team.
   const isTeamLeadCreator = hasRole(["team_lead"]) && !hasRole(["admin", "management", "do"]);
   const { data: teamMembers } = useQuery({
-    queryKey: ["deal-form-team-members", user?.id],
-    enabled: !!user && isTeamLeadCreator,
+    queryKey: ["deal-form-team-members", user?.id, lists?.people.length],
+    enabled: !!user && !!lists && isTeamLeadCreator,
     queryFn: async () => {
       const [{ data: me }, { data: led }] = await Promise.all([
         supabase.from("profiles").select("team_id").eq("id", user!.id).maybeSingle(),
