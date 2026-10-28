@@ -443,7 +443,7 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
                 <div className="flex min-w-max">
                 {stages.map((s: any) => {
                   const list = sec.deals.filter((d: any) => d.stage_id === s.id);
-                  const total = list.reduce((a: number, d: any) => a + (s.is_won ? wonValue(d) : Number(d.gross_premium || 0)), 0);
+                  const total = list.reduce((a: number, d: any) => a + (s.is_won ? wonTaggedOf(d) : Number(d.gross_premium || 0)), 0);
                   return (
                     <button
                       type="button"
