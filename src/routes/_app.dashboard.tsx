@@ -52,6 +52,7 @@ function DashboardPage() {
   });
 
   const [drill, setDrill] = useState<{ title: string; deals: any[] } | null>(null);
+  const [funnelIds, setFunnelIds] = useState<Set<string> | null>(null);
   const data = useMemo(() => {
     if (!raw) return null;
     return {
@@ -73,9 +74,11 @@ function DashboardPage() {
   const isWon = (d: any) => d.stage_id && wonStageIds.has(d.stage_id);
 
   // MANDATORY RULE: Total Business = Fresh Business + Renewal Business (Lost excluded)
-  const freshDeals = data.deals.filter(d => d.deal_type === "fresh" && !isLost(d));
-  const renewalDeals = data.deals.filter(d => d.deal_type === "renewal" && !isLost(d));
-  const lostDeals = data.deals.filter(isLost);
+  // Summary cards follow the same user/period filter applied in the Pipeline Sales Funnel.
+  const kpiDeals = funnelIds ? data.deals.filter((d) => funnelIds.has(d.id)) : data.deals;
+  const freshDeals = kpiDeals.filter(d => d.deal_type === "fresh" && !isLost(d));
+  const renewalDeals = kpiDeals.filter(d => d.deal_type === "renewal" && !isLost(d));
+  const lostDeals = kpiDeals.filter(isLost);
   const activeDeals = [...freshDeals, ...renewalDeals];
 
   // All money figures come from the centralized engine (single source of truth).
@@ -87,8 +90,8 @@ function DashboardPage() {
   const totalIncome = freshAgg.total_income + renewalAgg.total_income;
   const tagged = freshAgg.tagged_premium + renewalAgg.tagged_premium;
 
-  const total = data.deals.length;
-  const won = data.deals.filter(isWon).length;
+  const total = kpiDeals.length;
+  const won = kpiDeals.filter(isWon).length;
   const lost = lostDeals.length;
   const active = total - won - lost;
 
@@ -160,9 +163,9 @@ function DashboardPage() {
   if (canSeeIncome) financialKpis.push({ label: "Total Income", value: fmtPKR(totalIncome), icon: TrendingUp, deals: activeDeals });
   const activityKpis = [
     { label: "Total Deals", value: total.toString(), icon: Briefcase, deals: data.deals },
-    { label: "Won", value: won.toString(), icon: CheckCircle2, deals: data.deals.filter(isWon) },
+    { label: "Won", value: won.toString(), icon: CheckCircle2, deals: kpiDeals.filter(isWon) },
     { label: "Lost", value: lost.toString(), icon: XCircle, deals: lostDeals },
-    { label: "Active", value: active.toString(), icon: Activity, deals: data.deals.filter((d) => !isWon(d) && !isLost(d)) },
+    { label: "Active", value: active.toString(), icon: Activity, deals: kpiDeals.filter((d) => !isWon(d) && !isLost(d)) },
   ];
   const stageName = new Map(data.stages.map((s) => [s.id, s.name]));
   const taggedOf = (d: any) => aggregateDealFinancials([d] as any, data.basePct).tagged_premium;
@@ -195,7 +198,7 @@ function DashboardPage() {
 
       {/* Business Overview */}
       <div className="mb-5">
-        <PipelineFunnel />
+        <PipelineFunnel onFilteredChange={setFunnelIds} />
       </div>
 
 
