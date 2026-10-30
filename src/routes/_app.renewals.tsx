@@ -24,18 +24,29 @@ function classify(endDate: string) {
 }
 
 function RenewalsPage() {
+  const { hasRole } = useAuth();
+  const canExport = hasRole(["admin", "management"]);
   const [tab, setTab] = useState("upcoming");
   const { data } = useQuery({
     queryKey: ["renewals"],
     queryFn: async () => {
-      const [pols, deals, clients, cos] = await Promise.all([
+      const [pols, deals, clients, cos, types] = await Promise.all([
         supabase.from("policies").select("*").order("end_date"),
-        supabase.from("deals").select("id, deal_number, policy_number, policy_end_date, gross_premium, client_id, insurance_company_id"),
-        supabase.from("clients").select("id, company_name"),
+        supabase.from("deals").select("id, deal_number, policy_number, policy_end_date, gross_premium, client_id, insurance_company_id, insurance_type_id"),
+        supabase.from("clients").select("id, company_name, full_name, phone, poc_name, poc_number"),
         supabase.from("insurance_companies").select("id, name"),
+        supabase.from("insurance_types").select("id, name"),
       ]);
       const clientMap = new Map((clients.data ?? []).map(c => [c.id, c.company_name]));
+      const clientDetail = new Map((clients.data ?? []).map(c => [c.id, c]));
       const coMap = new Map((cos.data ?? []).map(c => [c.id, c.name]));
+      const typeMap = new Map((types.data ?? []).map(t => [t.id, t.name]));
+      const contactOf = (clientId: string | null) => {
+        const c = clientId ? clientDetail.get(clientId) : undefined;
+        if (!c) return "—";
+        const bits = [c.poc_name, c.poc_number || c.phone].filter(Boolean);
+        return bits.length ? bits.join(" — ") : (c.phone ?? "—");
+      };
       // combine policies + legacy deal-based renewals
       const rows = [
         ...(pols.data ?? []).map(p => ({
@@ -43,6 +54,8 @@ function RenewalsPage() {
           number: p.policy_number,
           client: p.client_id ? clientMap.get(p.client_id) ?? "—" : "—",
           company: p.company_id ? coMap.get(p.company_id) ?? "—" : "—",
+          product: "—",
+          contact: contactOf(p.client_id ?? null),
           premium: Number(p.premium),
           end_date: p.end_date,
           bucket: classify(p.end_date),
@@ -52,6 +65,8 @@ function RenewalsPage() {
           number: d.policy_number || d.deal_number,
           client: d.client_id ? clientMap.get(d.client_id) ?? "—" : "—",
           company: d.insurance_company_id ? coMap.get(d.insurance_company_id) ?? "—" : "—",
+          product: d.insurance_type_id ? typeMap.get(d.insurance_type_id) ?? "—" : "—",
+          contact: contactOf(d.client_id),
           premium: Number(d.gross_premium),
           end_date: d.policy_end_date!,
           bucket: classify(d.policy_end_date!),
@@ -60,6 +75,49 @@ function RenewalsPage() {
       return rows;
     },
   });
+
+  const exportRenewals = () => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const upcoming = (data ?? [])
+      .filter(r => new Date(r.end_date) >= today)
+      .sort((a, b) => a.end_date.localeCompare(b.end_date));
+    const toRow = (r: (typeof upcoming)[number]) => ({
+      "Policy / Deal #": r.number || "—",
+      "Customer Name": r.client,
+      "Company": r.company,
+      "Product": r.product,
+      "Contact": r.contact,
+      "Gross Premium": r.premium,
+      "End Date": r.end_date,
+      "Days Left": Math.ceil((new Date(r.end_date).getTime() - Date.now()) / 86400000),
+    });
+    const wb = XLSX.utils.book_new();
+    // month-wise sheets
+    const byMonth = new Map<string, typeof upcoming>();
+    for (const r of upcoming) {
+      const key = r.end_date.slice(0, 7); // YYYY-MM
+      if (!byMonth.has(key)) byMonth.set(key, []);
+      byMonth.get(key)!.push(r);
+    }
+    for (const [key, rows] of byMonth) {
+      const label = new Date(`${key}-01T00:00:00`).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.map(toRow)), label.slice(0, 31));
+    }
+    // quarter-wise sheet
+    const byQuarter = new Map<string, typeof upcoming>();
+    for (const r of upcoming) {
+      const d = new Date(`${r.end_date}T00:00:00`);
+      const key = `${d.getFullYear()}-Q${Math.floor(d.getMonth() / 3) + 1}`;
+      if (!byQuarter.has(key)) byQuarter.set(key, []);
+      byQuarter.get(key)!.push(r);
+    }
+    const quarterRows = [...byQuarter.entries()].flatMap(([q, rows]) =>
+      rows.map(r => ({ Quarter: q, ...toRow(r) })),
+    );
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(quarterRows), "Quarter Wise");
+    if (byMonth.size === 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([]), "No Upcoming");
+    XLSX.writeFile(wb, `upcoming-renewals-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
 
   const filtered = (data ?? []).filter(r => r.bucket === tab);
 
