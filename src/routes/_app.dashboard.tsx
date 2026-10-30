@@ -58,7 +58,6 @@ function DashboardPage() {
     setOverviewDealIds((previous) =>
       previous?.length === ids.length && previous.every((id, index) => id === ids[index]) ? previous : ids,
     );
-    setDrill(null);
   }, []);
   const data = useMemo(() => {
     if (!raw) return null;
