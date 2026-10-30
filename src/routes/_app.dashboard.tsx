@@ -162,7 +162,7 @@ function DashboardPage() {
   ];
   if (canSeeIncome) financialKpis.push({ label: "Total Income", value: fmtPKR(totalIncome), icon: TrendingUp, deals: activeDeals });
   const activityKpis = [
-    { label: "Total Deals", value: total.toString(), icon: Briefcase, deals: data.deals },
+    { label: "Total Deals", value: total.toString(), icon: Briefcase, deals: kpiDeals },
     { label: "Won", value: won.toString(), icon: CheckCircle2, deals: kpiDeals.filter(isWon) },
     { label: "Lost", value: lost.toString(), icon: XCircle, deals: lostDeals },
     { label: "Active", value: active.toString(), icon: Activity, deals: kpiDeals.filter((d) => !isWon(d) && !isLost(d)) },
