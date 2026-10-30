@@ -40,14 +40,14 @@ export function PipelineKanban({ lockUserId }: Props) {
         deals: deals.data ?? [],
         stages: stages.data ?? [],
         profiles: profiles.data ?? [],
-        companies: companies.data ?? [],
+        clients: clients.data ?? [],
       };
     },
   });
 
   const stages = data?.stages ?? [];
   const profileMap = useMemo(() => new Map((data?.profiles ?? []).map((p: any) => [p.id, p.full_name])), [data]);
-  const clientMap = useMemo(() => new Map((data?.clients ?? []).map((c: any) => [c.id, c.company_name || c.full_name || "—"])), [data]);
+  const clientMap = useMemo(() => new Map((data?.clients ?? []).map((c: any) => [c.id, c.company_name || c.full_name || "—"])), [data]) as Map<string, string>;
 
   const deals = useMemo(() => {
     return (data?.deals ?? []).filter((d: any) => {
