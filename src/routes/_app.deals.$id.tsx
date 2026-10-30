@@ -91,6 +91,7 @@ function DealDetail() {
   });
 
   const [stageId, setStageId] = useState<string>("");
+  const [wonStageId, setWonStageId] = useState<string | null>(null);
   useEffect(() => { if (data?.deal?.stage_id) setStageId(data.deal.stage_id); }, [data?.deal?.stage_id]);
 
   const customRates = useMemo(() => {
