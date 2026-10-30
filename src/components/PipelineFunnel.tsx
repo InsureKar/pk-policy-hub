@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ type Props = {
   defaultTo?: string;
   lockUserId?: string;
   title?: string;
+  /** Reports the deal ids matching the applied filters so other dashboard sections stay in sync. */
+  onFilteredChange?: (dealIds: Set<string>) => void;
 };
 
 type Mode = "month" | "quarter" | "year";
@@ -44,7 +46,7 @@ function rangeFor(mode: Mode, year: number, month: number, quarter: string) {
   return { start, end };
 }
 
-export function PipelineFunnel({ lockUserId, title }: Props) {
+export function PipelineFunnel({ lockUserId, title, onFilteredChange }: Props) {
   const scope = useVisibilityScope();
   const now = new Date();
   const years = Array.from({ length: 7 }, (_, i) => now.getFullYear() - 4 + i);
@@ -288,6 +290,11 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, applied, scope, range, customDealIds, customPaidTagged, planPaidDated, insByDeal]);
+
+  useEffect(() => {
+    if (data) onFilteredChange?.(new Set(filteredDeals.map((d: any) => d.id)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredDeals, data]);
 
   const stages = data?.stages ?? [];
   const wonIds = new Set(stages.filter((s: any) => s.is_won).map((s: any) => s.id));
