@@ -1,7 +1,7 @@
 # Deal correction access
 ## Dashboard filters
-- [ ] Share Business Overview's applied period and DO selection with the highlighted dashboard cards and their deal lists.
-- [ ] Verify filter/reset behavior and existing calculations with tests and authenticated preview checks.
+- [x] Share Business Overview's applied period and DO selection with the highlighted dashboard cards and their deal lists.
+- [x] Verify filter/reset behavior and existing calculations: 16 tests passed; authenticated October selection showed 12 deals, a populated DO list showed the same 12 matching deals, empty DO selection showed zero, and Reset restored 43 deals with no browser errors.
 
 # Refund documents
 - [x] Add refusal letter and policy uploads to saved refunds using existing edit and view rights.
