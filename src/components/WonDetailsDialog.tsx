@@ -12,6 +12,10 @@ import { toast } from "sonner";
 
 const FIELDS = "id, deal_number, gross_premium, net_premium, commission_percentage, marketing_budget_percentage, loading, b2b_commission, b2b_taker_name";
 
+function F({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>;
+}
+
 /**
  * Stage-triggered form shown when a deal moves to Won. Saves the existing
  * Premium & Commission fields together with the Won stage; cancelling leaves
@@ -57,10 +61,6 @@ export function WonDetailsDialog({ dealId, wonStageId, onClose, onSaved }: {
     } catch (e) { toast.error((e as { message?: string })?.message ?? "Could not save. Please retry."); }
     finally { guard.end(); }
   };
-
-  const F = ({ label, children }: { label: string; children: React.ReactNode }) => (
-    <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>
-  );
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v && !guard.saving) onClose(); }}>
