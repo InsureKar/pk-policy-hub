@@ -16,3 +16,4 @@
 - Travel Posting delivery tracking lives in a separate role-restricted table, never the reconciliation status; absent legacy tracking rows use the default, so ordinary reads and unrelated posting edits cannot expose or overwrite it.
 - Refunds access is enforced in the database through refund_allows()/can_see_refund(); remarks live in a separate table so they can be permission-gated — keep UI checks aligned with these functions.
 - Refund attachments use a separate private bucket and refund-linked metadata; document reads follow refund visibility and uploads require refund edit access, preventing owner-only storage policies from exposing another user's refund.
+- Dashboard overview publishes its filtered deal IDs to the dashboard cards; cards intersect those IDs with their existing visibility-scoped data and retain the centralized financial engine, so period/DO selection stays consistent without duplicating date rules or changing unrelated charts and targets.

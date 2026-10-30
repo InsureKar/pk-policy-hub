@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { fmtDate } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { useAuth } from "@/lib/auth";
 import { Progress } from "@/components/ui/progress";
 import { PipelineFunnel } from "@/components/PipelineFunnel";
+import { selectDashboardDeals } from "@/lib/dashboard-filter";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 import { Button } from "@/components/ui/button";
 import insureSLogo from "@/assets/logo.png";
@@ -52,6 +53,12 @@ function DashboardPage() {
   });
 
   const [drill, setDrill] = useState<{ title: string; deals: any[] } | null>(null);
+  const [overviewDealIds, setOverviewDealIds] = useState<string[] | null>(null);
+  const onFilteredDealIdsChange = useCallback((ids: string[]) => {
+    setOverviewDealIds((previous) =>
+      previous?.length === ids.length && previous.every((id, index) => id === ids[index]) ? previous : ids,
+    );
+  }, []);
   const data = useMemo(() => {
     if (!raw) return null;
     return {
@@ -71,6 +78,11 @@ function DashboardPage() {
 
   const isLost = (d: any) => d.stage_id && lostStageIds.has(d.stage_id);
   const isWon = (d: any) => d.stage_id && wonStageIds.has(d.stage_id);
+  const cardDeals = selectDashboardDeals(data.deals, overviewDealIds);
+  const cardFreshDeals = cardDeals.filter(d => d.deal_type === "fresh" && !isLost(d));
+  const cardRenewalDeals = cardDeals.filter(d => d.deal_type === "renewal" && !isLost(d));
+  const cardActiveDeals = [...cardFreshDeals, ...cardRenewalDeals];
+  const cardLostDeals = cardDeals.filter(isLost);
 
   // MANDATORY RULE: Total Business = Fresh Business + Renewal Business (Lost excluded)
   const freshDeals = data.deals.filter(d => d.deal_type === "fresh" && !isLost(d));
@@ -79,17 +91,17 @@ function DashboardPage() {
   const activeDeals = [...freshDeals, ...renewalDeals];
 
   // All money figures come from the centralized engine (single source of truth).
-  const freshAgg = aggregateDealFinancials(freshDeals as any, data.basePct);
-  const renewalAgg = aggregateDealFinancials(renewalDeals as any, data.basePct);
+  const freshAgg = aggregateDealFinancials(cardFreshDeals as any, data.basePct);
+  const renewalAgg = aggregateDealFinancials(cardRenewalDeals as any, data.basePct);
 
   const totalGross = freshAgg.gross_premium + renewalAgg.gross_premium;
   const totalNet = freshAgg.net_premium + renewalAgg.net_premium;
   const totalIncome = freshAgg.total_income + renewalAgg.total_income;
   const tagged = freshAgg.tagged_premium + renewalAgg.tagged_premium;
 
-  const total = data.deals.length;
-  const won = data.deals.filter(isWon).length;
-  const lost = lostDeals.length;
+  const total = cardDeals.length;
+  const won = cardDeals.filter(isWon).length;
+  const lost = cardLostDeals.length;
   const active = total - won - lost;
 
   const now = new Date();
@@ -153,16 +165,16 @@ function DashboardPage() {
   const monthOverMonth = monthPct - lastMonthPct;
 
   const financialKpis: { label: string; value: string; icon: any; deals: any[] }[] = [
-    { label: "Gross Premium", value: fmtPKR(totalGross), icon: Wallet, deals: activeDeals },
-    { label: "Net Premium", value: fmtPKR(totalNet), icon: Coins, deals: activeDeals },
-    { label: "Tagged Premium", value: fmtPKR(tagged), icon: BadgePercent, deals: activeDeals },
+    { label: "Gross Premium", value: fmtPKR(totalGross), icon: Wallet, deals: cardActiveDeals },
+    { label: "Net Premium", value: fmtPKR(totalNet), icon: Coins, deals: cardActiveDeals },
+    { label: "Tagged Premium", value: fmtPKR(tagged), icon: BadgePercent, deals: cardActiveDeals },
   ];
-  if (canSeeIncome) financialKpis.push({ label: "Total Income", value: fmtPKR(totalIncome), icon: TrendingUp, deals: activeDeals });
+  if (canSeeIncome) financialKpis.push({ label: "Total Income", value: fmtPKR(totalIncome), icon: TrendingUp, deals: cardActiveDeals });
   const activityKpis = [
-    { label: "Total Deals", value: total.toString(), icon: Briefcase, deals: data.deals },
-    { label: "Won", value: won.toString(), icon: CheckCircle2, deals: data.deals.filter(isWon) },
-    { label: "Lost", value: lost.toString(), icon: XCircle, deals: lostDeals },
-    { label: "Active", value: active.toString(), icon: Activity, deals: data.deals.filter((d) => !isWon(d) && !isLost(d)) },
+    { label: "Total Deals", value: total.toString(), icon: Briefcase, deals: cardDeals },
+    { label: "Won", value: won.toString(), icon: CheckCircle2, deals: cardDeals.filter(isWon) },
+    { label: "Lost", value: lost.toString(), icon: XCircle, deals: cardLostDeals },
+    { label: "Active", value: active.toString(), icon: Activity, deals: cardDeals.filter((d) => !isWon(d) && !isLost(d)) },
   ];
   const stageName = new Map(data.stages.map((s) => [s.id, s.name]));
   const taggedOf = (d: any) => aggregateDealFinancials([d] as any, data.basePct).tagged_premium;
@@ -195,7 +207,7 @@ function DashboardPage() {
 
       {/* Business Overview */}
       <div className="mb-5">
-        <PipelineFunnel />
+        <PipelineFunnel onFilteredDealIdsChange={onFilteredDealIdsChange} />
       </div>
 
 
