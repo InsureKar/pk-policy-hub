@@ -495,10 +495,12 @@ export function DealCustomInstalments({
                                 : <span>{r.b2b_taker_name || "—"}</span>}</div>
                           </div>
                           <div className="mt-3 grid grid-cols-2 gap-3 max-w-md">
-                            <div className="rounded-md border p-3">
-                              <p className="text-xs text-muted-foreground">Commission ({r.commission || 0}%)</p>
-                              <p className="font-medium tabular-nums">{fmtPKR(calcs[i]?.commission_before_tax ?? 0)}</p>
-                            </div>
+                            {canSeeSensitive && (
+                              <div className="rounded-md border p-3">
+                                <p className="text-xs text-muted-foreground">Commission ({r.commission || 0}%)</p>
+                                <p className="font-medium tabular-nums">{fmtPKR(calcs[i]?.commission_before_tax ?? 0)}</p>
+                              </div>
+                            )}
                             <div className="rounded-md border p-3">
                               <p className="text-xs text-muted-foreground">Tagged Premium</p>
                               <p className="font-medium tabular-nums">{fmtPKR(calcs[i]?.tagged_premium ?? 0)}</p>
