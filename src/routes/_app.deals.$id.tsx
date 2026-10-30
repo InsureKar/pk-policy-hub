@@ -28,6 +28,7 @@ import B2BTakerField from "@/components/B2BTakerField";
 import { openStorageDoc } from "@/lib/openStorageDoc";
 import { downloadAllDocs } from "@/lib/downloadAllDocs";
 import { DealRecordEditor, DealRecordDelete } from "@/components/DealRecordEditor";
+import { WonDetailsDialog } from "@/components/WonDetailsDialog";
 import { TravelPostingStatus } from "@/components/TravelPostingStatus";
 
 export const Route = createFileRoute("/_app/deals/$id")({
@@ -90,6 +91,7 @@ function DealDetail() {
   });
 
   const [stageId, setStageId] = useState<string>("");
+  const [wonStageId, setWonStageId] = useState<string | null>(null);
   useEffect(() => { if (data?.deal?.stage_id) setStageId(data.deal.stage_id); }, [data?.deal?.stage_id]);
 
   const customRates = useMemo(() => {
@@ -171,6 +173,8 @@ function DealDetail() {
   const clientName = c ? (c.client_type === "individual" ? (c.full_name || c.company_name) : c.company_name) : null;
 
   const updateStage = async (newStage: string) => {
+    if (newStage === d.stage_id) return;
+    if (data.stages.find(s=>s.id===newStage)?.is_won) { setWonStageId(newStage); return; }
     setStageId(newStage);
     const { error } = await supabase.from("deals").update({ stage_id: newStage }).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Stage updated"); qc.invalidateQueries({ queryKey: ["deal", id] }); }
@@ -217,6 +221,9 @@ function DealDetail() {
               <SelectTrigger className="w-[200px]"><SelectValue/></SelectTrigger>
               <SelectContent>{data.stages.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
             </Select>
+            <WonDetailsDialog dealId={wonStageId ? id : null} wonStageId={wonStageId}
+              onClose={() => setWonStageId(null)}
+              onSaved={() => { setStageId(wonStageId!); setWonStageId(null); qc.invalidateQueries({ queryKey: ["deal", id] }); }} />
             {canManageDeal && (
               <>
                 <DealRecordEditor table="deals" title="Deal" record={d} onSaved={() => qc.invalidateQueries()} />

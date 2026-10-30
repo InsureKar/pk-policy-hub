@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtPKR } from "@/lib/format";
 import { toast } from "sonner";
 import { GripVertical } from "lucide-react";
+import { WonDetailsDialog } from "@/components/WonDetailsDialog";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 
 const STAGE_COLORS: Record<string, string> = {
@@ -56,7 +57,17 @@ export function PipelineKanban({ lockUserId }: Props) {
     });
   }, [data, userId, scope]);
 
+  const [wonPrompt, setWonPrompt] = useState<{ dealId: string; stageId: string } | null>(null);
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["pipeline-kanban"] });
+    qc.invalidateQueries({ queryKey: ["pipeline-funnel"] });
+  };
+
   const moveDeal = async (dealId: string, stageId: string) => {
+    const target = stages.find((s: any) => s.id === stageId);
+    const deal = (data?.deals ?? []).find((d: any) => d.id === dealId);
+    if (deal?.stage_id === stageId) return;
+    if (target?.is_won) { setWonPrompt({ dealId, stageId }); return; }
     const { error } = await supabase.from("deals").update({ stage_id: stageId }).eq("id", dealId);
     if (error) return toast.error(error.message);
     toast.success("Deal stage updated");
@@ -143,6 +154,8 @@ export function PipelineKanban({ lockUserId }: Props) {
           <div className="text-sm text-muted-foreground py-8 w-full text-center">No pipeline stages configured.</div>
         )}
       </div>
+      <WonDetailsDialog dealId={wonPrompt?.dealId ?? null} wonStageId={wonPrompt?.stageId ?? null}
+        onClose={() => setWonPrompt(null)} onSaved={() => { setWonPrompt(null); refresh(); }} />
     </div>
   );
 }
