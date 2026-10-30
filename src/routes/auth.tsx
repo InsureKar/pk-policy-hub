@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Shield, ArrowLeft } from "lucide-react";
+import { markActivityNow, EXPIRED_FLAG_KEY } from "@/components/SessionTimeout";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -20,6 +21,15 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(EXPIRED_FLAG_KEY)) {
+        localStorage.removeItem(EXPIRED_FLAG_KEY);
+        toast.error("Your session has expired due to inactivity. Please log in again.", { duration: 10000 });
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => { if (!loading && user) nav({ to: "/dashboard", replace: true }); }, [user, loading, nav]);
 
   const signIn = async (e: React.FormEvent) => {
@@ -28,6 +38,7 @@ function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      markActivityNow();
     } catch (err) {
       toast.error((err as Error).message);
     } finally { setBusy(false); }
