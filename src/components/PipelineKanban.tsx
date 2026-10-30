@@ -30,11 +30,11 @@ export function PipelineKanban({ lockUserId }: Props) {
   const { data } = useQuery({
     queryKey: ["pipeline-kanban"],
     queryFn: async () => {
-      const [deals, stages, profiles, companies] = await Promise.all([
-        supabase.from("deals").select("id, deal_number, gross_premium, stage_id, assigned_do_id, team_lead_id, deal_type, insurance_company_id"),
+      const [deals, stages, profiles, clients] = await Promise.all([
+        supabase.from("deals").select("id, deal_number, gross_premium, stage_id, assigned_do_id, team_lead_id, deal_type, client_id"),
         supabase.from("deal_stages").select("id, name, sort_order, is_won, is_lost").order("sort_order"),
         supabase.from("profiles").select("id, full_name"),
-        supabase.from("insurance_companies").select("id, name"),
+        supabase.from("clients").select("id, company_name, full_name"),
       ]);
       return {
         deals: deals.data ?? [],
@@ -47,7 +47,7 @@ export function PipelineKanban({ lockUserId }: Props) {
 
   const stages = data?.stages ?? [];
   const profileMap = useMemo(() => new Map((data?.profiles ?? []).map((p: any) => [p.id, p.full_name])), [data]);
-  const companyMap = useMemo(() => new Map((data?.companies ?? []).map((c: any) => [c.id, c.name])), [data]);
+  const clientMap = useMemo(() => new Map((data?.clients ?? []).map((c: any) => [c.id, c.company_name || c.full_name || "—"])), [data]);
 
   const deals = useMemo(() => {
     return (data?.deals ?? []).filter((d: any) => {
@@ -136,10 +136,7 @@ export function PipelineKanban({ lockUserId }: Props) {
                     </div>
                     <div className="text-sm font-semibold tabular-nums mt-1.5">{fmtPKR(Number(d.gross_premium || 0))}</div>
                     <div className="text-xs text-muted-foreground mt-1 truncate">
-                      {d.insurance_company_id ? companyMap.get(d.insurance_company_id) : "—"}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {d.assigned_do_id ? profileMap.get(d.assigned_do_id) : "Unassigned"}
+                      {d.client_id ? clientMap.get(d.client_id) : "—"}
                     </div>
                   </div>
                 ))}
