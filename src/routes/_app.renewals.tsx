@@ -125,7 +125,9 @@ function RenewalsPage() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
-      <PageHeader title="Renewals" subtitle="Track upcoming, due, expired and completed policy renewals."/>
+      <PageHeader title="Renewals" subtitle="Track upcoming, due, expired and completed policy renewals.">
+        {canExport && <Button variant="outline" onClick={exportRenewals}>Export Excel</Button>}
+      </PageHeader>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="upcoming">Upcoming ({counts.upcoming ?? 0})</TabsTrigger>
