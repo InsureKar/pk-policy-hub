@@ -1,4 +1,7 @@
 # Deal correction access
+## Deals Excel export
+- [x] Add Admin-only all-date, month and inclusive creation-date-range exports with saved deal fields and linked client, installment, bulk, travel and document details.
+- [ ] Verify period selection, stored values and authenticated Excel downloads.
 ## Dashboard filters
 - [x] Share Business Overview's applied period and DO selection with the highlighted dashboard cards and their deal lists.
 - [x] Verify filter/reset behavior and existing calculations: 16 tests passed; authenticated October selection showed 12 deals, a populated DO list showed the same 12 matching deals, empty DO selection showed zero, and Reset restored 43 deals with no browser errors.

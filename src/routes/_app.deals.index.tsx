@@ -14,6 +14,7 @@ import { useAuth } from "@/lib/auth";
 import { DeleteButton } from "@/components/DeleteButton";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 import { TravelPostingList } from "@/components/TravelPostingList";
+import { DealExcelExport } from "@/components/DealExcelExport";
 
 export type DealsSearch = { stage?: string; dealType?: string; category?: string };
 
@@ -93,7 +94,7 @@ function DealsList() {
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
       <PageHeader title="Deals" subtitle="All policies, quotations, and pipeline opportunities."
-        actions={<Button asChild><Link to="/deals/new"><Plus className="w-4 h-4 mr-2"/>New Deal</Link></Button>} />
+        actions={<div className="flex flex-wrap gap-2"><DealExcelExport /><Button asChild><Link to="/deals/new"><Plus className="w-4 h-4 mr-2"/>New Deal</Link></Button></div>} />
 
       <Card className="mb-4">
         <CardContent className="p-3 flex flex-wrap items-center gap-3">
