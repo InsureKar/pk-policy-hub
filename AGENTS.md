@@ -17,3 +17,4 @@
 - Refunds access is enforced in the database through refund_allows()/can_see_refund(); remarks live in a separate table so they can be permission-gated — keep UI checks aligned with these functions.
 - Refund attachments use a separate private bucket and refund-linked metadata; document reads follow refund visibility and uploads require refund edit access, preventing owner-only storage policies from exposing another user's refund.
 - Dashboard overview publishes its filtered deal IDs to the dashboard cards; cards intersect those IDs with their existing visibility-scoped data and retain the centralized financial engine, so period/DO selection stays consistent without duplicating date rules or changing unrelated charts and targets.
+- Deal Excel exports use paginated authenticated browser reads, existing visibility scope, and stored values; a separate creation-date period selector and prepared-download step avoid changing list filters or financial logic.
