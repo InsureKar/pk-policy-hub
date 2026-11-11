@@ -3102,6 +3102,9 @@ export type Database = {
       travel_posting_rows: {
         Row: {
           agent_name: string | null
+          commission_approval: string | null
+          commission_approval_at: string | null
+          commission_approval_by: string | null
           commission_percentage: number
           company_id: string | null
           created_at: string
@@ -3120,6 +3123,9 @@ export type Database = {
         }
         Insert: {
           agent_name?: string | null
+          commission_approval?: string | null
+          commission_approval_at?: string | null
+          commission_approval_by?: string | null
           commission_percentage?: number
           company_id?: string | null
           created_at?: string
@@ -3138,6 +3144,9 @@ export type Database = {
         }
         Update: {
           agent_name?: string | null
+          commission_approval?: string | null
+          commission_approval_at?: string | null
+          commission_approval_by?: string | null
           commission_percentage?: number
           company_id?: string | null
           created_at?: string
