@@ -83,7 +83,8 @@ export function TravelBulkPolicies({
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const { hasRole } = useAuth();
-  const canExceed45 = hasRole(["admin", "management"]);
+  const canExceed45 = true; // all users may exceed 45%; admin/management approve it
+  void hasRole;
 
   const totalPremium = rows.reduce((a, r) => a + Number(r.premium || 0), 0);
   const totalCommission = rows.reduce((a, r) => a + (Number(r.premium || 0) * Number(r.commission_percentage || 0)) / 100, 0);
@@ -183,7 +184,7 @@ export function TravelBulkPolicies({
               date_issued: toDate(cells[cols.date]),
               policy_number: policy,
               premium,
-              commission_percentage: clampPct(Number(pct.toFixed(2))),
+              commission_percentage: clampPct(Number(pct.toFixed(2)), true),
               agent_name: String(cells[cols.agent] ?? "").trim(),
               remarks: String(cells[cols.remarks] ?? "").trim(),
             });
@@ -269,7 +270,7 @@ export function TravelBulkPolicies({
                       onChange={(e) => update(i, { commission_percentage: Number(e.target.value) || 0 })}
                       onBlur={(e) => {
                         const v = Number(e.target.value) || 0;
-                        if (!canExceed45 && (v < 0 || v > 45)) toast.error("Commission must be between 0% and 45%");
+                        if (v > 45) toast.warning("Commission above 45% will be sent to Admin/Management for approval");
                         update(i, { commission_percentage: clampPct(v, canExceed45) });
                       }}/>
                   </td>

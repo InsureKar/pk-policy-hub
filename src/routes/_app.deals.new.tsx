@@ -533,7 +533,7 @@ function NewDealPage() {
       const seen = new Map<string, number>();
       for (let i = 0; i < travelRows.length; i++) {
         const r = travelRows[i];
-        if (r.commission_percentage < 0 || r.commission_percentage > 45) return toast.error(`Row ${i + 1}: commission must be between 0% and 45%`);
+        if (r.commission_percentage < 0) return toast.error(`Row ${i + 1}: commission cannot be negative`);
         const n = norm(r.policy_number);
         if (!n) return toast.error(`Row ${i + 1}: policy number is required`);
         if (seen.has(n)) return toast.error(`Duplicate policy number in rows ${seen.get(n)! + 1} and ${i + 1}`);

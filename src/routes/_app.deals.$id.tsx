@@ -874,7 +874,14 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                       <td className="p-2"><Input className="h-8" defaultValue={r.policy_number ?? ""} onBlur={e => updateRow(r.id, { policy_number: e.target.value })}/></td>
                       <td className="p-2"><Input type="number" step="0.01" className="h-8 text-right" defaultValue={r.premium ?? 0} onBlur={e => updateRow(r.id, { premium: Number(e.target.value) || 0 })}/></td>
                       <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={Number(r.commission_percentage) || ""} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>
-                      <td className="p-2 text-right tabular-nums">{fmtPKR(commAmt)}</td>
+                      <td className="p-2 text-right tabular-nums">{fmtPKR(commAmt)}{(r as any).commission_approval && (
+                        <div className="mt-1 flex flex-col items-end gap-1">
+                          <Badge variant={(r as any).commission_approval === "approved" ? "default" : (r as any).commission_approval === "rejected" ? "destructive" : "secondary"} className="text-[10px]">
+                            {(r as any).commission_approval === "pending" ? "Above 45% · Pending" : (r as any).commission_approval === "approved" ? "Above 45% · Approved" : "Above 45% · Rejected"}
+                          </Badge>
+                          {canEditPayables && (r as any).commission_approval !== "approved" && <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => updateRow(r.id, { commission_approval: "approved" } as any)}>Approve</Button>}
+                          {canEditPayables && (r as any).commission_approval !== "rejected" && <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => updateRow(r.id, { commission_approval: "rejected" } as any)}>Reject</Button>}
+                        </div>)}</td>
                       <td className="p-2 text-right tabular-nums">{canEditPayables
                         ? <Input type="number" step="0.01" className="h-8 text-right min-w-[110px]" key={`po-${r.id}-${r.payable_own}`} defaultValue={Math.round(ownPayable(r) * 100) / 100} onBlur={e => { const v = e.target.value.trim(); if (v !== "" && Number(v) === Math.round(ownPayable(r) * 100) / 100) return; updateRow(r.id, { payable_own: v === "" ? null : Number(v) }); }}/>
                         : fmtPKR(ownPayable(r))}</td>

@@ -71,6 +71,13 @@
       "when": 1793200531457,
       "tag": "0009_team_lead_default_assignment",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794413180516,
+      "tag": "0010_travel_commission_above_45_approval",
+      "breakpoints": true
     }
   ]
 }
