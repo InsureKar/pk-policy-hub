@@ -768,6 +768,7 @@ export type Database = {
           received_by: string | null
           source_id: string | null
           stage_id: string | null
+          submission_key: string | null
           tagged_premium: number | null
           tagged_premium_percentage: number | null
           team_id: string | null
@@ -830,6 +831,7 @@ export type Database = {
           received_by?: string | null
           source_id?: string | null
           stage_id?: string | null
+          submission_key?: string | null
           tagged_premium?: number | null
           tagged_premium_percentage?: number | null
           team_id?: string | null
@@ -892,6 +894,7 @@ export type Database = {
           received_by?: string | null
           source_id?: string | null
           stage_id?: string | null
+          submission_key?: string | null
           tagged_premium?: number | null
           tagged_premium_percentage?: number | null
           team_id?: string | null
@@ -2231,6 +2234,130 @@ export type Database = {
           },
         ]
       }
+      refund_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_name: string
+          id: string
+          refund_id: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_name: string
+          id?: string
+          refund_id: string
+          storage_path: string
+          uploaded_by?: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          id?: string
+          refund_id?: string
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_documents_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: false
+            referencedRelation: "refunds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refund_remarks: {
+        Row: {
+          refund_id: string
+          remarks: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          refund_id: string
+          remarks?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          refund_id?: string
+          remarks?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_remarks_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: true
+            referencedRelation: "refunds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refunds: {
+        Row: {
+          agent_name: string | null
+          created_at: string
+          created_by: string | null
+          do_name: string | null
+          do_user_id: string | null
+          id: string
+          import_batch: string | null
+          name: string
+          policy_no: string
+          premium: number
+          refund_process_date: string | null
+          refunded: number
+          sr_no: number
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          agent_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          do_name?: string | null
+          do_user_id?: string | null
+          id?: string
+          import_batch?: string | null
+          name: string
+          policy_no: string
+          premium?: number
+          refund_process_date?: string | null
+          refunded?: number
+          sr_no?: number
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          agent_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          do_name?: string | null
+          do_user_id?: string | null
+          id?: string
+          import_batch?: string | null
+          name?: string
+          policy_no?: string
+          premium?: number
+          refund_process_date?: string | null
+          refunded?: number
+          sr_no?: number
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       reimbursements: {
         Row: {
           amount: number
@@ -2949,15 +3076,43 @@ export type Database = {
           },
         ]
       }
+      travel_posting_delivery_status: {
+        Row: {
+          posting_id: string
+          sent_status: string
+        }
+        Insert: {
+          posting_id: string
+          sent_status?: string
+        }
+        Update: {
+          posting_id?: string
+          sent_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_posting_delivery_status_posting_id_fkey"
+            columns: ["posting_id"]
+            isOneToOne: true
+            referencedRelation: "travel_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       travel_posting_rows: {
         Row: {
           agent_name: string | null
+          commission_approval: string | null
+          commission_approval_at: string | null
+          commission_approval_by: string | null
           commission_percentage: number
           company_id: string | null
           created_at: string
           date_issued: string | null
           id: string
           payable_company: string | null
+          payable_insurance: number | null
+          payable_own: number | null
           policy_number: string | null
           policy_number_norm: string | null
           posting_id: string
@@ -2968,12 +3123,17 @@ export type Database = {
         }
         Insert: {
           agent_name?: string | null
+          commission_approval?: string | null
+          commission_approval_at?: string | null
+          commission_approval_by?: string | null
           commission_percentage?: number
           company_id?: string | null
           created_at?: string
           date_issued?: string | null
           id?: string
           payable_company?: string | null
+          payable_insurance?: number | null
+          payable_own?: number | null
           policy_number?: string | null
           policy_number_norm?: string | null
           posting_id: string
@@ -2984,12 +3144,17 @@ export type Database = {
         }
         Update: {
           agent_name?: string | null
+          commission_approval?: string | null
+          commission_approval_at?: string | null
+          commission_approval_by?: string | null
           commission_percentage?: number
           company_id?: string | null
           created_at?: string
           date_issued?: string | null
           id?: string
           payable_company?: string | null
+          payable_insurance?: number | null
+          payable_own?: number | null
           policy_number?: string | null
           policy_number_norm?: string | null
           posting_id?: string
@@ -3605,11 +3770,16 @@ export type Database = {
       }
     }
     Functions: {
+      can_see_refund: { Args: { _do: string }; Returns: boolean }
       can_view_ticket: {
         Args: { _t: Database["public"]["Tables"]["tickets"]["Row"] }
         Returns: boolean
       }
       can_view_uw: { Args: { _req: string }; Returns: boolean }
+      create_deal_once: {
+        Args: { _payload: Json; _submission_key: string }
+        Returns: Json
+      }
       current_user_team: { Args: never; Returns: string }
       deal_policy_conflict: {
         Args: { _exclude_row?: string; _policy_number: string }
@@ -3648,6 +3818,7 @@ export type Database = {
         Args: { _l: Database["public"]["Enums"]["permission_level"] }
         Returns: number
       }
+      refund_allows: { Args: { _key: string }; Returns: boolean }
       send_notification: {
         Args: {
           _entity_id?: string

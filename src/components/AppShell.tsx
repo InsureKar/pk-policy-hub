@@ -100,6 +100,7 @@ const groups: NavGroup[] = [
       { to: "/operations/expenses", label: "Expenses", icon: ReceiptText, roles: ["admin", "management"], perm: "operations.expenses" },
       { to: "/operations/reimbursements", label: "Reimbursements", icon: HandCoins, perm: "operations.reimbursements" },
       { to: "/operations/dispatch", label: "Dispatch Record", icon: PackageCheck, perm: "operations.dispatch" },
+      { to: "/operations/refunds", label: "Refunds", icon: HandCoins, perm: "refunds.view" },
       { to: "/operations/reports", label: "Ops Reports", icon: BarChart3, roles: ["admin", "management"], perm: "reports.operations" },
     ],
   },

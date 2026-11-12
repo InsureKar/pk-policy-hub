@@ -21,13 +21,25 @@ import { DealInstalments } from "@/components/DealInstalments";
 import { DealCustomInstalments } from "@/components/DealCustomInstalments";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { ArrowLeft, Maximize2, Pencil } from "lucide-react";
+import { ArrowLeft, Loader2, Maximize2, Pencil } from "lucide-react";
+import { useSaveGuard } from "@/lib/use-save-guard";
 import { cn } from "@/lib/utils";
 import B2BTakerField from "@/components/B2BTakerField";
 import { openStorageDoc } from "@/lib/openStorageDoc";
+import { downloadAllDocs } from "@/lib/downloadAllDocs";
+import { DealRecordEditor, DealRecordDelete } from "@/components/DealRecordEditor";
+import { WonDetailsDialog } from "@/components/WonDetailsDialog";
+import { TravelPostingStatus } from "@/components/TravelPostingStatus";
 
 export const Route = createFileRoute("/_app/deals/$id")({
   component: DealDetail,
+  head: () => ({ meta: [
+    { title: "Deal Details & Corrections | Insurekar CRM" },
+    { name: "description", content: "Review and correct authorized insurance deal records in Insurekar CRM." },
+    { property: "og:title", content: "Deal Details & Corrections | Insurekar CRM" },
+    { property: "og:description", content: "Review authorized insurance deals, instalments, documents and linked records." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 const PAYMENT_SCHEDULES = ["Annual", "Half-Yearly", "Quarterly", "Monthly"] as const;
@@ -37,6 +49,7 @@ function DealDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const { hasRole, can } = useAuth();
+  const paymentGuard = useSaveGuard();
   // Premium & Income calculations are restricted to Admin and Management.
   const canSeeFinancials = hasRole(["admin", "management"]);
   const canManageDeal = canSeeFinancials;
@@ -78,6 +91,7 @@ function DealDetail() {
   });
 
   const [stageId, setStageId] = useState<string>("");
+  const [wonStageId, setWonStageId] = useState<string | null>(null);
   useEffect(() => { if (data?.deal?.stage_id) setStageId(data.deal.stage_id); }, [data?.deal?.stage_id]);
 
   const customRates = useMemo(() => {
@@ -159,12 +173,16 @@ function DealDetail() {
   const clientName = c ? (c.client_type === "individual" ? (c.full_name || c.company_name) : c.company_name) : null;
 
   const updateStage = async (newStage: string) => {
+    if (newStage === d.stage_id) return;
+    if (data.stages.find(s=>s.id===newStage)?.is_won) { setWonStageId(newStage); return; }
     setStageId(newStage);
     const { error } = await supabase.from("deals").update({ stage_id: newStage }).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Stage updated"); qc.invalidateQueries({ queryKey: ["deal", id] }); }
   };
 
-  const savePayment = async () => {
+  const savePayment = async (afterSave?: () => Promise<void>) => {
+    if (!paymentGuard.begin()) return;
+    try {
     // Mandatory validation
     if (!pay.insurance_company_id) return toast.error("Insurance company is required");
     if (!pay.payment_receive_date) return toast.error("Payment receive date is required");
@@ -185,6 +203,9 @@ function DealDetail() {
     if (error) return toast.error(error.message);
     toast.success("Payment information saved");
     qc.invalidateQueries({ queryKey: ["deal", id] });
+    await afterSave?.();
+    } catch (error) { toast.error((error as { message?: string })?.message ?? "Could not save payment information. Please retry."); }
+    finally { paymentGuard.end(); }
   };
 
   const isTravelDeal = (type ?? "").toLowerCase() === "travel";
@@ -200,9 +221,12 @@ function DealDetail() {
               <SelectTrigger className="w-[200px]"><SelectValue/></SelectTrigger>
               <SelectContent>{data.stages.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
             </Select>
+            <WonDetailsDialog dealId={wonStageId ? id : null} wonStageId={wonStageId}
+              onClose={() => setWonStageId(null)}
+              onSaved={() => { setStageId(wonStageId!); setWonStageId(null); qc.invalidateQueries({ queryKey: ["deal", id] }); }} />
             {canManageDeal && (
               <>
-                <EditDealDialog deal={d} lists={data} onSaved={() => qc.invalidateQueries({ queryKey: ["deal", id] })} />
+                <DealRecordEditor table="deals" title="Deal" record={d} onSaved={() => qc.invalidateQueries()} />
                 <Button variant="destructive" size="sm" onClick={deleteDeal}>Delete Deal</Button>
               </>
             )}
@@ -313,9 +337,8 @@ function DealDetail() {
               </Field>
             </div>
             <div className="sm:col-span-2 lg:col-span-3 flex justify-end gap-2">
-              <Button onClick={savePayment}>Save Payment Info</Button>
-              <Button variant="secondary" onClick={async () => {
-                await savePayment();
+              <Button disabled={paymentGuard.saving} aria-busy={paymentGuard.saving} onClick={() => savePayment()}>{paymentGuard.saving && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />}{paymentGuard.saving ? "Saving Deal…" : "Save Payment Info"}</Button>
+              <Button variant="secondary" disabled={paymentGuard.saving} onClick={() => savePayment(async () => {
                 if (!c) return;
                 const recipient = (c as any).email || prompt("Recipient email:");
                 if (!recipient) return;
@@ -327,7 +350,7 @@ function DealDetail() {
                 });
                 if (error) toast.error("Email log failed: " + error.message);
                 else toast.success("Payment saved & email logged. Configure email sending in Settings > Emails to deliver.");
-              }}>Save & Send Email</Button>
+              })}>Save & Send Email</Button>
             </div>
           </CardContent>
         </Card>
@@ -352,6 +375,7 @@ function DealDetail() {
       )}
 
       <DealInvoicesAndTravel dealId={id} stage={stage} isTravel={(type ?? "").toLowerCase() === "travel"} />
+      {(d as any).policy_type === "bulk" && (type ?? "").toLowerCase() !== "travel" && <BulkPoliciesSection dealId={id} />}
 
       <StageHistory dealId={id} stages={data.stages} profiles={data.profiles} />
 
@@ -366,9 +390,15 @@ function DealDetail() {
 
       {d.notes && <Card className="mt-4"><CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader><CardContent className="text-sm whitespace-pre-wrap">{d.notes}</CardContent></Card>}
 
-      {(data.documents?.length ?? 0) > 0 && (
+      {((data.documents?.length ?? 0) > 0 || canManageDeal) && (
         <Card className="mt-4">
-          <CardHeader><CardTitle className="text-base">Documents &amp; Receipts</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
+            <CardTitle className="text-base">Documents &amp; Receipts</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              <DownloadAllButton docs={data.documents} zipName={`deal-${d.deal_number ?? id.slice(0, 8)}-documents.zip`} />
+              <DealRecordEditor table="deal_documents" title="Document or Receipt" defaults={{ deal_id: id }} onSaved={() => qc.invalidateQueries()} />
+            </div>
+          </CardHeader>
           <CardContent className="space-y-1.5 text-sm">
             {data.documents.map((doc: any) => (
               <div key={doc.id} className="flex items-center justify-between gap-3 rounded border px-3 py-2">
@@ -378,7 +408,11 @@ function DealDetail() {
                     {(doc.doc_type ?? "document").replace(/_/g, " ")} · {fmtDate(doc.created_at)}
                   </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => openStorageDoc(doc.storage_path)}>View</Button>
+                <div className="flex flex-wrap items-center gap-1">
+                  <Button size="sm" variant="outline" onClick={() => openStorageDoc(doc.storage_path)}>View</Button>
+                  <DealRecordEditor table="deal_documents" title="Document or Receipt" record={doc} defaults={{ deal_id: id }} onSaved={() => qc.invalidateQueries()} />
+                  <DealRecordDelete table="deal_documents" title="Document or Receipt" record={doc} onSaved={() => qc.invalidateQueries()} />
+                </div>
               </div>
             ))}
           </CardContent>
@@ -391,6 +425,7 @@ function DealDetail() {
 /** Admin & Management can edit any deal's core fields. */
 function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
+  const saveGuard = useSaveGuard();
   const [f, setF] = useState<any>({});
   useEffect(() => { if (open) setF({ ...deal }); }, [open, deal]);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
@@ -398,6 +433,8 @@ function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSav
   const clientLabel = (c: any) => (c.client_type === "individual" ? (c.full_name || c.company_name) : c.company_name) || "—";
 
   const save = async () => {
+    if (!saveGuard.begin()) return;
+    try {
     const { error } = await supabase.from("deals").update({
       client_id: f.client_id || null,
       insurance_company_id: f.insurance_company_id || null,
@@ -424,12 +461,14 @@ function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSav
     toast.success("Deal updated");
     setOpen(false);
     onSaved();
+    } catch (error) { toast.error((error as { message?: string })?.message ?? "Could not save the deal. Please retry."); }
+    finally { saveGuard.end(); }
   };
 
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}><Pencil className="w-4 h-4 mr-1"/>Edit Deal</Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => !saveGuard.saving && setOpen(v)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Edit Deal — {deal.deal_number}</DialogTitle></DialogHeader>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 py-2">
@@ -500,8 +539,8 @@ function EditDealDialog({ deal, lists, onSaved }: { deal: any; lists: any; onSav
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={save}>Save Changes</Button>
+            <Button variant="outline" disabled={saveGuard.saving} onClick={() => setOpen(false)}>Cancel</Button>
+            <Button disabled={saveGuard.saving} aria-busy={saveGuard.saving} onClick={save}>{saveGuard.saving && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />}{saveGuard.saving ? "Saving Deal…" : "Save Changes"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -552,9 +591,12 @@ function DealInvoicesAndTravel({ dealId, stage, isTravel }: { dealId: string; st
     queryKey: ["travel-posting", dealId],
     queryFn: async () => {
       const p = await supabase.from("travel_postings").select("*").eq("deal_id", dealId).maybeSingle();
-      if (!p.data) return { header: null, rows: [] as any[] };
-      const rows = await supabase.from("travel_posting_rows").select("*").eq("posting_id", p.data.id).order("sr_no");
-      return { header: p.data, rows: rows.data ?? [] };
+      if (!p.data) return { header: null, rows: [] as any[], transfers: [] as any[] };
+      const [rows, trans] = await Promise.all([
+        supabase.from("travel_posting_rows").select("*").eq("posting_id", p.data.id).order("sr_no"),
+        supabase.from("travel_posting_transfers").select("*").eq("posting_id", p.data.id).order("sr_no"),
+      ]);
+      return { header: p.data, rows: rows.data ?? [], transfers: trans.data ?? [] };
     },
   });
 
@@ -601,10 +643,119 @@ function DealInvoicesAndTravel({ dealId, stage, isTravel }: { dealId: string; st
   );
 }
 
-function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { header: any; rows: any[] } | null }) {
+function BulkPoliciesSection({ dealId }: { dealId: string }) {
+  const qc = useQueryClient();
+  const key = ["deal-bulk-policies", dealId];
+  const { data: rows = [] } = useQuery({
+    queryKey: key,
+    queryFn: async () => (await supabase.from("deal_policies").select("*").eq("deal_id", dealId).order("row_number")).data ?? [],
+  });
+  const empty = { cover_note_number: "", policy_number: "", gross_premium: 0, net_premium: 0, remarks: "" };
+  const [draft, setDraft] = useState<typeof empty>(empty);
+  const refresh = () => qc.invalidateQueries({ queryKey: key });
+  const save = async (id: string, patch: Record<string, any>) => {
+    const { error } = await supabase.from("deal_policies").update(patch as any).eq("id", id);
+    if (error) toast.error(error.message); else refresh();
+  };
+  const add = async () => {
+    if (!draft.cover_note_number.trim() && !draft.policy_number.trim()) return toast.error("Enter a cover note or policy number");
+    const next = rows.reduce((m: number, r: any) => Math.max(m, r.row_number), 0) + 1;
+    const { error } = await supabase.from("deal_policies").insert({
+      ...draft, cover_note_number: draft.cover_note_number.trim() || null,
+      policy_number: draft.policy_number.trim() || null, deal_id: dealId, row_number: next,
+    });
+    if (error) toast.error(error.message); else { setDraft(empty); refresh(); toast.success("Row added"); }
+  };
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("deal_policies").delete().eq("id", id);
+    if (error) toast.error(error.message); else refresh();
+  };
+  const tg = rows.reduce((a: number, r: any) => a + Number(r.gross_premium || 0), 0);
+  const tn = rows.reduce((a: number, r: any) => a + Number(r.net_premium || 0), 0);
+  return (
+    <Card className="mt-4">
+      <CardHeader><CardTitle className="text-base">Bulk Cover Note Details</CardTitle></CardHeader>
+      <CardContent className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-xs text-muted-foreground">
+            <tr>
+              <th className="text-left p-2">#</th><th className="text-left p-2">Cover Note</th>
+              <th className="text-left p-2">Policy No.</th><th className="text-right p-2">Gross Premium</th>
+              <th className="text-right p-2">Net Premium</th><th className="text-left p-2">Remarks</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr><td colSpan={7} className="p-2 text-muted-foreground">No bulk cover notes saved for this deal yet. Add them below.</td></tr>
+            )}
+            {rows.map((r: any, i: number) => (
+              <tr key={r.id} className="border-t">
+                <td className="p-2">{i + 1}</td>
+                <td className="p-2"><Input defaultValue={r.cover_note_number ?? ""} onBlur={(e) => e.target.value !== (r.cover_note_number ?? "") && save(r.id, { cover_note_number: e.target.value || null })}/></td>
+                <td className="p-2"><Input defaultValue={r.policy_number ?? ""} onBlur={(e) => e.target.value !== (r.policy_number ?? "") && save(r.id, { policy_number: e.target.value || null })}/></td>
+                <td className="p-2 text-right tabular-nums">{fmtPKR(Number(r.gross_premium))}</td>
+                <td className="p-2 text-right tabular-nums">{fmtPKR(Number(r.net_premium))}</td>
+                <td className="p-2"><Input defaultValue={r.remarks ?? ""} onBlur={(e) => e.target.value !== (r.remarks ?? "") && save(r.id, { remarks: e.target.value || null })}/></td>
+                <td className="p-2"><div className="flex items-center gap-1"><Button size="sm" variant="ghost" onClick={() => remove(r.id)}>×</Button><DealRecordEditor table="deal_policies" title="Bulk Policy" record={r} defaults={{ deal_id: dealId }} onSaved={refresh} /></div></td>
+              </tr>
+            ))}
+            <tr className="border-t">
+              <td className="p-2">+</td>
+              <td className="p-2"><Input value={draft.cover_note_number} onChange={(e) => setDraft({ ...draft, cover_note_number: e.target.value })}/></td>
+              <td className="p-2"><Input value={draft.policy_number} onChange={(e) => setDraft({ ...draft, policy_number: e.target.value })}/></td>
+              <td className="p-2"><MoneyInput value={draft.gross_premium} onChange={(v) => setDraft({ ...draft, gross_premium: v })}/></td>
+              <td className="p-2"><MoneyInput value={draft.net_premium} onChange={(v) => setDraft({ ...draft, net_premium: v })}/></td>
+              <td className="p-2"><Input value={draft.remarks} onChange={(e) => setDraft({ ...draft, remarks: e.target.value })}/></td>
+              <td className="p-2"><Button size="sm" variant="outline" onClick={add}>Add</Button></td>
+            </tr>
+          </tbody>
+          <tfoot className="border-t font-medium">
+            <tr><td className="p-2" colSpan={3}>Totals ({rows.length})</td>
+              <td className="p-2 text-right tabular-nums">{fmtPKR(tg)}</td>
+              <td className="p-2 text-right tabular-nums">{fmtPKR(tn)}</td><td colSpan={2}></td></tr>
+          </tfoot>
+        </table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { header: any; rows: any[]; transfers?: any[] } | null }) {
   const qc = useQueryClient();
   const header = posting?.header;
   const rows = posting?.rows ?? [];
+  const transfers = posting?.transfers ?? [];
+  const { hasRole: hasRoleTP } = useAuth();
+  const canEditPayables = hasRoleTP(["admin", "management"]);
+  const ownPayable = (r: any) => r.payable_own != null ? Number(r.payable_own) : Number(r.premium || 0) - Number(r.premium || 0) * Number(r.commission_percentage || 0) / 100;
+  const totalOwnPayable = rows.reduce((a, r) => a + ownPayable(r), 0);
+  const totalTransferred = transfers.reduce((a, t) => a + Number(t.amount || 0), 0);
+  const tDiff = Math.round(totalTransferred - totalOwnPayable);
+  const tStatus = transfers.length === 0 ? "pending" : tDiff === 0 ? "matched" : tDiff > 0 ? "excess" : "deficit";
+  const destLabel = (t: any) => !t.agent_payment_destination ? "—" : t.payment_destination === "insurance_company" ? "Paid directly to Insurance Company" : t.payment_destination === "company" ? "Paid to Company (receivable)" : "—";
+
+  const exportExcel = async () => {
+    const XLSX = await import("xlsx");
+    const policySheet = [
+      ["Sr. No", "Travel Agent", "Date of Issued", "Policy No.", "Premium", "Commission %", "Commission Amount", "Payable to own company", "Payable to Insurance Co.", "Loading", "Agent Name", "Remarks"],
+      ...rows.map((r) => {
+        const prem = Number(r.premium || 0);
+        const ins = prem - prem * 0.45;
+        return [r.sr_no, r.travel_agent ?? "", r.date_issued ?? "", r.policy_number ?? "", prem, Number(r.commission_percentage || 0),
+          prem * Number(r.commission_percentage || 0) / 100, ownPayable(r), ins, ownPayable(r) - ins, r.agent_name ?? "", r.remarks ?? ""];
+      }),
+      ["Totals", "", "", "", totalPremium, "", rows.reduce((a, r) => a + Number(r.premium || 0) * Number(r.commission_percentage || 0) / 100, 0), totalOwnPayable],
+    ];
+    const transferSheet = [
+      ["Sr. No", "Date", "Bank Name", "Amount", "TID", "Agent", "Agent Payment Destination"],
+      ...transfers.map((t, i) => [t.sr_no ?? i + 1, t.transfer_date ?? "", t.bank_name ?? "", Number(t.amount || 0), t.tid ?? "", t.agent ?? "", destLabel(t)]),
+      ["Total Transferred", "", "", totalTransferred],
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(policySheet), "Policies");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(transferSheet), "Amount Transfers");
+    XLSX.writeFile(wb, `travel-posting-${dealId.slice(0, 8)}.xlsx`);
+  };
   const [totalPolicy, setTotalPolicy] = useState(header?.total_policy_amount ?? 0);
   const [totalPost, setTotalPost] = useState(header?.total_posting_amount ?? 0);
   const [from, setFrom] = useState(header?.posting_from ?? "");
@@ -619,8 +770,11 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
   }, [header]);
 
   const totalPremium = rows.reduce((a, r) => a + Number(r.premium || 0), 0);
-  const diff = totalPremium - Number(totalPost || 0);
-  const status = Number(totalPost) === 0 ? "pending" : Math.abs(diff) < 0.01 ? "balanced" : diff > 0 ? "excess" : "deficit";
+  const insPayable = (r: any) => r.payable_insurance != null ? Number(r.payable_insurance) : Number(r.premium || 0) * 0.55;
+  const totalInsPayable = rows.reduce((a, r) => a + insPayable(r), 0);
+  // Posting amount is reconciled against Payable to own company (premium − commission), to the whole rupee.
+  const diff = Math.round(totalOwnPayable - Number(totalPost || 0));
+  const status = Number(totalPost) === 0 ? "pending" : diff === 0 ? "balanced" : diff > 0 ? "excess" : "deficit";
   const badgeCls: Record<string,string> = {
     balanced: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
     excess: "bg-red-500/15 text-red-600 border-red-500/30",
@@ -674,6 +828,8 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
     else qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
   };
 
+  const refreshPosting = () => qc.invalidateQueries({ queryKey: ["travel-posting", dealId] });
+
   const [full, setFull] = useState(false);
 
   const content = (
@@ -700,7 +856,8 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                   <th className="text-right p-2">Premium</th>
                   <th className="text-right p-2">Comm %</th>
                   <th className="text-right p-2">Comm Amt</th>
-                  <th className="text-left p-2">Payable Co.</th>
+                  <th className="text-right p-2">Payable to own company</th>
+                  <th className="text-right p-2">Payable to Insurance Co.</th>
                   <th className="text-left p-2">Agent Name</th>
                   <th className="text-left p-2">Remarks</th>
                   <th></th>
@@ -717,11 +874,23 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                       <td className="p-2"><Input className="h-8" defaultValue={r.policy_number ?? ""} onBlur={e => updateRow(r.id, { policy_number: e.target.value })}/></td>
                       <td className="p-2"><Input type="number" step="0.01" className="h-8 text-right" defaultValue={r.premium ?? 0} onBlur={e => updateRow(r.id, { premium: Number(e.target.value) || 0 })}/></td>
                       <td className="p-2"><Input type="number" step="0.001" className="h-8 text-right" defaultValue={Number(r.commission_percentage) || ""} onBlur={e => updateRow(r.id, { commission_percentage: Number(e.target.value) || 0 })}/></td>
-                      <td className="p-2 text-right tabular-nums">{fmtPKR(commAmt)}</td>
-                      <td className="p-2"><Input className="h-8" defaultValue={r.payable_company ?? ""} onBlur={e => updateRow(r.id, { payable_company: e.target.value })}/></td>
+                      <td className="p-2 text-right tabular-nums">{fmtPKR(commAmt)}{(r as any).commission_approval && (
+                        <div className="mt-1 flex flex-col items-end gap-1">
+                          <Badge variant={(r as any).commission_approval === "approved" ? "default" : (r as any).commission_approval === "rejected" ? "destructive" : "secondary"} className="text-[10px]">
+                            {(r as any).commission_approval === "pending" ? "Above 45% · Pending" : (r as any).commission_approval === "approved" ? "Above 45% · Approved" : "Above 45% · Rejected"}
+                          </Badge>
+                          {canEditPayables && (r as any).commission_approval !== "approved" && <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => updateRow(r.id, { commission_approval: "approved" } as any)}>Approve</Button>}
+                          {canEditPayables && (r as any).commission_approval !== "rejected" && <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => updateRow(r.id, { commission_approval: "rejected" } as any)}>Reject</Button>}
+                        </div>)}</td>
+                      <td className="p-2 text-right tabular-nums">{canEditPayables
+                        ? <Input type="number" step="0.01" className="h-8 text-right min-w-[110px]" key={`po-${r.id}-${r.payable_own}`} defaultValue={Math.round(ownPayable(r) * 100) / 100} onBlur={e => { const v = e.target.value.trim(); if (v !== "" && Number(v) === Math.round(ownPayable(r) * 100) / 100) return; updateRow(r.id, { payable_own: v === "" ? null : Number(v) }); }}/>
+                        : fmtPKR(ownPayable(r))}</td>
+                      <td className="p-2 text-right tabular-nums">{canEditPayables
+                        ? <Input type="number" step="0.01" className="h-8 text-right min-w-[110px]" key={`pi-${r.id}-${r.payable_insurance}`} defaultValue={Math.round(insPayable(r) * 100) / 100} onBlur={e => { const v = e.target.value.trim(); if (v !== "" && Number(v) === Math.round(insPayable(r) * 100) / 100) return; updateRow(r.id, { payable_insurance: v === "" ? null : Number(v) }); }}/>
+                        : fmtPKR(insPayable(r))}<div className="text-[10px] text-muted-foreground">Loading: {fmtPKR(ownPayable(r) - insPayable(r))}</div></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.agent_name ?? ""} onBlur={e => updateRow(r.id, { agent_name: e.target.value })}/></td>
                       <td className="p-2"><Input className="h-8" defaultValue={r.remarks ?? ""} onBlur={e => updateRow(r.id, { remarks: e.target.value })}/></td>
-                      <td className="p-2"><Button size="sm" variant="ghost" onClick={() => deleteRow(r.id)}>×</Button></td>
+                      <td className="p-2"><div className="flex items-center gap-1"><Button size="sm" variant="ghost" onClick={() => deleteRow(r.id)}>×</Button><DealRecordEditor table="travel_posting_rows" title="Travel Policy" record={r} defaults={{ posting_id: header.id }} onSaved={refreshPosting} /></div></td>
                     </tr>
                   );
                 })}
@@ -732,7 +901,9 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
                   <td className="p-2 text-right tabular-nums">{fmtPKR(totalPremium)}</td>
                   <td></td>
                   <td className="p-2 text-right tabular-nums">{fmtPKR(rows.reduce((a,r)=>a+(Number(r.premium||0)*Number(r.commission_percentage||0)/100),0))}</td>
-                  <td colSpan={4}></td>
+                  <td className="p-2 text-right tabular-nums">{fmtPKR(totalOwnPayable)}</td>
+                  <td className="p-2 text-right tabular-nums">{fmtPKR(totalInsPayable)}<div className="text-[10px] font-normal text-muted-foreground">Loading: {fmtPKR(totalOwnPayable - totalInsPayable)}</div></td>
+                  <td colSpan={3}></td>
                 </tr>
               </tfoot>
             </table>
@@ -745,6 +916,57 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">Deal cannot progress to Won until posting is Balanced.</p>
+
+            <div className="space-y-3 pt-4 mt-4 border-t">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium">Amount Transfer Details</h4>
+                <DealRecordEditor table="travel_posting_transfers" title="Transfer" defaults={{ posting_id: header.id }} onSaved={refreshPosting} />
+                <Badge variant="outline" className={badgeCls[tStatus === "matched" ? "balanced" : tStatus]}>{tStatus.toUpperCase()}</Badge>
+              </div>
+              <table className="w-full text-xs">
+                <thead className="text-muted-foreground">
+                  <tr>
+                    <th className="text-left p-2">Sr. No</th>
+                    <th className="text-left p-2">Date</th>
+                    <th className="text-left p-2">Bank Name</th>
+                    <th className="text-right p-2">Amount</th>
+                    <th className="text-left p-2">TID</th>
+                    <th className="text-left p-2">Agent</th>
+                    <th className="text-left p-2">Agent Payment Destination</th>
+                    {canEditPayables && <th className="p-2">Actions</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {transfers.length === 0 && (
+                    <tr className="border-t"><td colSpan={7} className="p-2 text-muted-foreground">No transfers saved.</td></tr>
+                  )}
+                  {transfers.map((t, i) => (
+                    <tr key={t.id} className="border-t">
+                      <td className="p-2">{t.sr_no ?? i + 1}</td>
+                      <td className="p-2">{t.transfer_date ? fmtDate(t.transfer_date) : "—"}</td>
+                      <td className="p-2">{t.bank_name || "—"}</td>
+                      <td className="p-2 text-right tabular-nums">{fmtPKR(Number(t.amount || 0))}</td>
+                      <td className="p-2">{t.tid || "—"}</td>
+                      <td className="p-2">{t.agent || "—"}</td>
+                      <td className="p-2">{destLabel(t)}</td>
+                      {canEditPayables && <td className="p-2"><div className="flex items-center gap-1"><DealRecordEditor table="travel_posting_transfers" title="Transfer" record={t} defaults={{ posting_id: header.id }} onSaved={refreshPosting} /><DealRecordDelete table="travel_posting_transfers" title="Transfer" record={t} onSaved={refreshPosting} /></div></td>}
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="border-t font-medium">
+                  <tr>
+                    <td className="p-2" colSpan={3}>Total Transferred</td>
+                    <td className="p-2 text-right tabular-nums">{fmtPKR(totalTransferred)}</td>
+                    <td colSpan={3}></td>
+                  </tr>
+                </tfoot>
+              </table>
+              <p className="text-xs">
+                {tStatus === "matched" && <span className="text-emerald-600">Transfers match Payable to own company ✓</span>}
+                {tStatus === "excess" && <span className="text-red-600">Excess by {fmtPKR(tDiff)}</span>}
+                {tStatus === "deficit" && <span className="text-amber-600">Deficit by {fmtPKR(-tDiff)}</span>}
+              </p>
+            </div>
           </div>
         )}
     </div>
@@ -757,9 +979,16 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
           Travel Posting
           <Badge variant="outline" className={badgeCls[status]}>{status === "balanced" ? "MATCHED" : status.toUpperCase()}</Badge>
         </CardTitle>
-        <Button size="sm" variant="outline" onClick={() => setFull(true)}><Maximize2 className="w-4 h-4 mr-1"/>Full Screen</Button>
+        <div className="flex gap-2">
+          {header && <DealRecordDelete table="travel_postings" title="Travel Posting" record={header} onSaved={refreshPosting} />}
+          <Button size="sm" variant="outline" disabled={!header} onClick={exportExcel}>Export to Excel</Button>
+          <Button size="sm" variant="outline" onClick={() => setFull(true)}><Maximize2 className="w-4 h-4 mr-1"/>Full Screen</Button>
+        </div>
       </CardHeader>
-      <CardContent>{content}</CardContent>
+      <CardContent>
+        {header && <div className="mb-4"><TravelPostingStatus postingId={header.id} /></div>}
+        {content}
+      </CardContent>
       <Dialog open={full} onOpenChange={setFull}>
         <DialogContent className="max-w-[98vw] w-[98vw] h-[94vh] max-h-[94vh] overflow-auto">
           <DialogHeader>
@@ -768,6 +997,7 @@ function TravelPostingSection({ dealId, posting }: { dealId: string; posting: { 
               <Badge variant="outline" className={badgeCls[status]}>{status.toUpperCase()}</Badge>
             </DialogTitle>
           </DialogHeader>
+          {header && <TravelPostingStatus postingId={header.id} />}
           {content}
         </DialogContent>
       </Dialog>
@@ -780,4 +1010,14 @@ function KV({ k, v }: { k: string; v: React.ReactNode }) {
 }
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>;
+}
+
+function DownloadAllButton({ docs, zipName }: { docs: any[]; zipName: string }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button size="sm" variant="outline" disabled={busy} onClick={async () => {
+      setBusy(true);
+      try { await downloadAllDocs(docs, zipName); } finally { setBusy(false); }
+    }}>{busy ? "Preparing…" : `Download All (${docs.length})`}</Button>
+  );
 }

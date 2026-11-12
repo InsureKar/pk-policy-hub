@@ -16,6 +16,7 @@ import { fmtDate } from "@/lib/format";
 import { openStorageDoc } from "@/lib/openStorageDoc";
 import { Check, Eye, Pencil, Plus, Paperclip } from "lucide-react";
 import { toast } from "sonner";
+import { DealRecordDelete } from "@/components/DealRecordEditor";
 
 const PRIORITIES = ["low", "medium", "high", "critical"] as const;
 const STATUSES = [
@@ -165,6 +166,7 @@ export function DealTasks({ dealId, clientId }: { dealId: string; clientId?: str
                       attachment_path: t.attachment_path, attachment_name: t.attachment_name,
                     }); }}><Pencil className="w-4 h-4" /></Button>
                     {!isDone(t.status) && <Button size="sm" variant="ghost" title="Mark as Completed" onClick={() => complete(t.id)}><Check className="w-4 h-4" /></Button>}
+                    <DealRecordDelete table="tasks" title="Task" record={t} onSaved={refresh} />
                   </TableCell>
                 </TableRow>
               );

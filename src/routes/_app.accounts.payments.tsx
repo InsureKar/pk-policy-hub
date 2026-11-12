@@ -12,6 +12,7 @@ import { fmtPKR, fmtDate } from "@/lib/format";
 import { Download } from "lucide-react";
 import { DateField } from "@/components/DateField";
 import { DeleteButton } from "@/components/DeleteButton";
+import { InlineRecordEdit } from "@/components/DealRecordEditor";
 
 export const Route = createFileRoute("/_app/accounts/payments")({
   component: PaymentsPage,
@@ -104,7 +105,7 @@ function PaymentsPage() {
                 <TableCell className="text-xs">{p.ibft_reference ?? "—"}</TableCell>
                 <TableCell className="text-xs">{p.cheque_number ?? "—"}</TableCell>
                 <TableCell className="text-xs">{p.receiving_bank ?? "—"}</TableCell>
-                <TableCell className="text-right"><DeleteButton table="payments" id={p.id} label="payment" invalidate={["accounts-payments"]} /></TableCell>
+                <TableCell className="text-right"><InlineRecordEdit table="payments" title="Payment" record={p} /><DeleteButton table="payments" id={p.id} label="payment" invalidate={["accounts-payments"]} /></TableCell>
               </TableRow>
             ))}
           </TableBody>

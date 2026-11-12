@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { fmtPKR, fmtDate } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
+import { InlineRecordEdit } from "@/components/DealRecordEditor";
 
 export const Route = createFileRoute("/_app/accounts/installments")({
   component: InstallmentsPage,
@@ -86,7 +87,7 @@ function InstallmentsPage() {
                   <TableCell className="text-right tabular-nums">{fmtPKR(i.paid_amount)}</TableCell>
                   <TableCell className="text-right tabular-nums font-medium">{fmtPKR(i.remaining_amount)}</TableCell>
                   <TableCell><StatusBadge status={eff}/></TableCell>
-                  <TableCell className="text-right"><DeleteButton table="installments" id={i.id} label="installment" invalidate={["accounts-installments"]} /></TableCell>
+                  <TableCell className="text-right"><InlineRecordEdit table="installments" title="Instalment" record={i} /><DeleteButton table="installments" id={i.id} label="installment" invalidate={["accounts-installments"]} /></TableCell>
                 </TableRow>
               );
             })}

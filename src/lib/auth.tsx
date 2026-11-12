@@ -130,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (roles.includes("admin") || roles.includes("management")) return "full";
     const assigned = access[key];
     if (assigned) return assigned;
+    if (PERM_DEFS[key]?.defaultLevel) return PERM_DEFS[key].defaultLevel!;
     const mod = PERM_DEFS[key]?.module;
     const fallback = mod ? (permissions[mod] ?? "add") : "add";
     return MODULE_TO_ACCESS[fallback];

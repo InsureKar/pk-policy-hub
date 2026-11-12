@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ type Props = {
   defaultTo?: string;
   lockUserId?: string;
   title?: string;
+  onFilteredDealIdsChange?: (dealIds: string[]) => void;
 };
 
 type Mode = "month" | "quarter" | "year";
@@ -44,7 +45,7 @@ function rangeFor(mode: Mode, year: number, month: number, quarter: string) {
   return { start, end };
 }
 
-export function PipelineFunnel({ lockUserId, title }: Props) {
+export function PipelineFunnel({ lockUserId, title, onFilteredDealIdsChange }: Props) {
   const scope = useVisibilityScope();
   const now = new Date();
   const years = Array.from({ length: 7 }, (_, i) => now.getFullYear() - 4 + i);
@@ -198,6 +199,66 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
     return m;
   }, [data?.installments, customDealIds, baseOf]);
 
+  /**
+   * Quarterly / Bi-Annual / other instalment deals: each paid instalment's
+   * paid amount (unchanged calculation) reported under its own paid date.
+   */
+  const planPaidDated = useMemo(() => {
+    const m = new Map<string, { value: number; date: Date | null }[]>();
+    for (const r of (data?.installments ?? [])) {
+      if (customDealIds.has(r.deal_id)) continue;
+      const isPaid = r.payment_status === "paid" || Number(r.paid_amount || 0) > 0;
+      if (!isPaid) continue;
+      const value = Number(r.paid_amount || 0) || Number(r.gross_premium || 0) || Number(r.amount || 0);
+      const list = m.get(r.deal_id) ?? [];
+      list.push({ value, date: paidDateOf(r) });
+      m.set(r.deal_id, list);
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.installments, customDealIds]);
+
+  const planPaidInRange = (dealId: string) =>
+    (planPaidDated.get(dealId) ?? []).reduce(
+      (a, x) => a + (x.date && x.date >= range.start && x.date <= range.end ? x.value : 0),
+      0,
+    );
+
+  /**
+   * Quarterly / Bi-Annual / other instalment deals: the existing Tagged
+   * Premium of each paid instalment, reported under its own paid date.
+   */
+  const planPaidTaggedDated = useMemo(() => {
+    const m = new Map<string, { tagged: number; date: Date | null }[]>();
+    for (const r of (data?.installments ?? [])) {
+      if (customDealIds.has(r.deal_id)) continue;
+      const isPaid = r.payment_status === "paid" || Number(r.paid_amount || 0) > 0;
+      if (!isPaid) continue;
+      const gross = Number(r.gross_premium || 0);
+      const mktPct = gross > 0 ? (Number(r.marketing_budget || 0) / gross) * 100 : 0;
+      const f = calculateDealFinancials({
+        gross_premium: gross,
+        net_premium: Number(r.net_premium || 0),
+        commission_percentage: Number(r.commission_percentage || 0),
+        marketing_budget_percentage: mktPct,
+        loading: Number(r.loading || 0),
+        b2b_commission: Number(r.b2b_commission || 0),
+        base_percentage: baseOf.get(r.deal_id),
+      });
+      const list = m.get(r.deal_id) ?? [];
+      list.push({ tagged: f.tagged_premium, date: paidDateOf(r) });
+      m.set(r.deal_id, list);
+    }
+    return m;
+  }, [data?.installments, customDealIds, baseOf]);
+
+  /** Tagged Premium of the paid instalments inside the selected period. */
+  const planPaidTaggedInRange = (dealId: string) =>
+    (planPaidTaggedDated.get(dealId) ?? []).reduce(
+      (a, x) => a + (x.date && x.date >= range.start && x.date <= range.end ? x.tagged : 0),
+      0,
+    );
+
   /** Tagged Premium of the custom instalments paid inside the selected period. */
   const customWonInRange = (dealId: string) =>
     (customPaidTagged.get(dealId) ?? []).reduce(
@@ -208,11 +269,17 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
   const filteredDeals = useMemo(() => {
     return (data?.deals ?? []).filter((d: any) => {
       if (!isVisibleRow(d, scope)) return false;
-      const dt = new Date(d.created_at);
+      // Single-payment deals (Annually / no schedule) are placed in the month
+      // their payment was received; until then, by their creation date.
+      const single = !customDealIds.has(d.id) && !planPaidDated.has(d.id) && !insByDeal.has(d.id);
+      const recv = single && d.payment_receive_date ? new Date(`${String(d.payment_receive_date).slice(0, 10)}T00:00:00`) : null;
+      const dt = recv && !isNaN(recv.getTime()) ? recv : new Date(d.created_at);
       const inPeriod = dt >= range.start && dt <= range.end;
-      // Custom plans are also included when one of their instalments was paid
-      // inside the selected period, whatever the date the deal was created.
-      const paidInPeriod = customDealIds.has(d.id) && customWonInRange(d.id) > 0;
+      // Instalment deals are also included when one of their instalments was
+      // paid inside the selected period, whatever the date the deal was created.
+      const paidInPeriod = customDealIds.has(d.id)
+        ? customWonInRange(d.id) > 0
+        : planPaidInRange(d.id) > 0;
       if (!inPeriod && !paidInPeriod) return false;
       if (applied.userId !== "all") {
         if (!scope.all && !scope.ids.includes(applied.userId)) return false;
@@ -221,7 +288,12 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, applied, scope, range, customDealIds, customPaidTagged]);
+  }, [data, applied, scope, range, customDealIds, customPaidTagged, planPaidDated, insByDeal]);
+
+  useEffect(() => {
+    if (!data || scope.loading) return;
+    onFilteredDealIdsChange?.(filteredDeals.map((deal) => deal.id));
+  }, [data, scope.loading, filteredDeals, onFilteredDealIdsChange]);
 
   const stages = data?.stages ?? [];
   const wonIds = new Set(stages.filter((s: any) => s.is_won).map((s: any) => s.id));
@@ -234,8 +306,19 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
    */
   const wonValue = (d: any) => {
     if (customDealIds.has(d.id)) return customWonInRange(d.id);
-    const e = insByDeal.get(d.id);
-    return e ? e.paid : Number(d.gross_premium || 0);
+    if (planPaidDated.has(d.id) || insByDeal.has(d.id)) return planPaidInRange(d.id);
+    return Number(d.gross_premium || 0);
+  };
+
+  /**
+   * Won Business value of a deal — the existing Tagged Premium: instalment
+   * plans report the Tagged Premium of the instalments paid inside the
+   * selected period; plain deals their stored Tagged Premium.
+   */
+  const wonTaggedOf = (d: any) => {
+    if (customDealIds.has(d.id)) return customWonInRange(d.id);
+    if (planPaidDated.has(d.id) || insByDeal.has(d.id)) return planPaidTaggedInRange(d.id);
+    return Number(d.tagged_premium || 0);
   };
   const dueValue = (d: any) => insByDeal.get(d.id)?.due ?? 0;
 
@@ -366,7 +449,7 @@ export function PipelineFunnel({ lockUserId, title }: Props) {
                 <div className="flex min-w-max">
                 {stages.map((s: any) => {
                   const list = sec.deals.filter((d: any) => d.stage_id === s.id);
-                  const total = list.reduce((a: number, d: any) => a + (s.is_won ? wonValue(d) : Number(d.gross_premium || 0)), 0);
+                  const total = list.reduce((a: number, d: any) => a + (s.is_won ? wonTaggedOf(d) : Number(d.gross_premium || 0)), 0);
                   return (
                     <button
                       type="button"

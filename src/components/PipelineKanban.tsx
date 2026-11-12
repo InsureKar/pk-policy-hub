@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtPKR } from "@/lib/format";
 import { toast } from "sonner";
 import { GripVertical } from "lucide-react";
+import { WonDetailsDialog } from "@/components/WonDetailsDialog";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
 
 const STAGE_COLORS: Record<string, string> = {
@@ -29,24 +30,24 @@ export function PipelineKanban({ lockUserId }: Props) {
   const { data } = useQuery({
     queryKey: ["pipeline-kanban"],
     queryFn: async () => {
-      const [deals, stages, profiles, companies] = await Promise.all([
-        supabase.from("deals").select("id, deal_number, gross_premium, stage_id, assigned_do_id, team_lead_id, deal_type, insurance_company_id"),
+      const [deals, stages, profiles, clients] = await Promise.all([
+        supabase.from("deals").select("id, deal_number, gross_premium, stage_id, assigned_do_id, team_lead_id, deal_type, client_id"),
         supabase.from("deal_stages").select("id, name, sort_order, is_won, is_lost").order("sort_order"),
         supabase.from("profiles").select("id, full_name"),
-        supabase.from("insurance_companies").select("id, name"),
+        supabase.from("clients").select("id, company_name, full_name"),
       ]);
       return {
         deals: deals.data ?? [],
         stages: stages.data ?? [],
         profiles: profiles.data ?? [],
-        companies: companies.data ?? [],
+        clients: clients.data ?? [],
       };
     },
   });
 
   const stages = data?.stages ?? [];
   const profileMap = useMemo(() => new Map((data?.profiles ?? []).map((p: any) => [p.id, p.full_name])), [data]);
-  const companyMap = useMemo(() => new Map((data?.companies ?? []).map((c: any) => [c.id, c.name])), [data]);
+  const clientMap = useMemo(() => new Map((data?.clients ?? []).map((c: any) => [c.id, c.company_name || c.full_name || "—"])), [data]) as Map<string, string>;
 
   const deals = useMemo(() => {
     return (data?.deals ?? []).filter((d: any) => {
@@ -56,7 +57,17 @@ export function PipelineKanban({ lockUserId }: Props) {
     });
   }, [data, userId, scope]);
 
+  const [wonPrompt, setWonPrompt] = useState<{ dealId: string; stageId: string } | null>(null);
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["pipeline-kanban"] });
+    qc.invalidateQueries({ queryKey: ["pipeline-funnel"] });
+  };
+
   const moveDeal = async (dealId: string, stageId: string) => {
+    const target = stages.find((s: any) => s.id === stageId);
+    const deal = (data?.deals ?? []).find((d: any) => d.id === dealId);
+    if (deal?.stage_id === stageId) return;
+    if (target?.is_won) { setWonPrompt({ dealId, stageId }); return; }
     const { error } = await supabase.from("deals").update({ stage_id: stageId }).eq("id", dealId);
     if (error) return toast.error(error.message);
     toast.success("Deal stage updated");
@@ -125,10 +136,7 @@ export function PipelineKanban({ lockUserId }: Props) {
                     </div>
                     <div className="text-sm font-semibold tabular-nums mt-1.5">{fmtPKR(Number(d.gross_premium || 0))}</div>
                     <div className="text-xs text-muted-foreground mt-1 truncate">
-                      {d.insurance_company_id ? companyMap.get(d.insurance_company_id) : "—"}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {d.assigned_do_id ? profileMap.get(d.assigned_do_id) : "Unassigned"}
+                      {d.client_id ? clientMap.get(d.client_id) : "—"}
                     </div>
                   </div>
                 ))}
@@ -143,6 +151,8 @@ export function PipelineKanban({ lockUserId }: Props) {
           <div className="text-sm text-muted-foreground py-8 w-full text-center">No pipeline stages configured.</div>
         )}
       </div>
+      <WonDetailsDialog dealId={wonPrompt?.dealId ?? null} wonStageId={wonPrompt?.stageId ?? null}
+        onClose={() => setWonPrompt(null)} onSaved={() => { setWonPrompt(null); refresh(); }} />
     </div>
   );
 }

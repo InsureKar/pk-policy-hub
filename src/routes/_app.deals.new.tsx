@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useSaveGuard } from "@/lib/use-save-guard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -24,11 +26,20 @@ import B2BTakerField from "@/components/B2BTakerField";
 
 export const Route = createFileRoute("/_app/deals/new")({
   component: NewDealPage,
+  head: () => ({ meta: [
+    { title: "New Deal | Insurekar CRM" },
+    { name: "description", content: "Create an insurance deal in Insurekar CRM." },
+    { property: "og:title", content: "New Deal | Insurekar CRM" },
+    { property: "og:description", content: "Create an insurance deal in Insurekar CRM." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 function NewDealPage() {
   const nav = useNavigate();
   const { user, hasRole } = useAuth();
+  const saveGuard = useSaveGuard();
+  const submissionKey = useRef<string | null>(null);
   // Premium & Commission inputs stay available to every user creating a deal.
   const canSeeFinancials = true;
   const canSeeMarketing = true;
@@ -47,7 +58,7 @@ function NewDealPage() {
         supabase.from("insurance_types").select("id, name").eq("active", true).order("name"),
         supabase.from("lead_sources").select("id, name").eq("active", true).order("name"),
         supabase.from("app_settings").select("key, value").eq("key", "tagged_premium_base_percentage").maybeSingle(),
-        supabase.from("profiles").select("id, full_name").order("full_name"),
+        supabase.from("profiles").select("id, full_name, team_id").order("full_name"),
       ]);
       return {
         clients: clients.data ?? [], stages: stages.data ?? [],
@@ -58,6 +69,25 @@ function NewDealPage() {
       };
     },
   });
+
+  // Team Leads: default assignee is themselves; they may pick any member of their own team.
+  const isTeamLeadCreator = hasRole(["team_lead"]) && !hasRole(["admin", "management", "do"]);
+  const { data: teamMembers } = useQuery({
+    queryKey: ["deal-form-team-members", user?.id, lists?.people.length],
+    enabled: !!user && !!lists && isTeamLeadCreator,
+    queryFn: async () => {
+      const [{ data: me }, { data: led }] = await Promise.all([
+        supabase.from("profiles").select("team_id").eq("id", user!.id).maybeSingle(),
+        supabase.from("teams").select("id").eq("lead_id", user!.id),
+      ]);
+      const teamIds = new Set<string>([...(me?.team_id ? [me.team_id] : []), ...((led ?? []).map((t: any) => t.id))]);
+      const all = (lists?.people ?? []) as Array<{ id: string; full_name: string | null; team_id: string | null }>;
+      const members = all.filter(p => p.id === user!.id || (p.team_id && teamIds.has(p.team_id)));
+      return members;
+    },
+  });
+  const [assignedTo, setAssignedTo] = useState<string>("");
+  useEffect(() => { if (isTeamLeadCreator && user && !assignedTo) setAssignedTo(user.id); }, [isTeamLeadCreator, user, assignedTo]);
 
   const [form, setForm] = useState({
     client_id: "", cover_note_number: "", policy_number: "",
@@ -456,7 +486,18 @@ function NewDealPage() {
 
 
   const submit = async () => {
-    if (!user) return;
+    if (!user || !saveGuard.begin()) return;
+    try {
+    // A lost response must never turn a retry into a second deal or linked insert.
+    if (submissionKey.current) {
+      const previous = await supabase.from("deals").select("id").eq("submission_key", submissionKey.current).maybeSingle();
+      if (previous.error) throw previous.error;
+      if (previous.data) {
+        toast.success("Deal already saved");
+        await nav({ to: "/deals/$id", params: { id: previous.data.id } });
+        return;
+      }
+    }
     if (!form.client_id) return toast.error("Please pick a client");
    const effectiveGross = effGross;
    const effectiveNet = effNet;
@@ -492,7 +533,7 @@ function NewDealPage() {
       const seen = new Map<string, number>();
       for (let i = 0; i < travelRows.length; i++) {
         const r = travelRows[i];
-        if (r.commission_percentage < 0 || r.commission_percentage > 45) return toast.error(`Row ${i + 1}: commission must be between 0% and 45%`);
+        if (r.commission_percentage < 0) return toast.error(`Row ${i + 1}: commission cannot be negative`);
         const n = norm(r.policy_number);
         if (!n) return toast.error(`Row ${i + 1}: policy number is required`);
         if (seen.has(n)) return toast.error(`Duplicate policy number in rows ${seen.get(n)! + 1} and ${i + 1}`);
@@ -525,6 +566,7 @@ function NewDealPage() {
     const payload: any = {
       ...form,
       created_by: user.id,
+      ...(isTeamLeadCreator ? { assigned_do_id: assignedTo || user.id } : {}),
       client_id: form.client_id || null,
       source_id: form.source_id || null,
       insurance_company_id: form.insurance_company_id || null,
@@ -562,8 +604,17 @@ function NewDealPage() {
       payment_year: paymentYear,
       underwritten_premium: manualSchedule || isCustom ? underwritten : 0,
     };
-    const { data, error } = await supabase.from("deals").insert(payload).select("id").maybeSingle();
-    if (error) { toast.error(error.message); return; }
+    submissionKey.current ??= crypto.randomUUID();
+    const result = await supabase.rpc("create_deal_once", { _submission_key: submissionKey.current, _payload: payload });
+    if (result.error) throw result.error;
+    const response = result.data as { id?: string; replayed?: boolean } | null;
+    if (!response?.id) throw new Error("The deal save could not be confirmed. Please retry.");
+    const data = { id: response.id };
+    if (response.replayed) {
+      toast.success("Deal already saved");
+      await nav({ to: "/deals/$id", params: { id: data.id } });
+      return;
+    }
     if (data && proofs.length) {
       const { error: dErr } = await supabase.from("deal_documents").insert(
         proofs.map((p) => ({
@@ -677,10 +728,13 @@ function NewDealPage() {
     } else if (form.policy_type === "bulk" && data) {
       const rows = bulkRows.map((r, idx) => ({ ...r, deal_id: data.id, row_number: idx + 1 }));
       const { error: bErr } = await supabase.from("deal_policies").insert(rows);
-      if (bErr) toast.error("Deal created, but bulk rows failed: " + bErr.message);
+      if (bErr) toast.error("Deal created, but bulk cover notes failed to save: " + bErr.message + " — add them on the deal page.", { duration: 15000 });
     }
     toast.success("Deal created");
-    nav({ to: "/deals/$id", params: { id: data!.id } });
+    await nav({ to: "/deals/$id", params: { id: data.id } });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : (error as { message?: string })?.message ?? "Could not confirm the deal save. Please retry.");
+    } finally { saveGuard.end(); }
   };
 
   const clientLabel = (c: { company_name: string; full_name: string | null; client_type: string | null }) =>
@@ -707,6 +761,14 @@ function NewDealPage() {
                   <SelectContent>{lists?.clients.map(c=><SelectItem key={c.id} value={c.id}>{clientLabel(c)}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
+              {isTeamLeadCreator && (
+                <Field label="Deal Assigned To">
+                  <Select value={assignedTo} onValueChange={setAssignedTo}>
+                    <SelectTrigger><SelectValue placeholder="Select team member"/></SelectTrigger>
+                    <SelectContent>{(teamMembers ?? [{ id: user?.id ?? "", full_name: "Me" }]).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.full_name || "—"}{p.id === user?.id ? " (You)" : ""}</SelectItem>)}</SelectContent>
+                  </Select>
+                </Field>
+              )}
               <Field label="Stage">
                 <Select value={form.stage_id} onValueChange={(v)=>set("stage_id", v)}>
                   <SelectTrigger><SelectValue placeholder="Stage"/></SelectTrigger>
@@ -1317,8 +1379,8 @@ function NewDealPage() {
           </Card>
 
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={()=>nav({ to: "/deals" })}>Cancel</Button>
-            <Button onClick={submit}>Create Deal</Button>
+            <Button variant="ghost" disabled={saveGuard.saving} onClick={()=>nav({ to: "/deals" })}>Cancel</Button>
+            <Button disabled={saveGuard.saving} aria-busy={saveGuard.saving} onClick={submit}>{saveGuard.saving && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />}{saveGuard.saving ? "Saving Deal…" : "Create Deal"}</Button>
           </div>
         </div>
 

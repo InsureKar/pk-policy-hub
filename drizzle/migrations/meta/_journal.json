@@ -1,0 +1,83 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792753233026,
+      "tag": "0000_travel_posting_match_own_payable",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792753461806,
+      "tag": "0001_travel_row_payable_overrides",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792760391806,
+      "tag": "0002_admin_management_deal_record_corrections",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792762064258,
+      "tag": "0003_scope_payment_correction_guard_to_managers",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792762338219,
+      "tag": "0004_idempotent_deal_creation",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792763379167,
+      "tag": "0005_private_travel_posting_sent_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792766976129,
+      "tag": "0006_refunds_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792767727773,
+      "tag": "0007_refund_document_uploads",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792767947723,
+      "tag": "0008_qualify_refund_storage_paths",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793200531457,
+      "tag": "0009_team_lead_default_assignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794413180516,
+      "tag": "0010_travel_commission_above_45_approval",
+      "breakpoints": true
+    }
+  ]
+}

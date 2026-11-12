@@ -13,6 +13,8 @@ import { Plus, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { DeleteButton } from "@/components/DeleteButton";
 import { useVisibilityScope, isVisibleRow } from "@/lib/visibility";
+import { TravelPostingList } from "@/components/TravelPostingList";
+import { DealExcelExport } from "@/components/DealExcelExport";
 
 export type DealsSearch = { stage?: string; dealType?: string; category?: string };
 
@@ -23,6 +25,13 @@ export const Route = createFileRoute("/_app/deals/")({
     category: typeof s.category === "string" ? s.category : undefined,
   }),
   component: DealsList,
+  head: () => ({ meta: [
+    { title: "Deals & Travel Postings | Insurekar CRM" },
+    { name: "description", content: "Review authorized insurance deals and Travel Postings in Insurekar CRM." },
+    { property: "og:title", content: "Deals & Travel Postings | Insurekar CRM" },
+    { property: "og:description", content: "Review insurance deals and authorized Travel Posting status tracking." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 function DealsList() {
@@ -85,7 +94,7 @@ function DealsList() {
   return (
     <div className="p-6 max-w-[1400px] mx-auto">
       <PageHeader title="Deals" subtitle="All policies, quotations, and pipeline opportunities."
-        actions={<Button asChild><Link to="/deals/new"><Plus className="w-4 h-4 mr-2"/>New Deal</Link></Button>} />
+        actions={<div className="flex flex-wrap gap-2"><DealExcelExport /><Button asChild><Link to="/deals/new"><Plus className="w-4 h-4 mr-2"/>New Deal</Link></Button></div>} />
 
       <Card className="mb-4">
         <CardContent className="p-3 flex flex-wrap items-center gap-3">
@@ -172,6 +181,7 @@ function DealsList() {
           </table>
         </CardContent>
       </Card>
+      <TravelPostingList deals={filtered} />
     </div>
   );
 }

@@ -1,0 +1,2 @@
+DROP TRIGGER IF EXISTS payment_correction_guard ON public.payments;
+CREATE TRIGGER payment_correction_guard BEFORE UPDATE OR DELETE ON public.payments FOR EACH ROW WHEN (public.has_role(auth.uid(), 'admin'::public.app_role) OR public.has_role(auth.uid(), 'management'::public.app_role)) EXECUTE FUNCTION public.tg_payment_correct();
