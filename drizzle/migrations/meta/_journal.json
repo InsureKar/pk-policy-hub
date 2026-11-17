@@ -78,6 +78,13 @@
       "when": 1794413180516,
       "tag": "0010_travel_commission_above_45_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794923099110,
+      "tag": "0011_tighten_open_access_rules",
+      "breakpoints": true
     }
   ]
 }

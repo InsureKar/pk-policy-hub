@@ -3797,6 +3797,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_crm_user: { Args: never; Returns: boolean }
       is_team_lead_of: { Args: { _user: string }; Returns: boolean }
       module_allows: {
         Args: {
