@@ -153,11 +153,15 @@ export const config = {
 };
 ```
 
+### 2.3 Closing Clerk-to-Drizzle Security & Sync Traps
+* **Mandatory Scoped DAL & RLS Protection:** Migrating from Supabase client queries to Drizzle ORM over a pooled Postgres connection bypasses Supabase RLS by default. Every query must go through a **Scoped Data Access Layer** that automatically injects `team_id` / role filters, and/or sets transaction-scoped Postgres variables (`SET LOCAL app.current_user_id`, `SET LOCAL app.current_team_id`) inside `db.transaction()`. *(Because existing RLS helpers expect `uuid` from `auth.uid()` while Clerk IDs are strings like `user_2...`, maintain a `clerk_user_id -> profiles.id (uuid)` mapping.)*
+* **Never Trust Stale JWT Claims for High-Risk Actions:** Clerk `sessionClaims.metadata.role` can remain cached up to 60 seconds. Use JWT claims for UI routing, but verify `role` and `is_locked` directly against PostgreSQL before executing admin, refund, or approval Server Actions.
+* **Defense-in-Depth Beyond `middleware.ts`:** Never treat middleware as the sole auth boundary. Enforce explicit `requireAuth()` / `requireRole()` checks at the entry of every Server Component loader, Server Action, and Route Handler.
+* **JIT Upsert for Svix Webhook Race Conditions:** A newly created user can land on `/dashboard` milliseconds before the async Svix webhook inserts their `profiles` row. Pair the webhook with a **Just-in-Time (JIT) idempotent upsert** in the auth helper on first authenticated request.
+
 ---
 
 ## 3. Recommended Core Services to Strengthen Brokerage Calculations
-
-To handle complex insurance brokerage calculations and high-volume ledger reconciliations, the following specialized libraries and engines are incorporated:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -174,37 +178,143 @@ To handle complex insurance brokerage calculations and high-volume ledger reconc
 
 ### 3.1 Arbitrary-Precision Financial Math (`Decimal.js` / `Dinero.js`)
 * **Problem:** Native JavaScript numbers use binary floating-point (`IEEE 754`). Calculations like `0.1 + 0.2 = 0.30000000000000004` cause fractional rounding discrepancies across thousands of installment splits, causing ledger imbalances during bank audits.
-* **Solution:** Integrate `decimal.js` inside Drizzle ORM queries and `src/lib/calc.ts` for:
-  - Prorated cancellation refunds (exact day fractions $365/366$)
-  - Multi-tier commission calculations (Gross vs. Net premium splits, 17% commission WHT, 9% marketing tax)
-  - Currency rounding stored as exact fixed-precision `numeric(14, 2)` in PostgreSQL.
+* **Solution:**
+  - Integrate `decimal.js` inside Drizzle ORM services and `src/lib/calc.ts` for prorated cancellations and multi-tier commission splits.
+  - **Deterministic Remainder Allocation:** Use the **Largest Remainder Method** (or assign residual paisa to the final installment/house share) so split sums always equal the exact parent total. *(Existing `NUMERIC` column types are kept intact during migration to avoid breaking existing views, generated columns, and RPCs.)*
+  - **Effective-Dated Tax & Commission Rules:** Move hardcoded rates (`17%` WHT, `9%` marketing tax, `45%` approval threshold) into effective-dated config tables (`effective_from`, `effective_to`, `insurer_id`, `line_of_business`) and **snapshot applied rates** onto each deal and invoice at issuance so future fiscal-year changes never alter historical figures.
 
 ### 3.2 Async Background Job & Calculation Engine (`Trigger.dev` or `Inngest`)
-* **Problem:** Standard serverless or HTTP requests time out after 10–30 seconds. Heavy brokerage operations cannot run safely in a standard web turn:
-  - Re-evaluating 10,000 policies at month-end to calculate agent commissions and performance tiers.
-  - Nightly automated sweeps to identify overdue installments and recalculate penalty/aging buckets.
-  - Replaying FIFO payment allocation across historical accounts.
-* **Solution:** Use **Trigger.dev v3** or **Inngest** directly in Next.js:
-  - Executes long-running tasks (even multi-hour calculation jobs) without timing out.
-  - Step-based execution: if step 4 fails, it retries step 4 without re-billing or duplicating steps 1–3.
+* **Problem:** Long-running calculations (month-end commission recalculations across 10,000+ policies, daily installment aging sweeps, replaying FIFO payment allocation) time out on standard web requests.
+* **Solution:** Step-based background execution with zero timeouts and automatic step retries.
 
-### 3.3 Server-Side Debit Note & Invoice Generation (`@react-pdf/renderer`)
-* **Problem:** Insurance brokers must generate official, print-ready documents:
-  - Premium Debit Notes & Tax Invoices with provincial tax breakups (PRA/SRB/KPRA/FED).
-  - Commission Payout Vouchers with approved signatures.
-  - Policy Underwriting Slips.
-* **Solution:** Use `@react-pdf/renderer` in a Next.js Route Handler (`/api/documents/debit-note/[id]`):
-  - Stream PDFs directly to the broker or client as an HTTP stream.
-  - Generates consistent, high-resolution PDFs with corporate letterheads and QR-code verification.
+### 3.3 Immutable Persisted Legal PDFs (`@react-pdf/renderer` + Object Storage)
+* **Problem:** Browser-side PDF generation freezes client tabs, and generating legal Debit Notes / Tax Invoices dynamically on every download means future template or letterhead edits alter historical documents.
+* **Solution:** Keep draft previews rendered on the fly, but **on final issuance**, generate the PDF once via `@react-pdf/renderer`, store it immutably in private object storage (S3/R2) with a **SHA-256 hash and version number**, and serve the archived file on re-download.
 
 ---
 
-## 4. Target Directory & Clean Modular Structure
+## 4. API Resilience & Defensive Engineering (Eliminating "API Killers")
+
+To prevent server crashes, cascading request backlogs, data corruption, and information leakage, the Next.js 15 architecture enforces four non-negotiable defensive engineering patterns:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                   DEFENSIVE ARCHITECTURE GUARANTEES                    │
+├─────────────────────────┬──────────────────────┬───────────────────────┤
+│ Common "API Killer"     │ Vulnerability        │ Next.js 15 Solution   │
+├─────────────────────────┼──────────────────────┼───────────────────────┤
+│ Raw Database Errors     │ Leaks schema/tables  │ Sanitized error mapper│
+│ Stuck External Calls    │ Request pile-up      │ AbortSignal.timeout() │
+│ Dirty DB Inputs         │ DB exceptions/crashes│ Strict Zod validation │
+│ Fat Controllers         │ Unmaintainable code  │ 4-Tier Layered Arch.  │
+└─────────────────────────┴──────────────────────┴───────────────────────┘
+```
+
+### 4.1 Sanitized Error Handling (Never Return Raw Database Errors)
+* **The Vulnerability in Current Code:**
+  - Raw PostgreSQL / PostgREST error messages are directly thrown or surfaced via `toast.error(error.message)` (e.g., `if (error) throw new Error(error.message)` in server functions and client handlers).
+  - Exposes internal schema names (`"deals_pkey"`, `current_user_team()`), table column structures, and permission rules to attackers, while providing confusing error strings to users.
+* **The Production Solution:**
+  - Server Actions catch all database exceptions, log the full raw stack trace to server-side telemetry (e.g., Axiom / Sentry) with an incident reference ID, and return a clean, user-friendly, domain-specific message:
+  ```typescript
+  export async function safeActionHandler<T>(
+    action: () => Promise<T>
+  ): Promise<{ data?: T; error?: string }> {
+    try {
+      const data = await action();
+      return { data };
+    } catch (err: any) {
+      const errorId = crypto.randomUUID();
+      console.error(`[Internal Error ${errorId}]:`, err);
+      
+      // Map known Postgres error codes to friendly messages
+      if (err.code === "23505") return { error: "A record with this information already exists." };
+      if (err.code === "42501") return { error: "You do not have permission to perform this action." };
+      if (err.code === "23503") return { error: "The referenced item (e.g. client, team) no longer exists." };
+      
+      return { error: `An unexpected error occurred. Please quote Ref: ${errorId.slice(0, 8)} to support.` };
+    }
+  }
+  ```
+
+### 4.2 Enforced Timeouts on All External & Database Calls (Preventing Server Hangs)
+* **The Vulnerability in Current Code:**
+  - `fetch` calls in Supabase clients have no `signal` or `timeout`.
+  - If a downstream service (storage CDN, webhook, payment gateway) hangs or runs slowly, requests pile up in memory, exhausting thread pools and crashing the server runtime.
+* **The Production Solution:**
+  - Every external network call and database query enforces a strict timeout via `AbortSignal.timeout(ms)`:
+  ```typescript
+  export async function fetchWithTimeout(
+    url: string,
+    options: RequestInit = {},
+    timeoutMs = 8000
+  ) {
+    const signal = AbortSignal.timeout(timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal });
+    } catch (err: any) {
+      if (err.name === "TimeoutError") {
+        throw new Error("Downstream service timed out. Please try again later.");
+      }
+      throw err;
+    }
+  }
+  ```
+
+### 4.3 Strict Fail-Fast Input Validation with Zod (Never Hit DB with Dirty Data)
+* **The Vulnerability in Current Code:**
+  - Most routes directly insert raw client state (`supabase.from("clients").insert({ ...payload })` or `as any`), relying only on database constraint failures or triggers.
+  - Using `z.number()` for money also introduces IEEE 754 float drift before `Decimal.js` ever runs.
+* **The Production Solution:**
+  - Zero unvalidated data reaches the database. Validate all currency inputs as **strings** (`z.string().regex(/^\d+(\.\d{1,4})?$/)`) or integer minor units (`BIGINT` paisa/cents) so money never touches a JS `number`:
+  ```typescript
+  const MoneyStringSchema = z
+    .string()
+    .regex(/^\d+(\.\d{1,4})?$/, "Invalid currency format")
+    .refine((val) => new Decimal(val).gt(0), "Amount must be greater than zero");
+
+  const CreateInvoiceSchema = z.object({
+    clientId: z.string().uuid("Invalid client ID"),
+    dealId: z.string().uuid("Invalid deal ID"),
+    totalAmount: MoneyStringSchema,
+    dueDate: z.coerce.date(),
+    items: z.array(z.object({
+      description: z.string().min(1, "Description required"),
+      amount: MoneyStringSchema,
+    })).min(1, "At least one line item is required"),
+  });
+  ```
+
+### 4.4 4-Tier Layered Architecture (Eliminating "God Files" & Fat Controllers)
+* **The Vulnerability in Current Code:**
+  - Files like `_app.deals.new.tsx` (82 KB) and `_app.deals.$id.tsx` (63 KB) mash UI rendering, state management, direct SQL queries, formulas, and error handling into a single massive file.
+* **The Production Solution:**
+  - Strict separation of concerns into 4 distinct, maintainable layers:
+  ```
+  1. Presentation Layer (src/app/ & src/components/)
+     └─ Pure UI components, handles visual rendering, forms, and client events.
+  2. Action / Controller Layer (src/actions/)
+     └─ Mutations only (never use Server Actions for reads/live search; use RSCs or GET Route Handlers).
+  3. Domain / Service Layer (src/lib/services/)
+     └─ Pure business logic: FIFO payment allocation, commission calculations, tax math.
+  4. Data Access Layer (src/db/queries/)
+     └─ Drizzle ORM queries, transactions, and database indexing.
+  ```
+
+### 4.5 Concurrency, Locking & Transactional Audit Integrity
+* **Pessimistic Row Locking (`SELECT ... FOR UPDATE`):** Wrap FIFO allocations, commission payouts, and refunds in `db.transaction()` with `SELECT ... FOR UPDATE` on parent deal/invoice/installment rows so simultaneous clicks cannot double-allocate funds.
+* **Optimistic Concurrency Control (`version` column):** Add an integer `version` column to `deals`, `clients`, and `invoices` and enforce `WHERE id = $1 AND version = $2` on updates to prevent silent overwrites.
+* **Universal Financial Idempotency:** Extend `UNIQUE idempotency_key` enforcement beyond `create_deal_idempotent()` to receipts, FIFO allocations, refund payouts, debit notes, and commission batches.
+* **In-Database Transactional Audit Trail:** Write an append-only `audit_events` row (`actor_id`, `entity_type`, `entity_id`, `before_json`, `after_json`, `reason`, `request_id`) **inside the same PostgreSQL transaction** as every financial or approval mutation so no change can commit without its audit record.
+
+---
+
+## 5. Target Directory & Clean Modular Structure
 
 ```
 insurekar-bms/
 ├── src/
-│   ├── app/                                 # Next.js 15 App Router
+│   ├── app/                                 # Next.js 15 App Router (Presentation)
 │   │   ├── (auth)/                          # Clerk authentication routes
 │   │   │   ├── sign-in/[[...sign-in]]/page.tsx
 │   │   │   ├── sign-up/[[...sign-up]]/page.tsx
@@ -254,18 +364,25 @@ insurekar-bms/
 │   │   ├── globals.css
 │   │   └── layout.tsx                       # Root layout (<ClerkProvider>, Fonts, Toaster)
 │   │
-│   ├── actions/                             # Next.js Server Actions (Type-safe mutations)
+│   ├── actions/                             # Layer 2: Server Actions (Controller Layer)
 │   │   ├── deals.actions.ts                 # Create (idempotent), update, correct
 │   │   ├── clients.actions.ts               # Create, update (delta-only)
 │   │   ├── accounts.actions.ts              # Invoicing, receipts, payment allocation
 │   │   ├── operations.actions.ts            # Commission approval, refunds, travel
 │   │   └── admin.actions.ts                 # User provisioning, lock, team assignment
 │   │
-│   ├── jobs/                                # Trigger.dev / Inngest Background Jobs
-│   │   ├── monthly-commissions.job.ts       # Nightly & month-end commission batch runs
-│   │   └── overdue-installments.job.ts      # Daily overdue checks & aging sweeps
+│   ├── lib/                                 # Layer 3: Domain & Services Layer
+│   │   ├── services/
+│   │   │   ├── deal.service.ts              # Idempotent deal workflows
+│   │   │   ├── accounting.service.ts        # FIFO allocation & invoice balances
+│   │   │   └── commission.service.ts        # 45% approval & tax deductions
+│   │   ├── calc.ts                          # Financial calculations (100% preserved)
+│   │   ├── deal-record-fields.ts            # Explicit catalog for deal corrections
+│   │   ├── deal-instalment-rollup.ts        # Rolled-up sums and balances
+│   │   ├── permissions.ts                   # Role permission matrices
+│   │   └── format.ts                        # Currency, date, and text formatters
 │   │
-│   ├── db/                                  # Drizzle ORM Database Layer
+│   ├── db/                                  # Layer 4: Data Access Layer (Drizzle ORM)
 │   │   ├── index.ts                         # Pooled PostgreSQL client
 │   │   ├── schema/                          # Explicit TypeScript Schemas
 │   │   │   ├── auth.ts                      # Profiles (linked to Clerk ID), roles
@@ -275,7 +392,12 @@ insurekar-bms/
 │   │   │   ├── operations.ts                # Travel postings, refunds, underwriting
 │   │   │   ├── master.ts                    # Companies, insurance types, sources
 │   │   │   └── index.ts                     # Schema barrel export
+│   │   ├── queries/                         # Optimized SQL queries & indexes
 │   │   └── relations.ts                     # Full foreign-key relational graph
+│   │
+│   ├── jobs/                                # Background Workers (Trigger.dev)
+│   │   ├── monthly-commissions.job.ts       # Nightly & month-end commission batch runs
+│   │   └── overdue-installments.job.ts      # Daily overdue checks & aging sweeps
 │   │
 │   ├── components/                          # UI Component Tree
 │   │   ├── ui/                              # shadcn/ui components (Radix + Tailwind)
@@ -284,19 +406,12 @@ insurekar-bms/
 │   │   ├── accounts/                        # InvoiceTable, PaymentAllocationModal
 │   │   └── layout/                          # AppShell, Sidebar, Header, UserMenu
 │   │
-│   ├── lib/                                 # Pure Business Logic & Domain Engines
-│   │   ├── calc.ts                          # Financial calculations (100% preserved)
-│   │   ├── deal-record-fields.ts            # Explicit catalog for deal corrections
-│   │   ├── deal-instalment-rollup.ts        # Rolled-up sums and balances
-│   │   ├── permissions.ts                   # Role permission matrices
-│   │   └── format.ts                        # Currency, date, and text formatters
-│   │
 │   └── middleware.ts                        # Clerk edge protection & route matchers
 ```
 
 ---
 
-## 5. How Features Will Work in Next.js + Clerk
+## 6. How Features Will Work in Next.js + Clerk
 
 ```mermaid
 sequenceDiagram
@@ -304,61 +419,34 @@ sequenceDiagram
     actor User as Broker / Admin (Browser)
     participant MW as Clerk Middleware
     participant RSC as React Server Component
-    participant SA as Server Action
-    participant Drizzle as Drizzle ORM (PgBouncer)
+    participant SA as Server Action (Controller)
+    participant Svc as Domain Service
+    participant DAL as Drizzle ORM (DAL)
     participant DB as PostgreSQL Database
 
     User->>MW: Request /deals
     MW->>MW: Verify Clerk Session & Claims
     MW->>RSC: Forward with Clerk User ID & Role
-    RSC->>Drizzle: db.query.deals.findMany({ limit: 50, where: scopedToUser })
-    Drizzle->>DB: SQL Query (Indexed & Scoped)
-    DB-->>Drizzle: Records
-    Drizzle-->>RSC: Typed Data
+    RSC->>DAL: dealsQuery.getPaginatedDeals({ limit: 50, teamId })
+    DAL->>DB: SQL Query (Indexed & Scoped)
+    DB-->>DAL: Records
+    DAL-->>RSC: Typed Data
     RSC-->>User: Rendered HTML + Client Grid
 
     User->>SA: Submit New Deal (Form Action)
     SA->>SA: Validate Zod Schema & Submission Guard Key
-    SA->>DB: Execute create_deal_idempotent() RPC via Drizzle
-    DB-->>SA: Deal Created with Idempotent Lock
+    SA->>Svc: dealService.createDeal(validatedData)
+    Svc->>DAL: Execute create_deal_idempotent() RPC
+    DAL->>DB: Atomic Transaction with Lock
+    DB-->>DAL: Result
+    DAL-->>Svc: Deal Entity
+    Svc-->>SA: Success Result
     SA->>User: Revalidate Path & Redirect /deals/[id]
 ```
 
-### Module by Module Execution Details:
-
-#### 1. Authentication & Role Permissions
-- **How it works:** 
-  - Handled via `@clerk/nextjs` with `clerkMiddleware()`.
-  - Roles (`admin`, `management`, `team_lead`, `do`) are assigned via Clerk `publicMetadata` and synchronized with the database `user_roles` table via webhooks.
-  - Admin-only routes (`/admin/*`) and actions verify `sessionClaims.metadata.role === 'admin'`.
-
-#### 2. Deals Engine & Pipeline
-- **How it works:**
-  - **Idempotent Creation**: Submissions use a unique per-attempt submission key passed to the PostgreSQL RPC `create_deal_idempotent`. Double clicks or network retries safely return the existing deal without duplicating rows.
-  - **Correction Controls**: Editing existing deals uses the explicit schema field catalog (`src/lib/deal-record-fields.ts`), strictly excluding financial totals and audit identities.
-  - **Installment Rollups**: Handled by the pure calculation engine (`src/lib/deal-instalment-rollup.ts`), keeping client balances synchronized with database triggers.
-
-#### 3. Accounts & Financial Reconciliation
-- **How it works:**
-  - Invoices, receivables, and payables are fetched via server pagination (50/100 rows per page with search and date filters).
-  - Payment corrections and receipts trigger the PostgreSQL FIFO allocation trigger, automatically prioritizing specific installments and rejecting mixed manual balances.
-  - Tax withholding calculations are computed via `src/lib/calc.ts`.
-
-#### 4. Operations & Travel Postings
-- **How it works:**
-  - Bulk travel policy uploads are parsed via streaming server actions, writing directly into `travel_postings` and `travel_posting_rows`.
-  - Delivery tracking (Sent/Unsent status) is kept in its dedicated role-restricted table.
-  - Policies with commission $>45\%$ automatically flag `commission_approval = 'pending'`, notifying Admins.
-
-#### 5. Refunds Engine
-- **How it works:**
-  - Enforced via database security functions `refund_allows()` and `can_see_refund()`.
-  - Internal remarks live in a separate, permission-gated table.
-  - Documents upload to private storage buckets using pre-signed upload URLs generated on the server.
-
 ---
 
-## 6. Code Cleanup & De-cluttering Strategy
+## 7. Code Cleanup & De-cluttering Strategy
 
 ### What Gets Deleted / Removed:
 1. **Lovable Wrappers**:
@@ -393,37 +481,105 @@ sequenceDiagram
 
 ---
 
-## 7. High-Volume Scalability Blueprint
+## 8. High-Volume Scalability Blueprint
 
 To ensure the platform seamlessly handles thousands of clients, policies, and transactions:
 
-### 1. Database Connection Pooling
+### 1. Database Connection Pooling & Timeouts
 - Next.js connects through PostgreSQL's **Supavisor / PgBouncer Transaction Pooler** (Port `6543`).
-- Eliminates connection exhaustion during high concurrent load.
+- **Disable Prepared Statements:** Port `6543` transaction pooling breaks with `postgres.js` default prepared statements—explicitly configure `postgres(url, { prepare: false })`.
+- **Enforce DB-Level Timeouts:** Set Postgres `statement_timeout` (e.g., `10s`) and `lock_timeout` (e.g., `3s`) alongside HTTP `AbortSignal.timeout()` so stalled locks or runaway queries cannot pile up.
 
-### 2. Server-Side Pagination & Cursor Streaming
+### 2. Hybrid Pagination Strategy (Keyset Cursor + Bounded Offset)
 - No table loads unfiltered datasets into the browser.
-- All list endpoints (`/deals`, `/clients`, `/accounts/invoices`) implement:
+- **Cursor (Keyset) Pagination for High-Volume Lists:** Use composite keyset pagination on `(created_at DESC, id DESC)` for `deals`, `invoices`, `deal_installments`, and `audit_events` so performance stays constant across 100,000+ rows.
+- **Bounded `OFFSET` Only Where Required:** Reserve `OFFSET` strictly for small/medium admin tables where users explicitly need numbered page jumps.
   ```typescript
+  // Keyset pagination for high-volume deals/ledgers
   const records = await db.query.deals.findMany({
-    where: and(eq(deals.team_id, userTeamId), inArray(deals.stage_id, selectedStages)),
+    where: and(
+      eq(deals.team_id, userTeamId),
+      cursor ? or(
+        lt(deals.created_at, cursor.createdAt),
+        and(eq(deals.created_at, cursor.createdAt), lt(deals.id, cursor.id))
+      ) : undefined
+    ),
     limit: 50,
-    offset: (page - 1) * 50,
-    orderBy: [desc(deals.created_at)],
+    orderBy: [desc(deals.created_at), desc(deals.id)],
   });
   ```
 
-### 3. Database Indexing Strategy
-Ensure compound indexes exist on:
-- `deals(team_id, created_at DESC)`
-- `deals(client_id, stage_id)`
-- `deal_installments(deal_id, status, due_date)`
-- `invoices(client_id, status)`
-- `travel_postings(created_at DESC)`
+### 3. High-Performance Database Indexing Strategy (Sub-Millisecond Fetching at Scale)
+
+In a high-volume brokerage with 100,000+ policies, installments, and receipts, standard sequential table scans will freeze the database and cause query timeouts. We will implement four targeted categories of PostgreSQL indexes to ensure sub-millisecond data fetching:
+
+#### A. Compound B-Tree Indexes (Multi-Column Query Optimization)
+Matches the exact filter-and-sort patterns used across the BMS dashboards:
+* **`deals(team_id, created_at DESC)`**: Instant DO/Team filtered deal listings sorted newest-first without in-memory sorting.
+* **`deals(client_id, stage_id)`**: Instant retrieval of all won/active policies for a specific client profile.
+* **`deal_installments(deal_id, status, due_date ASC)`**: Fast retrieval of unpaid installments for receipt allocations.
+* **`invoices(client_id, status, due_date ASC)`**: Immediate loading of overdue client statements for accounts receivable.
+* **`travel_posting_rows(posting_id, commission_approval)`**: Sub-millisecond loading of travel batches with pending management approvals.
+
+#### B. Partial / Filtered Indexes (Zero Overhead for Historical Data)
+Partial indexes index *only active or pending rows*, keeping index sizes tiny (kilobytes instead of gigabytes) and queries ultra-fast:
+```sql
+-- Indexes ONLY pending/unpaid installments (ignoring millions of historical paid rows)
+CREATE INDEX idx_installments_pending ON deal_installments (due_date ASC)
+WHERE status IN ('pending', 'partial', 'overdue');
+
+-- Indexes ONLY policies requiring management commission approval (>45%)
+CREATE INDEX idx_travel_pending_approval ON travel_posting_rows (created_at DESC)
+WHERE commission_approval = 'pending';
+
+-- Indexes ONLY open tickets for real-time SLA warning dashboards
+CREATE INDEX idx_tickets_active ON tickets (team_id, priority, created_at DESC)
+WHERE status != 'closed';
+```
+
+#### C. Foreign Key Covering Indexes (Eliminating Slow Table Joins)
+PostgreSQL does not automatically index foreign key columns. Unindexed foreign keys cause full sequential table scans on parent-child joins:
+* `idx_deals_lead_source`: `deals(lead_source_id)`
+* `idx_deals_insurance_company`: `deals(insurance_company_id)`
+* `idx_deals_insurance_type`: `deals(insurance_type_id)`
+* `idx_deal_docs_deal`: `deal_documents(deal_id)`
+* `idx_refund_remarks_refund`: `refund_remarks(refund_id)`
+
+#### D. Trigram / GIN Search Indexes (Instant Client & Policy Search)
+A multi-column `gin_trgm_ops` index performs poorly on `OR` search predicates. Instead, use a single stored generated `search_text` column indexed once:
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+ALTER TABLE clients
+ADD COLUMN search_text TEXT GENERATED ALWAYS AS (
+  coalesce(name, '') || ' ' || coalesce(national_id, '') || ' ' || coalesce(phone, '')
+) STORED;
+
+-- Instant search by Client Name, CNIC / National ID, or Phone number
+CREATE INDEX idx_clients_search_trgm
+ON clients USING gin (search_text gin_trgm_ops);
+
+-- Instant search by Policy Number or Tracking ID
+CREATE INDEX idx_deals_policy_no_trgm ON deals 
+USING gin (policy_number gin_trgm_ops);
+```
+
+### 4. Schema Migration Safety (Protecting Existing Triggers & RLS)
+- **Never run `drizzle-kit push`** against a database containing the 58 existing migrations, custom PostgreSQL triggers, RLS policies, and RPCs—it can drop or desync unmanaged objects.
+- Baseline the Drizzle schema cleanly, use `drizzle-kit generate` with manual SQL review, and keep complex accounting RPCs versioned in explicit SQL migrations.
 
 ---
 
-## 8. Phased Execution Roadmap
+## 9. Phased Execution Roadmap
+
+### Cutover Requirement: Zero-Variance Financial Parity Gate (Phase 5)
+Before switching production traffic, run an automated parity script comparing every active policy's receivable balance, FIFO installment state, WHT/tax totals, and commission payout between the legacy engine and the new Drizzle/`Decimal.js` services. Require **0.00 variance across 100% of production records**.
+
+### Post-Migration Roadmap (Phase 6 — Domain Upgrades After Cutover)
+To avoid mixing a framework port with a core-accounting schema rewrite, the following major domain upgrades are scheduled *after* Next.js + Clerk cutover is verified:
+1. Immutable double-entry general ledger (`journal_entries` + `ledger_lines`).
+2. Versioned policy endorsements (`parent_policy_id` + temporal snapshots).
+3. Insurer Bordereaux reconciliation & Unallocated Cash (Suspense) account.
 
 ```mermaid
 gantt
