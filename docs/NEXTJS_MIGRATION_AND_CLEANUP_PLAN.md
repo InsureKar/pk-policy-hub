@@ -102,24 +102,103 @@ Replacing Supabase Auth with **Clerk (`@clerk/nextjs`)** provides enterprise-gra
 └────────────────────────────────────────────────────────┘
 ```
 
-### 2.1 Role-Based Access Control (RBAC) via Clerk Metadata
-Instead of making database round-trips to query roles on every page load, roles are stored directly in Clerk's `publicMetadata`:
+### 2.1 Role-Based Access Control (RBAC) Specification & Governance Matrix
+
+The BMS enforces a strict 4-tier hierarchical access model:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        HIERARCHICAL ROLE PYRAMID                       │
+├────────────────────────────────────────────────────────────────────────┤
+│  1. Admin (Super Admin)                                                │
+│     └─ Full master control: users, teams, companies, stages, sources   │
+│  2. Management (Executive Oversight)                                   │
+│     └─ Enterprise analytics, reporting, deals; CANNOT delete master    │
+│  3. Team Lead (Sales Supervisor)                                       │
+│     └─ Scoped strictly to own team; manages DOs, views team deals/KPIs │
+│  4. DO (Development Officer / Sales Agent)                             │
+│     └─ Scoped strictly to personal clients, deals, stages & documents  │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Detailed Role Permission Matrix
+
+| Capability / Entity | 1. Admin | 2. Management | 3. Team Lead | 4. DO (Sales Agent) |
+| :--- | :---: | :---: | :---: | :---: |
+| **User & Team Management** | Full (CRUD) | View Only | View Team Members | None |
+| **Master Data: Insurance Companies** | Full (CRUD) | View Only *(No Delete)* | View Active Only | View Active Only |
+| **Master Data: Insurance Types** | Full (CRUD) | View Only *(No Delete)* | View Active Only | View Active Only |
+| **Master Data: Deal Stages** | Full (CRUD) | View Only *(No Delete)* | View Active Only | View Active Only |
+| **Master Data: Lead Sources** | Full (CRUD) | View Only *(No Delete)* | View Active Only | View Active Only |
+| **Global Dashboards & Income Analytics** | Full Access | Full Access | Scoped to Team | Scoped to Self |
+| **Financial Reports & Excel Export** | Full Access | Full Access | Team Deals Only | Own Deals Only |
+| **Client Profiles & Contacts** | Full Access | View All | View Team Clients | Create / View Own Only |
+| **Deal Creation & Stage Updates** | Full Access | View All | Team Deals (View/Edit) | Create & Update Own Deals |
+| **Document Uploads** | Full Access | View All | Team Documents | Own Deal Documents |
+| **Manage DO Assignments** | Global | Global | Under Own Team Only | None |
+| **Referral Leads: Bulk Upload** | Full Access | Full Access | None | None |
+| **Referral Leads: Partner Filter & Assign to TL** | Full Access | Full Access | None | None |
+| **Referral Leads: Assign to Under-DOs** | Full Access | Full Access | Own Team DOs Only | View Assigned Leads Only |
+
+#### Clerk Metadata Schema & Assertions
+Roles and organizational scopes are stored directly in Clerk's `publicMetadata`:
 ```json
 {
-  "role": "admin", // "admin" | "management" | "team_lead" | "do"
-  "team_id": "00000000-0000-0000-0000-000000000001"
+  "role": "team_lead", // "admin" | "management" | "team_lead" | "do"
+  "team_id": "00000000-0000-0000-0000-000000000001",
+  "is_locked": false
 }
 ```
-In Next.js Server Components and Server Actions, the role is immediately available in the session claims:
+
+In Next.js Server Components, Server Actions, and Route Handlers, role guards enforce these invariants at the execution boundary:
 ```typescript
 import { auth } from "@clerk/nextjs/server";
 
-export async function assertAdmin() {
-  const { sessionClaims } = await auth();
-  const role = sessionClaims?.metadata?.role;
-  if (role !== "admin") {
-    throw new Error("Unauthorized: Super Admin access required");
+export type UserRole = "admin" | "management" | "team_lead" | "do";
+
+export async function assertAuthenticated() {
+  const { sessionClaims, userId } = await auth();
+  if (!userId || !sessionClaims) {
+    throw new Error("Unauthorized: Authentication required");
   }
+  return {
+    userId,
+    role: (sessionClaims.metadata?.role as UserRole) ?? "do",
+    teamId: sessionClaims.metadata?.team_id as string | undefined,
+  };
+}
+
+/** Enforce Admin-only access (master data deletion, user provisioning) */
+export async function assertAdmin() {
+  const session = await assertAuthenticated();
+  if (session.role !== "admin") {
+    throw new Error("Forbidden: Super Admin access required");
+  }
+  return session;
+}
+
+/** Enforce Master Data deletion rule: Management CANNOT delete master data */
+export async function assertCanDeleteMasterData() {
+  const session = await assertAuthenticated();
+  if (session.role !== "admin") {
+    throw new Error("Forbidden: Only Super Admins may delete master data (insurance companies, types, stages, sources).");
+  }
+  return session;
+}
+
+/** Enforce Team Lead / Supervisory access (scoped to own team) */
+export async function assertTeamLeadOrAbove(targetTeamId?: string) {
+  const session = await assertAuthenticated();
+  if (session.role === "admin" || session.role === "management") {
+    return session;
+  }
+  if (session.role === "team_lead") {
+    if (targetTeamId && session.teamId !== targetTeamId) {
+      throw new Error("Forbidden: Team Leads may only access data for their assigned team");
+    }
+    return session;
+  }
+  throw new Error("Forbidden: Supervisory access required");
 }
 ```
 
@@ -135,16 +214,21 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+const isManagementRoute = createRouteMatcher(["/operations/reports(.*)", "/operations/performance(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
     await auth.protect();
   }
-  if (isAdminRoute(req)) {
-    const { sessionClaims } = await auth();
-    if (sessionClaims?.metadata?.role !== "admin") {
-      return new Response("Forbidden", { status: 403 });
-    }
+  const { sessionClaims } = await auth();
+  const role = sessionClaims?.metadata?.role;
+
+  if (isAdminRoute(req) && role !== "admin") {
+    return new Response("Forbidden: Admin access required", { status: 403 });
+  }
+
+  if (isManagementRoute(req) && role !== "admin" && role !== "management") {
+    return new Response("Forbidden: Management or Admin access required", { status: 403 });
   }
 });
 
@@ -154,9 +238,13 @@ export const config = {
 ```
 
 ### 2.3 Closing Clerk-to-Drizzle Security & Sync Traps
-* **Mandatory Scoped DAL & RLS Protection:** Migrating from Supabase client queries to Drizzle ORM over a pooled Postgres connection bypasses Supabase RLS by default. Every query must go through a **Scoped Data Access Layer** that automatically injects `team_id` / role filters, and/or sets transaction-scoped Postgres variables (`SET LOCAL app.current_user_id`, `SET LOCAL app.current_team_id`) inside `db.transaction()`. *(Because existing RLS helpers expect `uuid` from `auth.uid()` while Clerk IDs are strings like `user_2...`, maintain a `clerk_user_id -> profiles.id (uuid)` mapping.)*
+* **Mandatory Scoped DAL & Data Visibility:** In Drizzle queries, never fetch raw data without passing the viewer's `VisibilityScope`:
+  - **Admin / Management:** Accesses all records (`scope.all = true`).
+  - **Team Lead:** Scoped queries dynamically inject `WHERE team_id = :teamId OR team_lead_id = :userId`.
+  - **DO:** Scoped queries dynamically inject `WHERE (assigned_do_id = :userId OR created_by = :userId)`.
+* **Management Master Data Protection:** Hardcoded policy in database and server action layers prevents `DELETE` operations on `insurance_companies`, `insurance_types`, `deal_stages`, and `lead_sources` if the actor's role is `management`.
 * **Never Trust Stale JWT Claims for High-Risk Actions:** Clerk `sessionClaims.metadata.role` can remain cached up to 60 seconds. Use JWT claims for UI routing, but verify `role` and `is_locked` directly against PostgreSQL before executing admin, refund, or approval Server Actions.
-* **Defense-in-Depth Beyond `middleware.ts`:** Never treat middleware as the sole auth boundary. Enforce explicit `requireAuth()` / `requireRole()` checks at the entry of every Server Component loader, Server Action, and Route Handler.
+* **Defense-in-Depth Beyond `middleware.ts`:** Never treat middleware as the sole auth boundary. Enforce explicit `assertRole()` checks at the entry of every Server Component loader, Server Action, and Route Handler.
 * **JIT Upsert for Svix Webhook Race Conditions:** A newly created user can land on `/dashboard` milliseconds before the async Svix webhook inserts their `profiles` row. Pair the webhook with a **Just-in-Time (JIT) idempotent upsert** in the auth helper on first authenticated request.
 
 ---
@@ -307,6 +395,124 @@ To prevent server crashes, cascading request backlogs, data corruption, and info
 * **Universal Financial Idempotency:** Extend `UNIQUE idempotency_key` enforcement beyond `create_deal_idempotent()` to receipts, FIFO allocations, refund payouts, debit notes, and commission batches.
 * **In-Database Transactional Audit Trail:** Write an append-only `audit_events` row (`actor_id`, `entity_type`, `entity_id`, `before_json`, `after_json`, `reason`, `request_id`) **inside the same PostgreSQL transaction** as every financial or approval mutation so no change can commit without its audit record.
 
+### 4.6 Architectural Fix for Bug #1: Disentangling DO Production vs. Team Lead Supervisory Attribution
+
+#### The Root Cause in Current Architecture:
+In the legacy codebase (`PipelineFunnel.tsx`, `_app.dashboard.tsx`, `visibility.ts`), deals are filtered using a conflated boolean clause:
+```typescript
+// Legacy flawed filter logic
+if (d.assigned_do_id !== applied.userId && d.team_lead_id !== applied.userId) return false;
+```
+Because deals written by a DO store both `assigned_do_id = <DO_ID>` and `team_lead_id = <TL_ID>`, filtering by a Team Lead's user ID inadvertently pulls in **all production generated by their subordinate DOs**, incorrectly displaying it as the Team Lead's personal business. Furthermore, when filtering by DO, supervisory linkages can produce false duplicates or attribution leakage in aggregate reports.
+
+#### The Next.js 15 + Drizzle Resolution Architecture:
+1. **Strict Entity Separation in PostgreSQL / Drizzle Schema**:
+   - `assigned_do_id (UUID)`: Strictly designates the **Sales Producer / Development Officer** who originated, owned, and closed the policy.
+   - `team_id (UUID)` & `team_lead_id (UUID)`: Designates the supervisory reporting branch for organizational rollups and managerial override commissions.
+2. **Granular Scoped Data Access Layer (DAL) Query Modes**:
+   Instead of a single ambiguous filter, the DAL provides three explicit query scopes:
+   ```typescript
+   export type ProductionScope = 
+     | { type: "do_personal"; doId: string }
+     | { type: "team_lead_personal"; teamLeadId: string }
+     | { type: "team_subordinate_rollup"; teamLeadId: string; teamId: string }
+     | { type: "team_aggregate_total"; teamId: string };
+
+   export function buildProductionFilter(scope: ProductionScope) {
+     switch (scope.type) {
+       case "do_personal":
+         // Returns strictly deals where this DO is the direct sales agent
+         return eq(deals.assigned_do_id, scope.doId);
+
+       case "team_lead_personal":
+         // Returns deals where the Team Lead personally acted as the originating DO
+         return and(
+           eq(deals.assigned_do_id, scope.teamLeadId),
+           eq(deals.team_lead_id, scope.teamLeadId)
+         );
+
+       case "team_subordinate_rollup":
+         // Returns deals closed by team members under this TL (excluding TL personal sales)
+         return and(
+           eq(deals.team_lead_id, scope.teamLeadId),
+           ne(deals.assigned_do_id, scope.teamLeadId)
+         );
+
+       case "team_aggregate_total":
+         // Full branch volume
+         return eq(deals.team_id, scope.teamId);
+     }
+   }
+   ```
+3. **UI Filter Granularity**:
+   On the Dashboard and Pipeline Funnel, the user selector provides clear, distinct options:
+   - *"Team Total (All Members)"*
+   - *"Team Members Only (DO Production Breakdown)"*
+   - *"My Personal Production (Direct Sales as Producer)"*
+
+---
+
+### 4.7 Architectural Fix for Bug #2: Mathematical Reconciliation & Parity Between Won Business & Tagged Premium
+
+#### The Root Cause in Current Architecture:
+In the legacy codebase, "Won Business" and "Tagged Business" diverge due to three fundamental flaws:
+1. **Divergent Metric Definitions**: In `PipelineFunnel.tsx`, `wonValue` returned `gross_premium` for standard deals, but returned `tagged_premium` for custom installment plans. In `_app.dashboard.tsx`, cards compared Gross Premium directly against Tagged Premium without clarifying the multiplier.
+2. **Recognition Date Asynchrony**: Single-payment deals recognized won status on `payment_receive_date` or `created_at`, while installment deals recognized partial won status on individual installment `paid_date`s. Filtering by a date range counted a deal as "Won" in deal-count cards while installment sums were partially recognized in financial cards.
+3. **Floating-point & Dynamic Settings Drift**: Tagged Premium depends on `base_percentage` (`13%` default). Historical deals without hard-snapshotted base percentages recalculated dynamically when global settings changed, breaking parity with historical reports.
+
+#### The Next.js 15 + Drizzle Resolution Architecture:
+1. **Rigorous Domain Metric Definitions**:
+   - **Won Gross Premium**: $\sum \text{gross\_premium}$ of all deals where `deal_stages.is_won = true` (or paid installment gross amounts).
+   - **Won Net Premium**: $\sum \text{net\_premium}$ of won policies.
+   - **Tagged Premium (Base Brokerage Revenue)**: Defined by invariant law:
+     $$\text{Tagged Premium} = \text{Net Premium} \times \left(\frac{\text{snapshot\_base\_percentage}}{100}\right)$$
+2. **Immutable Snapshotting at Deal Creation**:
+   Every deal record permanently snapshots `snapshot_base_percentage` at the time of creation. Global changes to `app_settings` apply only to future deals, never altering historical tagged premium calculations.
+3. **Centralized Calculation Engine (`src/lib/services/financial-metrics.service.ts`)**:
+   All cards, funnels, and exports call a single, unified financial engine powered by `Decimal.js`:
+   ```typescript
+   import Decimal from "decimal.js";
+
+   export interface FinancialBreakdown {
+     grossPremium: string;
+     netPremium: string;
+     taggedPremium: string;
+     totalIncome: string;
+   }
+
+   export function computeDealMetrics(
+     deals: Array<{
+       netPremium: string;
+       grossPremium: string;
+       basePercentage: string;
+       commissionPercentage: string;
+     }>
+   ): FinancialBreakdown {
+     let gross = new Decimal(0);
+     let net = new Decimal(0);
+     let tagged = new Decimal(0);
+
+     for (const d of deals) {
+       const dGross = new Decimal(d.grossPremium || 0);
+       const dNet = new Decimal(d.netPremium || 0);
+       const basePct = new Decimal(d.basePercentage || 13).div(100);
+
+       gross = gross.plus(dGross);
+       net = net.plus(dNet);
+       tagged = tagged.plus(dNet.times(basePct));
+     }
+
+     return {
+       grossPremium: gross.toFixed(2),
+       netPremium: net.toFixed(2),
+       taggedPremium: tagged.toFixed(2),
+       totalIncome: tagged.toFixed(2), // Synchronized base income
+     };
+   }
+   ```
+4. **Automated Mathematical Parity Suite**:
+   A continuous integration test suite runs nightly, asserting that $\text{Tagged Premium}$ matches $\text{Net Premium} \times \text{Base \%}$ across 100% of won records with `0.00` allowable variance.
+
 ---
 
 ## 5. Target Directory & Clean Modular Structure
@@ -330,6 +536,10 @@ insurekar-bms/
 │   │   │   │   ├── new/page.tsx             # New Deal Creation (Idempotent Guard)
 │   │   │   │   ├── [id]/page.tsx            # Deal Master Record & Editor
 │   │   │   │   └── pipeline/page.tsx        # Pipeline Kanban & Funnel
+│   │   │   ├── leads/                       # Referral Leads Management Module
+│   │   │   │   ├── referral/page.tsx        # Referral Leads List & Partner Filter
+│   │   │   │   ├── referral/upload/page.tsx # Bulk CSV/Excel Upload
+│   │   │   │   └── unassigned/page.tsx      # Unassigned Leads Management
 │   │   │   ├── accounts/
 │   │   │   │   ├── invoices/page.tsx
 │   │   │   │   ├── receivables/page.tsx
@@ -360,13 +570,14 @@ insurekar-bms/
 │   │   │   ├── webhooks/clerk/route.ts      # Svix Webhook user sync
 │   │   │   ├── export/deals/route.ts        # Server-side Excel streaming
 │   │   │   ├── documents/invoice/[id]/route.ts # Server-side PDF generation
-│   │   │   └── webhooks/route.ts
+│   │   │   └── leads/upload/route.ts        # Streaming bulk lead upload
 │   │   ├── globals.css
 │   │   └── layout.tsx                       # Root layout (<ClerkProvider>, Fonts, Toaster)
 │   │
 │   ├── actions/                             # Layer 2: Server Actions (Controller Layer)
 │   │   ├── deals.actions.ts                 # Create (idempotent), update, correct
 │   │   ├── clients.actions.ts               # Create, update (delta-only)
+│   │   ├── leads.actions.ts                 # Bulk upload, partner filter, assign to TL, assign to DO
 │   │   ├── accounts.actions.ts              # Invoicing, receipts, payment allocation
 │   │   ├── operations.actions.ts            # Commission approval, refunds, travel
 │   │   └── admin.actions.ts                 # User provisioning, lock, team assignment
@@ -374,7 +585,9 @@ insurekar-bms/
 │   ├── lib/                                 # Layer 3: Domain & Services Layer
 │   │   ├── services/
 │   │   │   ├── deal.service.ts              # Idempotent deal workflows
+│   │   │   ├── referral-lead.service.ts     # Ingestion, validation, 2-tier delegation
 │   │   │   ├── accounting.service.ts        # FIFO allocation & invoice balances
+│   │   │   ├── financial-metrics.service.ts # Won vs Tagged calculation parity
 │   │   │   └── commission.service.ts        # 45% approval & tax deductions
 │   │   ├── calc.ts                          # Financial calculations (100% preserved)
 │   │   ├── deal-record-fields.ts            # Explicit catalog for deal corrections
@@ -388,6 +601,7 @@ insurekar-bms/
 │   │   │   ├── auth.ts                      # Profiles (linked to Clerk ID), roles
 │   │   │   ├── clients.ts                   # Clients & client contacts
 │   │   │   ├── deals.ts                     # Deals, stages, custom installments
+│   │   │   ├── leads.ts                     # Referral leads, batches, assignment logs
 │   │   │   ├── accounts.ts                  # Invoices, payables, receivables, ledger
 │   │   │   ├── operations.ts                # Travel postings, refunds, underwriting
 │   │   │   ├── master.ts                    # Companies, insurance types, sources
@@ -397,12 +611,14 @@ insurekar-bms/
 │   │
 │   ├── jobs/                                # Background Workers (Trigger.dev)
 │   │   ├── monthly-commissions.job.ts       # Nightly & month-end commission batch runs
-│   │   └── overdue-installments.job.ts      # Daily overdue checks & aging sweeps
+│   │   ├── overdue-installments.job.ts      # Daily overdue checks & aging sweeps
+│   │   └── lead-assignment-digest.job.ts    # Unassigned leads reminder & SLA escalations
 │   │
 │   ├── components/                          # UI Component Tree
 │   │   ├── ui/                              # shadcn/ui components (Radix + Tailwind)
 │   │   ├── shared/                          # PageHeader, MoneyInput, DateField
 │   │   ├── deals/                           # DealAmountTable, DealCustomInstalments
+│   │   ├── leads/                           # ReferralBulkUploadModal, PartnerFilterSelect
 │   │   ├── accounts/                        # InvoiceTable, PaymentAllocationModal
 │   │   └── layout/                          # AppShell, Sidebar, Header, UserMenu
 │   │
@@ -412,6 +628,8 @@ insurekar-bms/
 ---
 
 ## 6. How Features Will Work in Next.js + Clerk
+
+### 6.1 Deal Lifecycle & Server Action Execution Flow
 
 ```mermaid
 sequenceDiagram
@@ -443,6 +661,147 @@ sequenceDiagram
     Svc-->>SA: Success Result
     SA->>User: Revalidate Path & Redirect /deals/[id]
 ```
+
+### 6.2 Referral Leads Pipeline Architecture: Bulk Ingestion & Two-Tier Delegation
+
+The Referral Leads module enables high-volume partner acquisition, streamlined lead processing, and auditable accountability across management tiers.
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│               TWO-TIER REFERRAL LEAD DELEGATION PIPELINE               │
+├────────────────────────────────────────────────────────────────────────┤
+│  STEP 1: Bulk Upload (Admin / Management)                              │
+│          Upload multi-thousand lead CSV/XLSX with partner attribution  │
+│                                                                        │
+│  STEP 2: Partner Filter & Tier-1 Assignment (Admin / Management)       │
+│          Filter unassigned pool by Referral Partner -> Assign to TL   │
+│                                                                        │
+│  STEP 3: Tier-2 Assignment (Team Lead)                                 │
+│          Team Lead reviews team pool -> Assigns to subordinate DO      │
+│                                                                        │
+│  STEP 4: Conversion & Deal Creation (DO)                               │
+│          DO contacts lead -> 1-Click Convert to Client + Deal Record   │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 1. Drizzle ORM Schema Definition (`src/db/schema/leads.ts`)
+```typescript
+import { pgTable, uuid, text, timestamp, numeric, varchar, integer, index } from "drizzle-orm/pg-core";
+import { profiles, teams } from "./auth";
+import { insuranceTypes } from "./master";
+
+export const leadBatches = pgTable("lead_batches", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  batchNumber: varchar("batch_number", { length: 50 }).notNull().unique(),
+  uploadedBy: text("uploaded_by").notNull(), // Clerk User ID
+  totalRecords: integer("total_records").notNull(),
+  validRecords: integer("valid_records").notNull(),
+  failedRecords: integer("failed_records").notNull().default(0),
+  fileName: text("file_name").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const referralLeads = pgTable("referral_leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  batchId: uuid("batch_id").references(() => leadBatches.id),
+  referralPartnerName: varchar("referral_partner_name", { length: 255 }).notNull(),
+  
+  // Client Contact Details
+  clientName: varchar("client_name", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }).notNull(),
+  email: varchar("email", { length: 255 }),
+  nationalIdCnic: varchar("national_id_cnic", { length: 50 }),
+  
+  // Insurance Context
+  insuranceTypeId: uuid("insurance_type_id").references(() => insuranceTypes.id),
+  estimatedPremium: numeric("estimated_premium", { precision: 14, scale: 2 }),
+  notes: text("notes"),
+  
+  // Status & Lifecycle
+  status: varchar("status", { length: 50 })
+    .notNull()
+    .default("unassigned"), // 'unassigned' | 'assigned_to_team' | 'assigned_to_do' | 'converted' | 'discarded'
+
+  // Two-Tier Hierarchical Assignment
+  assignedTeamId: uuid("assigned_team_id").references(() => teams.id),
+  assignedTeamLeadId: uuid("assigned_team_lead_id").references(() => profiles.id),
+  assignedDoId: uuid("assigned_do_id").references(() => profiles.id),
+  
+  // Audit Trail
+  assignedByAdminId: text("assigned_by_admin_id"),
+  assignedByTlId: text("assigned_by_tl_id"),
+  convertedDealId: uuid("converted_deal_id"),
+  convertedClientId: uuid("converted_client_id"),
+  
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  partnerIdx: index("idx_referral_partner").on(table.referralPartnerName),
+  statusIdx: index("idx_referral_status").on(table.status),
+  teamLeadIdx: index("idx_referral_team_lead").on(table.assignedTeamLeadId),
+  assignedDoIdx: index("idx_referral_do").on(table.assignedDoId),
+  phoneIdx: index("idx_referral_phone").on(table.phone),
+}));
+```
+
+#### 2. Sequence Diagram: Bulk Ingestion & Two-Tier Assignment Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Admin / Management
+    actor TL as Team Lead
+    actor DO as Development Officer (DO)
+    participant SA as Next.js Server Action
+    participant Svc as ReferralLeadService
+    participant DB as PostgreSQL (Drizzle ORM)
+
+    Note over Admin,DB: Step 1: Bulk Upload & Partner Ingestion
+    Admin->>SA: Upload CSV/XLSX (/leads/referral/upload)
+    SA->>Svc: parseAndValidateLeads(fileStream)
+    Svc->>Svc: Zod validation & phone/CNIC deduplication
+    Svc->>DB: INSERT into lead_batches & referral_leads (status: 'unassigned')
+    DB-->>Admin: Batch Summary (e.g. 500 Leads Ingested)
+
+    Note over Admin,DB: Step 2: Tier-1 Assignment by Referral Partner
+    Admin->>SA: Filter by Partner (e.g. "Bank Alfalah") & Assign to Team Lead
+    SA->>SA: assertAdmin() or assertManagement()
+    SA->>Svc: assignLeadsToTeamLead(leadIds, teamLeadId, teamId)
+    Svc->>DB: UPDATE referral_leads SET assigned_team_id = $1, assigned_team_lead_id = $2, status = 'assigned_to_team'
+    DB-->>Admin: Notification: Leads dispatched to Team Lead
+
+    Note over TL,DB: Step 3: Tier-2 Assignment (Team Lead to Subordinate DO)
+    TL->>SA: View Team Pool (/leads/referral) & Select Leads
+    SA->>SA: assertTeamLeadOrAbove(teamId)
+    SA->>Svc: assignLeadsToSubordinateDO(leadIds, subordinateDoId)
+    Svc->>DB: Verify DO belongs to TL's team
+    Svc->>DB: UPDATE referral_leads SET assigned_do_id = $1, status = 'assigned_to_do'
+    DB-->>TL: Leads assigned to DO
+
+    Note over DO,DB: Step 4: Lead Conversion into Deal
+    DO->>SA: Click "Convert to Deal" from DO Dashboard
+    SA->>Svc: convertLeadToDeal(leadId)
+    Svc->>DB: Create Client profile (source = referralPartnerName)
+    Svc->>DB: Initialize Deal Draft (assigned_do_id = DO, team_lead_id = TL)
+    Svc->>DB: UPDATE referral_leads SET status = 'converted'
+    DB-->>DO: Redirect to /deals/[newDealId] with prefilled fields
+```
+
+#### 3. Core Functional Capabilities
+* **Bulk Ingestion Route Handler & Action**:
+  - Accepts `.csv` and `.xlsx` multipart file uploads up to 50MB.
+  - Streaming line-by-line parser using `fast-csv` or `xlsx` stream buffers on the server.
+  - Normalizes Pakistani phone numbers (`03xx-xxxxxxx` $\rightarrow$ `+923xxxxxxxxx`) and CNICs (`xxxxx-xxxxxxx-x`).
+  - Flags duplicate leads against active database records without halting the entire batch.
+* **Partner Filter & Batch Assignment (Admin & Management Only)**:
+  - High-performance dropdown pulling `SELECT DISTINCT referral_partner_name FROM referral_leads`.
+  - Filter by multiple partners, date ranges, and upload batches.
+  - Select All / Paginated Checkbox mechanism allows assigning hundreds of leads in a single atomic Server Action.
+* **Team Lead Supervisory Queue**:
+  - Scoped to `assigned_team_id = session.teamId`.
+  - Team Lead can inspect lead details, view notes, and delegate to active DOs in their team roster with balanced workload distribution.
+* **Audit Trail & Lead History**:
+  - Tracks timestamp and user ID for every state transition: upload $\rightarrow$ assigned to TL $\rightarrow$ assigned to DO $\rightarrow$ converted to Deal.
 
 ---
 
@@ -572,8 +931,50 @@ USING gin (policy_number gin_trgm_ops);
 
 ## 9. Phased Execution Roadmap
 
-### Cutover Requirement: Zero-Variance Financial Parity Gate (Phase 5)
-Before switching production traffic, run an automated parity script comparing every active policy's receivable balance, FIFO installment state, WHT/tax totals, and commission payout between the legacy engine and the new Drizzle/`Decimal.js` services. Require **0.00 variance across 100% of production records**.
+### Phase Breakdown
+
+#### Phase 1: Database & Schemas (Nov 27 – Nov 29)
+* Introspect existing PostgreSQL schema and baseline Drizzle ORM definitions in `src/db/schema/`.
+* Adapt `profiles` table to bridge Clerk user strings (`user_xxx`) with database UUIDs.
+* Create migration for `referral_leads` and `lead_batches` tables with compound indexes on `(referral_partner_name, status, assigned_team_lead_id)`.
+* Implement compound indexes for DO and Team Lead attribution: `idx_deals_assigned_do` and `idx_deals_team_lead`.
+
+#### Phase 2: Next.js 15 App Router & Clerk RBAC Setup (Nov 30 – Dec 03)
+* Initialize Next.js 15 App Router structure with React Server Components.
+* Configure `@clerk/nextjs` with Edge Middleware protection and public metadata sync.
+* Implement the 4-tier Role Enforcement Matrix:
+  - **Admin**: Full master data CRUD, user management, and global reports.
+  - **Management**: Global view of all deals/dashboards/reports; **strict block on deleting master data**.
+  - **Team Lead**: Strictly scoped to assigned team; DO supervision and team deals.
+  - **DO**: Strictly scoped to creating clients, creating/updating own deals, uploading documents.
+* Set up Svix webhook listener for idempotent profile synchronization.
+
+#### Phase 3: Core Domain Migration & Bug Resolution (Dec 04 – Dec 11)
+* **Resolve Bug #1 (DO vs. Team Lead Business Attribution)**:
+  - Implement `buildProductionFilter()` in the Data Access Layer to decouple direct producer sales (`assigned_do_id`) from supervisory oversight (`team_lead_id`).
+  - Update Dashboard and Funnel filters to offer explicit toggles: "My Direct Production" vs. "Team Member Production".
+* **Resolve Bug #2 (Won Business vs. Tagged Premium Mathematical Parity)**:
+  - Centralize all financial calculations in `src/lib/services/financial-metrics.service.ts` using `Decimal.js`.
+  - Snapshot `base_percentage` immutably on deal creation.
+  - Enforce uniform recognition criteria across single-payment and custom installment deals.
+* Port AppShell, Sidebar, Header, and Master Data pages.
+* Port Deal Creation with synchronous guard key and idempotent RPC invocation.
+
+#### Phase 4: Referral Leads Module & Operations (Dec 12 – Dec 19)
+* **Referral Leads Bulk Upload & Ingestion**:
+  - Implement streaming multipart CSV/XLSX file ingestion in `src/app/api/leads/upload/route.ts`.
+  - Enforce Zod validation and phone number/CNIC deduplication.
+* **Two-Tier Hierarchical Assignment**:
+  - Tier 1: Admin & Management interface to filter unassigned leads by Referral Partner Name and assign in bulk to Team Leads.
+  - Tier 2: Team Lead interface to review assigned pool and delegate leads to subordinate DOs.
+  - DO 1-Click Conversion: Action to convert assigned lead directly into Client + Deal.
+* Port Invoices, Accounts Receivable, FIFO payment allocation, Travel Postings, and Commission Approvals.
+
+#### Phase 5: Verification & Zero-Variance Cutover Gate (Dec 20 – Dec 23)
+* **Financial Parity Gate**: Run automated verification asserting `0.00` variance across 100% of historical deal balances, installment statuses, and tagged figures.
+* **RBAC Penetration Testing**: Verify that Management cannot delete master data, Team Leads cannot access outside teams, and DOs cannot read other agents' deals.
+* **Performance Benchmark**: Verify sub-100ms response times on paginated deals and instantaneous Excel streaming.
+* Production cutover and DNS switch.
 
 ### Post-Migration Roadmap (Phase 6 — Domain Upgrades After Cutover)
 To avoid mixing a framework port with a core-accounting schema rewrite, the following major domain upgrades are scheduled *after* Next.js + Clerk cutover is verified:
@@ -583,24 +984,26 @@ To avoid mixing a framework port with a core-accounting schema rewrite, the foll
 
 ```mermaid
 gantt
-    title Next.js 15 + Clerk Migration Timeline
+    title Next.js 15 + Clerk Migration & Updates Timeline
     dateFormat  YYYY-MM-DD
-    section Phase 1: Database & Schemas
-    Introspect Postgres & Generate Drizzle Schema :2026-11-27, 2d
-    Adapt profiles table for Clerk User ID (text) :2026-11-29, 1d
-    section Phase 2: Next.js 15 & Clerk Setup
-    Initialize Next.js 15 App Router             :2026-11-30, 1d
-    Install & Configure @clerk/nextjs & Middleware:2026-12-01, 1d
-    Svix Webhook Sync for Users/Profiles         :2026-12-02, 1d
-    section Phase 3: Core Domain Migration
-    Port AppShell, Navigation & User Profile     :2026-12-04, 2d
-    Migrate Clients & Master Data                :2026-12-06, 2d
-    Migrate Deals, Pipeline & Installments       :2026-12-08, 4d
-    section Phase 4: Financial & Operations
-    Migrate Invoices, Payables, Receivables      :2026-12-12, 3d
-    Migrate Travel Postings & Commissions        :2026-12-15, 3d
-    Migrate Refunds & Underwriting               :2026-12-18, 2d
-    section Phase 5: Verification & Cutover
-    End-to-end integration tests & audit checks  :2026-12-20, 3d
-    Production deployment & cutover              :2026-12-23, 1d
+    section Phase 1: DB & Schemas
+    Introspect Postgres & Baseline Drizzle Schema :2026-11-27, 2d
+    Create referral_leads & Batch Tables          :2026-11-29, 1d
+    section Phase 2: Next.js 15 & Clerk RBAC
+    Initialize Next.js 15 App Router & Middleware :2026-11-30, 1d
+    Implement 4-Tier RBAC & Master Data Locks     :2026-12-01, 2d
+    Svix Webhook Sync for Profiles               :2026-12-03, 1d
+    section Phase 3: Core Domain & Bug Fixes
+    Fix Bug 1: DO vs Team Lead Attribution       :2026-12-04, 2d
+    Fix Bug 2: Won vs Tagged Premium Parity      :2026-12-06, 2d
+    Migrate Clients & Master Data (Protected)    :2026-12-08, 2d
+    Migrate Deals, Pipeline & Installments       :2026-12-10, 2d
+    section Phase 4: Referral Leads & Operations
+    Bulk Lead Upload Engine (CSV/XLSX)           :2026-12-12, 2d
+    Two-Tier Assignment & Partner Filter         :2026-12-14, 2d
+    Invoices, FIFO Allocation & Commissions      :2026-12-16, 2d
+    Travel Postings & Delivery Tracking          :2026-12-18, 2d
+    section Phase 5: Parity & Cutover
+    Zero-Variance Parity Run & RBAC Security Audit:2026-12-20, 2d
+    Production Deployment & Cutover              :2026-12-22, 1d
 ```
