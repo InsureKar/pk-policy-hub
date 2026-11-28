@@ -247,6 +247,19 @@ export const config = {
 * **Defense-in-Depth Beyond `middleware.ts`:** Never treat middleware as the sole auth boundary. Enforce explicit `assertRole()` checks at the entry of every Server Component loader, Server Action, and Route Handler.
 * **JIT Upsert for Svix Webhook Race Conditions:** A newly created user can land on `/dashboard` milliseconds before the async Svix webhook inserts their `profiles` row. Pair the webhook with a **Just-in-Time (JIT) idempotent upsert** in the auth helper on first authenticated request.
 
+### 2.4 Flexible Custom Roles, Default-Deny Permissions & Leak-Free Analytics
+To replace the rigid 4-value `app_role` enum and eliminate permission leaks observed in production:
+* **Dynamic Custom Roles (`roles` + `role_permissions`):** Move beyond 4 fixed roles (`admin`, `management`, `team_lead`, `do`) to a `roles` table (`id`, `slug`, `name`, `data_scope: 'own' | 'team' | 'all'`, `is_system`) and `role_permissions` (`role_id`, `perm_key`, `level`), while preserving per-user overrides (`user_permissions`) and `permission_audit_log`. Real designations (*AVP*, *Head of Ops*, *Regional Sales Manager*, *Corporate Business Manager*, *Assistant Operations*, *Social Media Manager*) each get exact permissions without SQL enum migrations.
+* **Remove Legacy `Module Access` Fallback (Default-Deny):** Deprecate `user_module_permissions`. If a permission key is not explicitly granted (`none` by default), access is **blocked** in both the UI and Server Actions/DAL—so toggling off a screen permission can never leak through a coarse module fallback.
+* **Enforce `teams.lead_id` Integrity:** Automatically sync `teams.lead_id` whenever a Team Lead is assigned to a team, preventing orphaned team leads from breaking team-scoped queries.
+* **Server-Aggregated Analytics & Reports:** Never fetch all `deals` and `policies` to the browser and filter in JavaScript (`_app.analytics.tsx`). Run analytics as React Server Components using PostgreSQL aggregations (`SUM`, `COUNT`, `GROUP BY`) *after* applying `WHERE team_id IN (...)` on the server, so zero out-of-scope records ever leave the database.
+
+### 2.5 Zero-Loss Production User Migration & Invite-Only Onboarding
+* **Authoritative Production Environment:** `https://crm.insurekar.pk/` (hosted on Vercel) points to the live production Supabase database (19+ active users, 2 months of live data), which is separate from the outdated Lovable Cloud staging database (`pk-policy-hub.lovable.app`). Always export and migrate from the **Vercel production Supabase project**.
+* **Preserve `profiles.id` (UUID) Forever:** 40+ foreign keys across `deals`, `clients`, `invoices`, `commissions`, `payroll`, `teams`, and `documents` reference `profiles.id` (`uuid`). Never replace `profiles.id` with a Clerk string ID; instead add `clerk_user_id TEXT UNIQUE` on `public.profiles`.
+* **No Re-Signup for Existing Staff:** Bulk-import existing production users into Clerk via `clerkClient.users.createUser` with `externalId: profile.id` and their role/team metadata (and `passwordHasher: "bcrypt"` if exporting hashes from `auth.users`), storing the returned `clerk_user_id` on `profiles`.
+* **Invite-Only Onboarding for New Staff:** Disable public `/sign-up` in Clerk. In `/admin/users`, replace manual password entry with `clerkClient.invitations.createInvitation({ emailAddress, publicMetadata })` so new hires set their own password and optional 2FA.
+
 ---
 
 ## 3. Recommended Core Services to Strengthen Brokerage Calculations
@@ -512,6 +525,10 @@ In the legacy codebase, "Won Business" and "Tagged Business" diverge due to thre
    ```
 4. **Automated Mathematical Parity Suite**:
    A continuous integration test suite runs nightly, asserting that $\text{Tagged Premium}$ matches $\text{Net Premium} \times \text{Base \%}$ across 100% of won records with `0.00` allowable variance.
+
+### 4.8 UI/UX Standard: Searchable `<UserCombobox />` Across All Dropdowns
+* **Current Issue:** User selectors across `/permissions`, `/deals`, `/leads/unassigned`, `/teams`, and `/tasks` use plain `<Select>` lists, making it slow and error-prone to pick from 19+ staff members.
+* **Solution:** Replace every user, client, and team `<Select>` with a shared searchable **`<UserCombobox />`** built on Radix `Popover` + `cmdk` (already in `package.json`), filtering instantaneously by **Name, Email, Designation, and Team**—and automatically scoping selectable users (e.g., Team Leads only see DOs inside their own team).
 
 ---
 
